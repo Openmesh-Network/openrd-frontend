@@ -18,22 +18,22 @@ export function NotificationsToggle() {
   const account = useAccount()
   const [events, setEvents] = React.useState<number[]>([])
 
-  React.useEffect(() => {
-    const getEvents = async () => {
-      if (!account.address) {
-        setEvents([])
-        return
-      }
-
-      const newEvents = await userEvents(account.address)
-      setEvents(newEvents)
+  const getEvents = async () => {
+    if (!account.address) {
+      setEvents([])
+      return
     }
 
+    const newEvents = await userEvents(account.address)
+    setEvents(newEvents)
+  }
+
+  React.useEffect(() => {
     getEvents().catch(console.error)
   }, [account.address])
 
   return (
-    <DropdownMenu>
+    <DropdownMenu onOpenChange={() => getEvents().catch(console.error)}>
       <DropdownMenuTrigger
         className={buttonVariants({ variant: "ghost", size: "icon" })}
       >

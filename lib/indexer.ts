@@ -66,3 +66,16 @@ export async function getTotalEvents(): Promise<TotalEventsReturn> {
   checkError(res)
   return JSON.parse(JSON.stringify(res.data), reviver)
 }
+
+export async function setMetadata(
+  account: Address,
+  metadataUri: string,
+  signature: `0x${string}`
+): Promise<void> {
+  const res = await axios.post(`${backendBaseUrl}/setMetadata/`, {
+    account: account,
+    metadata: metadataUri,
+    signature: signature,
+  })
+  checkError(res)
+}

@@ -462,9 +462,7 @@ export function ShowApplication({
               <Badge variant="secondary">Executor</Badge>
             )}
         </CardTitle>
-        {userDescription && (
-          <CardDescription>{userDescription}</CardDescription>
-        )}
+        {userDescription && <SanitizeHTML html={userDescription} />}
       </CardHeader>
       <CardContent>
         <div className="space-y-2">

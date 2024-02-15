@@ -4,7 +4,7 @@ import * as React from "react"
 import { useAccount } from "wagmi"
 
 import { userEvents } from "@/lib/indexer"
-import { Button, buttonVariants } from "@/components/ui/button"
+import { buttonVariants } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,

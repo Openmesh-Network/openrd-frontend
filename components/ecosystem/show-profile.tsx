@@ -4,12 +4,14 @@ import { useEffect, useState } from "react"
 import { TaskRole, User } from "@/openrd-indexer/types/user"
 import { parseBigInt } from "@/openrd-indexer/utils/parseBigInt"
 import { Address } from "viem"
+import { useAccount } from "wagmi"
 
 import { chains } from "@/config/wagmi-config"
 import { useENS } from "@/lib/ens"
 import { getUser } from "@/lib/indexer"
 import { objectKeysInt } from "@/lib/object-keys"
 import { Badge } from "@/components/ui/badge"
+import { buttonVariants } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Link } from "@/components/ui/link"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
@@ -22,7 +24,9 @@ export interface ProfileMetadata {
 }
 
 export function ShowProfile({ address }: { address: Address }) {
+  const account = useAccount()
   const [user, setUser] = useState<User | undefined>(undefined)
+  const [forceTab, setForceTab] = useState<string | undefined>(undefined)
   const userENS = useENS({ address: address })
 
   useEffect(() => {
@@ -34,6 +38,12 @@ export function ShowProfile({ address }: { address: Address }) {
     getUserInfo().catch(console.error)
   }, [address])
 
+  useEffect(() => {
+    if (user?.metadata) {
+      setForceTab("description")
+    }
+  }, [user?.metadata])
+
   const metadata = user?.metadata
     ? (JSON.parse(user.metadata) as ProfileMetadata)
     : undefined
@@ -42,10 +52,15 @@ export function ShowProfile({ address }: { address: Address }) {
 
   return (
     <div>
-      <div className="flex max-w-[980px] flex-col items-start gap-2">
+      <div className="flex max-w-[980px] gap-2">
         <h1 className="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
           {title}
         </h1>
+        {account.address && account.address == address && (
+          <Link href="/profile/edit" className={buttonVariants({})}>
+            Edit profile
+          </Link>
+        )}
       </div>
       <div className="flex gap-x-10">
         {chains.map((chain) => (
@@ -58,7 +73,11 @@ export function ShowProfile({ address }: { address: Address }) {
           </Link>
         ))}
       </div>
-      <Tabs defaultValue="tasks">
+      <Tabs
+        defaultValue="tasks"
+        value={forceTab}
+        onValueChange={() => setForceTab(undefined)}
+      >
         <TabsList>
           {description && (
             <TabsTrigger value="description">Description</TabsTrigger>

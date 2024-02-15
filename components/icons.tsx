@@ -1,6 +1,5 @@
-import { Bell, Disc } from "lucide-react"
+import { Bell } from "lucide-react"
 
 export const Icons = {
-  logo: Disc,
   notification: Bell,
 }

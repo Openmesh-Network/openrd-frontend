@@ -5,7 +5,7 @@ import { TasksContract } from "@/openrd-indexer/contracts/Tasks"
 import { addToIpfs } from "@/openrd-indexer/utils/ipfs"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { decodeEventLog } from "viem"
+import { BaseError, ContractFunctionRevertedError, decodeEventLog } from "viem"
 import {
   useChainId,
   usePublicClient,
@@ -121,23 +121,49 @@ export function CancelTask({
         description: "Please sign the transaction in your wallet...",
       }).dismiss
 
-      if (!walletClient) {
+      if (!publicClient || !walletClient) {
         dismiss()
         toast({
           title: "Cancel task failed",
-          description: "WalletClient is undefined.",
+          description: `${publicClient ? "Wallet" : "Public"}Client is undefined.`,
           variant: "destructive",
         })
         return
       }
-      const transactionHash = await walletClient
-        .writeContract({
+      const transactionRequest = await publicClient
+        .simulateContract({
+          account: walletClient.account.address,
           abi: TasksContract.abi,
           address: TasksContract.address,
           functionName: "cancelTask",
           args: [taskId, `ipfs://${cid}`],
           chain: chains.find((c) => c.id == chainId),
         })
+        .catch((err) => {
+          console.error(err)
+          if (err instanceof BaseError) {
+            let errorName = err.shortMessage ?? "Simulation failed."
+            const revertError = err.walk(
+              (err) => err instanceof ContractFunctionRevertedError
+            )
+            if (revertError instanceof ContractFunctionRevertedError) {
+              errorName += ` -> ${revertError.data?.errorName}` ?? ""
+            }
+            return errorName
+          }
+          return "Simulation failed."
+        })
+      if (typeof transactionRequest === "string") {
+        dismiss()
+        toast({
+          title: "Cancel task failed",
+          description: transactionRequest,
+          variant: "destructive",
+        })
+        return
+      }
+      const transactionHash = await walletClient
+        .writeContract(transactionRequest.request)
         .catch((err) => {
           console.error(err)
           return undefined
@@ -176,16 +202,6 @@ export function CancelTask({
           </ToastAction>
         ),
       }).dismiss
-
-      if (!publicClient) {
-        dismiss()
-        toast({
-          title: "Cannot watch blockchain",
-          description: "PublicClient is undefined.",
-          variant: "destructive",
-        })
-        return
-      }
 
       const receipt = await publicClient.waitForTransactionReceipt({
         hash: transactionHash,

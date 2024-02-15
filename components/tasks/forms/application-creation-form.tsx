@@ -7,7 +7,13 @@ import { addToIpfs } from "@/openrd-indexer/utils/ipfs"
 import { zodResolver } from "@hookform/resolvers/zod"
 import axios from "axios"
 import { useFieldArray, useForm } from "react-hook-form"
-import { Address, decodeEventLog, isAddress } from "viem"
+import {
+  Address,
+  BaseError,
+  ContractFunctionRevertedError,
+  decodeEventLog,
+  isAddress,
+} from "viem"
 import {
   useAccount,
   useChainId,
@@ -209,15 +215,6 @@ export function ApplicationCreationForm({
         description: "Please sign the transaction in your wallet...",
       }).dismiss
 
-      if (!walletClient) {
-        dismiss()
-        toast({
-          title: "Application creation failed",
-          description: "WalletClient is undefined.",
-          variant: "destructive",
-        })
-        return
-      }
       const nativeReward = values.nativeReward.map((r) => {
         return {
           ...r,
@@ -252,14 +249,49 @@ export function ApplicationCreationForm({
           },
           [] as { nextToken: boolean; to: Address; amount: bigint }[]
         )
-      const transactionHash = await walletClient
-        .writeContract({
+      if (!publicClient || !walletClient) {
+        dismiss()
+        toast({
+          title: "Application creation failed",
+          description: `${publicClient ? "Wallet" : "Public"}Client is undefined.`,
+          variant: "destructive",
+        })
+        return
+      }
+      const transactionRequest = await publicClient
+        .simulateContract({
+          account: walletClient.account.address,
           abi: TasksContract.abi,
           address: TasksContract.address,
           functionName: "applyForTask",
           args: [taskId, `ipfs://${cid}`, nativeReward, reward],
           chain: chains.find((c) => c.id == chainId),
         })
+        .catch((err) => {
+          console.error(err)
+          if (err instanceof BaseError) {
+            let errorName = err.shortMessage ?? "Simulation failed."
+            const revertError = err.walk(
+              (err) => err instanceof ContractFunctionRevertedError
+            )
+            if (revertError instanceof ContractFunctionRevertedError) {
+              errorName += ` -> ${revertError.data?.errorName}` ?? ""
+            }
+            return errorName
+          }
+          return "Simulation failed."
+        })
+      if (typeof transactionRequest === "string") {
+        dismiss()
+        toast({
+          title: "Application creation failed",
+          description: transactionRequest,
+          variant: "destructive",
+        })
+        return
+      }
+      const transactionHash = await walletClient
+        .writeContract(transactionRequest.request)
         .catch((err) => {
           console.error(err)
           return undefined
@@ -298,16 +330,6 @@ export function ApplicationCreationForm({
           </ToastAction>
         ),
       }).dismiss
-
-      if (!publicClient) {
-        dismiss()
-        toast({
-          title: "Cannot watch blockchain",
-          description: "PublicClient is undefined.",
-          variant: "destructive",
-        })
-        return
-      }
 
       const receipt = await publicClient.waitForTransactionReceipt({
         hash: transactionHash,
@@ -465,139 +487,141 @@ export function ApplicationCreationForm({
           )}
         />
 
-        <FormItem>
-          <FormLabel>Native Rewards</FormLabel>
-          <FormControl>
-            <div>
-              {nativeReward.map((nativeRewardItem, i) => (
-                <ErrorWrapper
-                  key={i}
-                  error={form.formState.errors.nativeReward?.at?.(i)}
+        {task.nativeBudget !== BigInt(0) && (
+          <FormItem>
+            <FormLabel>Native Rewards</FormLabel>
+            <FormControl>
+              <div>
+                {nativeReward.map((nativeRewardItem, i) => (
+                  <ErrorWrapper
+                    key={i}
+                    error={form.formState.errors.nativeReward?.at?.(i)}
+                  >
+                    <div className="flex gap-x-1 w-full">
+                      <AddressPicker
+                        addressName="receiver"
+                        selectableAddresses={selectableAddresses}
+                        value={nativeRewardItem.to}
+                        onChange={(change) => {
+                          updateNativeReward(i, {
+                            ...nativeRewardItem,
+                            to: change ?? "",
+                          })
+                          form.trigger("nativeReward")
+                        }}
+                        customAllowed={true}
+                      />
+                      <NativeBalanceInput
+                        value={nativeRewardItem.amount}
+                        onChange={(change) => {
+                          updateNativeReward(i, {
+                            ...nativeRewardItem,
+                            amount: change,
+                          })
+                          form.trigger("nativeReward")
+                        }}
+                        account={account.address}
+                      />
+                      <Button
+                        onClick={() => removeNativeReward(i)}
+                        variant="destructive"
+                      >
+                        X
+                      </Button>
+                    </div>
+                  </ErrorWrapper>
+                ))}
+                <Button
+                  onClick={() =>
+                    appendNativeReward({ to: "", amount: BigInt(0) })
+                  }
                 >
-                  <div className="flex gap-x-1 w-full">
-                    <AddressPicker
-                      addressName="receiver"
-                      selectableAddresses={selectableAddresses}
-                      value={nativeRewardItem.to}
-                      onChange={(change) => {
-                        updateNativeReward(i, {
-                          ...nativeRewardItem,
-                          to: change ?? "",
-                        })
-                        form.trigger("nativeReward")
-                      }}
-                      customAllowed={true}
-                    />
-                    <NativeBalanceInput
-                      value={nativeRewardItem.amount}
-                      onChange={(change) => {
-                        updateNativeReward(i, {
-                          ...nativeRewardItem,
-                          amount: change,
-                        })
-                        form.trigger("nativeReward")
-                      }}
-                      account={account.address}
-                    />
-                    <Button
-                      onClick={() => removeNativeReward(i)}
-                      variant="destructive"
-                    >
-                      X
-                    </Button>
-                  </div>
-                </ErrorWrapper>
-              ))}
-              {/* Summary of total native */}
-              <Button
-                onClick={() =>
-                  appendNativeReward({ to: "", amount: BigInt(0) })
-                }
-              >
-                Add native reward
-              </Button>
-            </div>
-          </FormControl>
-          <FormDescription>
-            The amount of ERC20 currency that your require for completing this
-            task. This is limited to the ERC20 tokens set as budget, but can
-            exceed the current budget amount.
-          </FormDescription>
-          <FormMessage />
-        </FormItem>
-        <FormItem>
-          <FormLabel>ERC20 Rewards</FormLabel>
-          <FormControl>
-            <div>
-              {reward.map((rewardItem, i) => (
-                <ErrorWrapper
-                  key={i}
-                  error={form.formState.errors.reward?.at?.(i)}
+                  Add native reward
+                </Button>
+              </div>
+            </FormControl>
+            <FormDescription>
+              The amount of ERC20 currency that your require for completing this
+              task. This is limited to the ERC20 tokens set as budget, but can
+              exceed the current budget amount.
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
+        {task.budget.length !== 0 && (
+          <FormItem>
+            <FormLabel>ERC20 Rewards</FormLabel>
+            <FormControl>
+              <div>
+                {reward.map((rewardItem, i) => (
+                  <ErrorWrapper
+                    key={i}
+                    error={form.formState.errors.reward?.at?.(i)}
+                  >
+                    <div className="flex gap-x-1 w-full">
+                      <AddressPicker
+                        addressName="receiver"
+                        selectableAddresses={selectableAddresses}
+                        value={rewardItem.to}
+                        onChange={(change) => {
+                          updateReward(i, {
+                            ...rewardItem,
+                            to: change ?? "",
+                          })
+                          form.trigger("reward")
+                        }}
+                        customAllowed={true}
+                      />
+                      <AddressPicker
+                        addressName="ERC20 token"
+                        selectableAddresses={budgetTokens}
+                        value={rewardItem.token}
+                        onChange={(change) => {
+                          updateReward(i, {
+                            ...rewardItem,
+                            token: change ?? "",
+                          })
+                          form.trigger("reward")
+                        }}
+                      />
+                      <ERC20BalanceInput
+                        token={
+                          isAddress(rewardItem.to) ? rewardItem.to : undefined
+                        }
+                        value={rewardItem.amount}
+                        onChange={(change) => {
+                          updateReward(i, { ...rewardItem, amount: change })
+                          form.trigger("reward")
+                        }}
+                        account={account.address}
+                        showAvailable={false}
+                      />
+                      <Button
+                        onClick={() => removeReward(i)}
+                        variant="destructive"
+                      >
+                        X
+                      </Button>
+                    </div>
+                  </ErrorWrapper>
+                ))}
+                <Button
+                  onClick={() =>
+                    appendReward({ to: "", token: "", amount: BigInt(0) })
+                  }
                 >
-                  <div className="flex gap-x-1 w-full">
-                    <AddressPicker
-                      addressName="receiver"
-                      selectableAddresses={selectableAddresses}
-                      value={rewardItem.to}
-                      onChange={(change) => {
-                        updateReward(i, {
-                          ...rewardItem,
-                          to: change ?? "",
-                        })
-                        form.trigger("reward")
-                      }}
-                      customAllowed={true}
-                    />
-                    <AddressPicker
-                      addressName="ERC20 token"
-                      selectableAddresses={budgetTokens}
-                      value={rewardItem.token}
-                      onChange={(change) => {
-                        updateReward(i, {
-                          ...rewardItem,
-                          token: change ?? "",
-                        })
-                        form.trigger("reward")
-                      }}
-                    />
-                    <ERC20BalanceInput
-                      token={
-                        isAddress(rewardItem.to) ? rewardItem.to : undefined
-                      }
-                      value={rewardItem.amount}
-                      onChange={(change) => {
-                        updateReward(i, { ...rewardItem, amount: change })
-                        form.trigger("reward")
-                      }}
-                      account={account.address}
-                      showAvailable={false}
-                    />
-                    <Button
-                      onClick={() => removeReward(i)}
-                      variant="destructive"
-                    >
-                      X
-                    </Button>
-                  </div>
-                </ErrorWrapper>
-              ))}
-              {/* Summary of total erc20 per type*/}
-              <Button
-                onClick={() =>
-                  appendReward({ to: "", token: "", amount: BigInt(0) })
-                }
-              >
-                Add ERC20 reward
-              </Button>
-            </div>
-          </FormControl>
-          <FormDescription>
-            The amount of ERC20 currency that your require for completing this
-            task. This is limited to the ERC20 tokens set as budget, but can
-            exceed the current budget amount.
-          </FormDescription>
-          <FormMessage />
-        </FormItem>
+                  Add ERC20 reward
+                </Button>
+              </div>
+            </FormControl>
+            <FormDescription>
+              The amount of ERC20 currency that your require for completing this
+              task. This is limited to the ERC20 tokens set as budget, but can
+              exceed the current budget amount.
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
         <Button type="submit" disabled={submitting}>
           Create application
         </Button>

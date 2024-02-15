@@ -31,7 +31,6 @@ const formSchema = z.object({
 })
 
 export function EditProfile() {
-  const account = useAccount()
   const { data: walletClient } = useWalletClient()
   const { toast } = useToast()
   const { push } = useRouter()

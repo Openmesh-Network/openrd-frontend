@@ -9,7 +9,7 @@ import {
   TaskState,
 } from "@/openrd-indexer/types/tasks"
 import { fetchMetadata } from "@/openrd-indexer/utils/metadata-fetch"
-import { decodeEventLog } from "viem"
+import { BaseError, ContractFunctionRevertedError, decodeEventLog } from "viem"
 import {
   useAccount,
   useChainId,
@@ -26,7 +26,6 @@ import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
-  CardDescription,
   CardFooter,
   CardHeader,
   CardTitle,
@@ -149,23 +148,49 @@ export function ShowApplication({
         description: "Please sign the transaction in your wallet...",
       })
 
-      if (!walletClient) {
+      if (!publicClient || !walletClient) {
         dismiss()
         toast({
           title: "Application approve failed",
-          description: "WalletClient is undefined.",
+          description: `${publicClient ? "Wallet" : "Public"}Client is undefined.`,
           variant: "destructive",
         })
         return
       }
-      const transactionHash = await walletClient
-        .writeContract({
+      const transactionRequest = await publicClient
+        .simulateContract({
+          account: walletClient.account.address,
           abi: TasksContract.abi,
           address: TasksContract.address,
           functionName: "acceptApplications",
           args: [taskId, [applicationId]],
           chain: chains.find((c) => c.id == chainId),
         })
+        .catch((err) => {
+          console.error(err)
+          if (err instanceof BaseError) {
+            let errorName = err.shortMessage ?? "Simulation failed."
+            const revertError = err.walk(
+              (err) => err instanceof ContractFunctionRevertedError
+            )
+            if (revertError instanceof ContractFunctionRevertedError) {
+              errorName += ` -> ${revertError.data?.errorName}` ?? ""
+            }
+            return errorName
+          }
+          return "Simulation failed."
+        })
+      if (typeof transactionRequest === "string") {
+        dismiss()
+        toast({
+          title: "Application approve failed",
+          description: transactionRequest,
+          variant: "destructive",
+        })
+        return
+      }
+      const transactionHash = await walletClient
+        .writeContract(transactionRequest.request)
         .catch((err) => {
           console.error(err)
           return undefined
@@ -204,16 +229,6 @@ export function ShowApplication({
           </ToastAction>
         ),
       }).dismiss
-
-      if (!publicClient) {
-        dismiss()
-        toast({
-          title: "Cannot watch blockchain",
-          description: "PublicClient is undefined.",
-          variant: "destructive",
-        })
-        return
-      }
 
       const receipt = await publicClient.waitForTransactionReceipt({
         hash: transactionHash,
@@ -312,23 +327,49 @@ export function ShowApplication({
         description: "Please sign the transaction in your wallet...",
       })
 
-      if (!walletClient) {
+      if (!publicClient || !walletClient) {
         dismiss()
         toast({
           title: "Take task failed",
-          description: "WalletClient is undefined.",
+          description: `${publicClient ? "Wallet" : "Public"}Client is undefined.`,
           variant: "destructive",
         })
         return
       }
-      const transactionHash = await walletClient
-        .writeContract({
+      const transactionRequest = await publicClient
+        .simulateContract({
+          account: walletClient.account.address,
           abi: TasksContract.abi,
           address: TasksContract.address,
           functionName: "takeTask",
           args: [taskId, applicationId],
           chain: chains.find((c) => c.id == chainId),
         })
+        .catch((err) => {
+          console.error(err)
+          if (err instanceof BaseError) {
+            let errorName = err.shortMessage ?? "Simulation failed."
+            const revertError = err.walk(
+              (err) => err instanceof ContractFunctionRevertedError
+            )
+            if (revertError instanceof ContractFunctionRevertedError) {
+              errorName += ` -> ${revertError.data?.errorName}` ?? ""
+            }
+            return errorName
+          }
+          return "Simulation failed."
+        })
+      if (typeof transactionRequest === "string") {
+        dismiss()
+        toast({
+          title: "Take task failed",
+          description: transactionRequest,
+          variant: "destructive",
+        })
+        return
+      }
+      const transactionHash = await walletClient
+        .writeContract(transactionRequest.request)
         .catch((err) => {
           console.error(err)
           return undefined
@@ -367,16 +408,6 @@ export function ShowApplication({
           </ToastAction>
         ),
       }).dismiss
-
-      if (!publicClient) {
-        dismiss()
-        toast({
-          title: "Cannot watch blockchain",
-          description: "PublicClient is undefined.",
-          variant: "destructive",
-        })
-        return
-      }
 
       const receipt = await publicClient.waitForTransactionReceipt({
         hash: transactionHash,

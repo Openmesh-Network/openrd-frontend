@@ -1,18 +1,28 @@
 export type SiteConfig = typeof siteConfig
 
 export const siteConfig = {
-  name: "Next.js",
-  description:
-    "Beautifully designed components built with Radix UI and Tailwind CSS.",
+  name: "OpenR&D" as const,
   mainNav: [
     {
       title: "Home",
       href: "/",
     },
+    {
+      title: "Tasks",
+      href: "/tasks/",
+    },
+    // {
+    //   title: "Organizations",
+    //   href: "/organizations/",
+    // },
+    // {
+    //   title: "RFPs",
+    //   href: "/rfps/",
+    // },
   ],
   links: {
-    twitter: "https://twitter.com/shadcn",
-    github: "https://github.com/shadcn/ui",
-    docs: "https://ui.shadcn.com",
+    guide: "https://discord.gg/6QDSHqbBvP", // Should be replaced when the guide is made
+    docs: "https://open-mesh.gitbook.io/l3a-dao-documentation/about/openr-and-d-101",
+    forum: "https://forum.openmesh.network/",
   },
 }

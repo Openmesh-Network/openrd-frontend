@@ -1,5 +1,6 @@
 "use client"
 
+import { useEffect } from "react"
 import { Filter, ObjectFilter } from "@/openrd-indexer/api/filter"
 import { FilterTasksReturn } from "@/openrd-indexer/api/return-types"
 import { parseBigInt } from "@/openrd-indexer/utils/parseBigInt"
@@ -7,6 +8,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useFieldArray, useForm } from "react-hook-form"
 import { z } from "zod"
 
+import { chains } from "@/config/wagmi-config"
 import { filterTasks } from "@/lib/indexer"
 import {
   Accordion,
@@ -134,23 +136,24 @@ const formSchema = z.object({
 export function TasksFilter({
   onFilterApplied,
 }: {
-  onFilterApplied: (filtered: FilterTasksReturn | undefined) => void
+  onFilterApplied: (filtered: FilterTasksReturn) => void
 }) {
+  // Temporarly also show testnets
+  const mainnets = chains /*.filter((c) => !c.testnet)*/
+    .map((c) => c.id)
+  const defaultFilter = [
+    { property: FilterProperty.ChainId, value: { oneOf: mainnets.join(",") } },
+  ]
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      filter: [],
+      filter: defaultFilter,
     },
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values)
     const getFilteredTasks = async () => {
-      if (values.filter.length === 0) {
-        onFilterApplied(undefined)
-        return
-      }
-
       const filteredTasks = await filterTasks(
         values.filter.reduce((acc, value) => {
           if (!value.property || Object.keys(value).length === 0) {
@@ -171,6 +174,11 @@ export function TasksFilter({
 
     getFilteredTasks().catch(console.error)
   }
+
+  useEffect(() => {
+    // Initial get tasks (with just default filter applied)
+    onSubmit(form.getValues()).catch(console.error)
+  }, [])
 
   const {
     fields: filter,

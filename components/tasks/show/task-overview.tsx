@@ -9,9 +9,7 @@ import { TasksFilter } from "@/components/tasks/filter/tasks-filter"
 import { ShowRecentTasks, TaskIndentifier } from "./show-recent-tasks"
 
 export function TaskOverview() {
-  const [taskList, setTaskList] = useState<TaskIndentifier[] | undefined>(
-    undefined
-  )
+  const [taskList, setTaskList] = useState<TaskIndentifier[]>([])
 
   return (
     <div className="grid grid-cols-1 gap-y-3">

@@ -17,12 +17,9 @@ export function ShowRecentTasks({ taskList }: { taskList: TaskIndentifier[] }) {
   return (
     <div>
       <span className="text-xl">Latest tasks:</span>
-      {taskList
-        .slice(-showTaskCount)
-        .reverse()
-        .map((task, i) => (
-          <ShowTaskSummary key={i} {...task} />
-        ))}
+      {taskList.slice(0, showTaskCount).map((task, i) => (
+        <ShowTaskSummary key={i} {...task} />
+      ))}
       {showTaskCount < taskList.length && (
         <Button
           onClick={() => {

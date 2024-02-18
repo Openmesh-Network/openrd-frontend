@@ -4,6 +4,8 @@ import {
   FilterTasksReturn,
   TaskReturn,
   TotalEventsReturn,
+  TotalUsdValueReturn,
+  TotalUsersReturn,
   UserEventsReturn,
   UserReturn,
 } from "@/openrd-indexer/api/return-types"
@@ -63,6 +65,18 @@ export async function userEvents(address: Address): Promise<UserEventsReturn> {
 
 export async function getTotalEvents(): Promise<TotalEventsReturn> {
   const res = await axios.get(`${backendBaseUrl}/totalEvents`)
+  checkError(res)
+  return JSON.parse(JSON.stringify(res.data), reviver)
+}
+
+export async function getTotalUsers(): Promise<TotalUsersReturn> {
+  const res = await axios.get(`${backendBaseUrl}/totalUsers`)
+  checkError(res)
+  return JSON.parse(JSON.stringify(res.data), reviver)
+}
+
+export async function getTotalUsdValue(): Promise<TotalUsdValueReturn> {
+  const res = await axios.get(`${backendBaseUrl}/totalUsdValue`)
   checkError(res)
   return JSON.parse(JSON.stringify(res.data), reviver)
 }

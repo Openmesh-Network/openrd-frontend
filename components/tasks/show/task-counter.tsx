@@ -1,20 +1,30 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { TaskState } from "@/openrd-indexer/types/tasks"
 
-export function TaskCounter({ type }: { type: TaskState }) {
+import { filterTasks } from "@/lib/indexer"
+import { FilterProperty } from "@/components/tasks/filter/filter-control"
+
+export function TaskCounter({ state }: { state: TaskState }) {
   const [counter, setCounter] = useState<number | undefined>(undefined)
 
-  // Get respective counter value from API
+  useEffect(() => {
+    const getCounter = async () => {
+      const filteredTasks = await filterTasks({
+        [FilterProperty.State]: { equal: state },
+      })
+      setCounter(filteredTasks.length)
+    }
 
-  // Make it a button to open tasks with the corresponding type filter
+    getCounter().catch(console.error)
+  }, [state])
 
   return (
     <div>
-      {counter ? (
+      {counter !== undefined ? (
         <h2>
-          {counter} {typeToString(type)} tasks
+          {counter} {stateToString(state)} tasks
         </h2>
       ) : (
         <h2>Loading...</h2>
@@ -23,8 +33,8 @@ export function TaskCounter({ type }: { type: TaskState }) {
   )
 }
 
-function typeToString(type: TaskState): string {
-  switch (type) {
+function stateToString(state: TaskState): string {
+  switch (state) {
     case TaskState.Open:
       return "open"
     case TaskState.Taken:

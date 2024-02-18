@@ -2,6 +2,8 @@ export type SiteConfig = typeof siteConfig
 
 export const siteConfig = {
   name: "OpenR&D" as const,
+  description:
+    "Open-source platform designed to empower decentralized teams to collaborate seamlessly." as const,
   mainNav: [
     {
       title: "Home",

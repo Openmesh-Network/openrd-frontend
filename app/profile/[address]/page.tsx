@@ -1,6 +1,6 @@
 import { isAddress } from "viem"
 
-import { ShowProfile } from "@/components/ecosystem/show-profile"
+import { ShowProfile } from "@/components/profile/show-profile"
 
 export default function ProfilePage({
   params,

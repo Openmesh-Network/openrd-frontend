@@ -1,4 +1,4 @@
-import { EditProfile } from "@/components/ecosystem/edit-profile"
+import { EditProfile } from "@/components/profile/edit-profile"
 
 export default function EditProfilePage() {
   return (

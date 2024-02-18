@@ -1,11 +1,28 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
+
+import { getTotalUsdValue } from "@/lib/indexer"
 
 export function TotalBudgetValue() {
   const [budgetValue, setBudgetValue] = useState<number | undefined>(undefined)
 
-  // Get total budget value from API
+  useEffect(() => {
+    const getBudgetValue = async () => {
+      const totalUsd = await getTotalUsdValue()
+      setBudgetValue(totalUsd.totalUsdValue)
+    }
 
-  return <div>{budgetValue ? <h2>{budgetValue}</h2> : <h2>Loading...</h2>}</div>
+    getBudgetValue().catch(console.error)
+  }, [])
+
+  return (
+    <div>
+      {budgetValue !== undefined ? (
+        <h2>{budgetValue} in task budgets</h2>
+      ) : (
+        <h2>Loading...</h2>
+      )}
+    </div>
+  )
 }

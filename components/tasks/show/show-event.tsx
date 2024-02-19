@@ -6,8 +6,8 @@ import { Block, Transaction } from "viem"
 import { usePublicClient } from "wagmi"
 
 import { chains } from "@/config/wagmi-config"
-import { useENS } from "@/lib/ens"
-import { getEvent, getUser } from "@/lib/indexer"
+import { getEvent } from "@/lib/indexer"
+import { useAddressTitle } from "@/hooks/useAddressTitle"
 import {
   Card,
   CardDescription,
@@ -36,10 +36,6 @@ export function ShowEvent({
     undefined
   )
   const [block, setBlock] = useState<Block | undefined>(undefined)
-  const [senderMetadata, setSenderMetadata] = useState<UserInfo | undefined>(
-    undefined
-  )
-  const senderENS = useENS({ address: transaction?.from })
 
   const chain = event ? chains.find((c) => c.id === event.chainId) : undefined
   const publicClient = usePublicClient({ chainId: event?.chainId })
@@ -85,24 +81,8 @@ export function ShowEvent({
     getBlockInfo().catch(console.error)
   }, [event?.blockNumber, publicClient])
 
-  useEffect(() => {
-    const getApplicantMetadata = async () => {
-      if (!transaction?.from) {
-        setSenderMetadata(undefined)
-        return
-      }
-
-      const user = await getUser(transaction.from)
-      setSenderMetadata(
-        user.metadata ? (JSON.parse(user.metadata) as UserInfo) : {}
-      )
-    }
-
-    getApplicantMetadata().catch(console.error)
-  }, [transaction?.from])
-
   const title = event?.type
-  const sender = senderMetadata?.title ?? senderENS ?? transaction?.from
+  const sender = useAddressTitle(transaction?.from)
   const timestamp = block ? new Date(Number(block.timestamp) * 1000) : undefined
 
   return (

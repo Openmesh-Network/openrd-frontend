@@ -14,9 +14,9 @@ import { deepEqual, useAccount, usePublicClient } from "wagmi"
 
 import { chains } from "@/config/wagmi-config"
 import { arrayToIndexObject } from "@/lib/array-to-object"
-import { useENS } from "@/lib/ens"
 import { getTask, getUser } from "@/lib/indexer"
 import { objectKeysInt } from "@/lib/object-keys"
+import { useAddressTitle } from "@/hooks/useAddressTitle"
 import {
   Accordion,
   AccordionContent,
@@ -200,64 +200,9 @@ export function ShowTask({
   const cancelTaskRequests =
     blockchainTask?.cancelTaskRequests ?? indexerTask?.cancelTaskRequests ?? {}
 
-  const [managerTitle, setManagerTitle] = useState<string | undefined>(
-    undefined
-  )
-  useEffect(() => {
-    const getManagerTitle = async () => {
-      if (!manager) {
-        setManagerTitle(undefined)
-        return
-      }
-
-      const user = await getUser(manager)
-      setManagerTitle(
-        user.metadata ? JSON.parse(user.metadata)?.title : undefined
-      )
-    }
-
-    getManagerTitle().catch(console.error)
-  }, [manager])
-  const [disputeManagerTitle, setDisputeManagerTitle] = useState<
-    string | undefined
-  >(undefined)
-  useEffect(() => {
-    const getDisputeManagerTitle = async () => {
-      if (!disputeManager) {
-        setDisputeManagerTitle(undefined)
-        return
-      }
-
-      const user = await getUser(disputeManager)
-      setDisputeManagerTitle(
-        user.metadata ? JSON.parse(user.metadata)?.title : undefined
-      )
-    }
-
-    getDisputeManagerTitle().catch(console.error)
-  }, [disputeManager])
-  const [creatorTitle, setCreatorTitle] = useState<string | undefined>(
-    undefined
-  )
-  useEffect(() => {
-    const getCreatorTitle = async () => {
-      if (!creator) {
-        setCreatorTitle(undefined)
-        return
-      }
-
-      const user = await getUser(creator)
-      setCreatorTitle(
-        user.metadata ? JSON.parse(user.metadata)?.title : undefined
-      )
-    }
-
-    getCreatorTitle().catch(console.error)
-  }, [creator])
-
-  const managerENS = useENS({ address: manager })
-  const disputeManagerENS = useENS({ address: disputeManager })
-  const creatorENS = useENS({ address: creator })
+  const managerTitle = useAddressTitle(manager)
+  const disputeManagerTitle = useAddressTitle(disputeManager)
+  const creatorTitle = useAddressTitle(creator)
 
   const events = indexerTask?.events ?? []
 
@@ -338,19 +283,15 @@ export function ShowTask({
                   : "Unknown"}
               </span>
               <Link href={manager ? `/profile/${manager}` : undefined}>
-                Manager: {managerTitle ?? managerENS ?? manager ?? "Unknown"}
+                Manager: {managerTitle ?? "Unknown"}
               </Link>
               <Link
                 href={disputeManager ? `/profile/${disputeManager}` : undefined}
               >
-                Dispute Manager:{" "}
-                {disputeManagerTitle ??
-                  disputeManagerENS ??
-                  disputeManager ??
-                  "Unknown"}
+                Dispute Manager: {disputeManagerTitle ?? "Unknown"}
               </Link>
               <Link href={creator ? `/profile/${creator}` : undefined}>
-                Creator: {creatorTitle ?? creatorENS ?? creator ?? "Unknown"}
+                Creator: {creatorTitle ?? "Unknown"}
               </Link>
               <span>
                 State: {state !== undefined ? TaskState[state] : "Unknown"}

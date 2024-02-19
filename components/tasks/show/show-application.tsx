@@ -19,8 +19,8 @@ import {
 } from "wagmi"
 
 import { chains } from "@/config/wagmi-config"
-import { useENS } from "@/lib/ens"
 import { getUser } from "@/lib/indexer"
+import { useENS } from "@/hooks/useENS"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {

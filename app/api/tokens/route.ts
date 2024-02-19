@@ -24,7 +24,7 @@ let provider: ITokenProvider | undefined
 function getProvider(): ITokenProvider {
   if (!provider) {
     if (!process.env.ALCHEMY_API_KEY) {
-      throw new Error("Covalent API key not set!")
+      throw new Error("Alchemy API key not set!")
     }
     provider = new AlchemyProvider(process.env.ALCHEMY_API_KEY)
   }

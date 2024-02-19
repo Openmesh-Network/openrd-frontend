@@ -10,7 +10,7 @@ export function useAddressTitle(address?: Address) {
   const ens = useENS({ address: address })
 
   useEffect(() => {
-    const getCreatorTitle = async () => {
+    const getTitle = async () => {
       if (!address) {
         setTitle(undefined)
         return
@@ -20,7 +20,7 @@ export function useAddressTitle(address?: Address) {
       setTitle(user.metadata ? JSON.parse(user.metadata)?.title : undefined)
     }
 
-    getCreatorTitle().catch(console.error)
+    getTitle().catch(console.error)
   }, [address])
 
   return title ?? ens ?? address

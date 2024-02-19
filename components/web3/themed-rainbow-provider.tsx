@@ -7,7 +7,7 @@ import {
 } from "@rainbow-me/rainbowkit"
 import { useTheme } from "next-themes"
 
-import { appName, defaultChain } from "@/config/wagmi-config"
+import { appName, appUrl, defaultChain } from "@/config/wagmi-config"
 
 export function ThemedRaindbowProvider({
   children,
@@ -22,7 +22,7 @@ export function ThemedRaindbowProvider({
       theme={resolvedTheme == "light" ? lightTheme() : darkTheme()}
       appInfo={{
         appName: appName,
-        learnMoreUrl: "https://openrd.openmesh.network",
+        learnMoreUrl: appUrl,
       }}
     >
       {children}

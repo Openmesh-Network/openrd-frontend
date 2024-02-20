@@ -272,12 +272,15 @@ export function TaskCreationForm() {
             values.preapprove.map((p) => {
               return {
                 applicant: p.applicant as Address,
-                nativeReward: [
-                  {
-                    to: p.applicant as Address,
-                    amount: values.nativeBudget,
-                  },
-                ],
+                nativeReward:
+                  values.nativeBudget !== BigInt(0)
+                    ? [
+                        {
+                          to: p.applicant as Address,
+                          amount: values.nativeBudget,
+                        },
+                      ]
+                    : [],
                 reward: values.budget.map((b) => {
                   return {
                     nextToken: true,

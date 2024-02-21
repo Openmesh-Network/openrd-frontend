@@ -100,11 +100,7 @@ export function ShowEvent({
       <CardFooter className="space-x-5">
         {viewTask && (
           <Link
-            href={
-              event
-                ? `/tasks/${event.chainId}:${(event as any).taskId}`
-                : undefined
-            }
+            href={event ? `/tasks/${event.chainId}:${event.taskId}` : undefined}
           >
             View task
           </Link>

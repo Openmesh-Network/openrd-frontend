@@ -39,6 +39,7 @@ import { IncreaseBudget } from "@/components/tasks/manage/increase-budget"
 import { DipsuteCreationForm } from "../forms/dispute-creation-form"
 import { ShowApplication } from "./show-application"
 import { ShowBudgetItem } from "./show-budget-item"
+import { ShowCancelTaskRequest } from "./show-cancel-task-request"
 import { ShowDispute } from "./show-dispute"
 import { ShowEvent } from "./show-event"
 import { ShowSubmission } from "./show-submission"
@@ -499,11 +500,19 @@ export function ShowTask({
             <div className="grid grid-cols-1">
               <span>Cancel Task Requests:</span>
               <ul>
-                {objectKeysInt(cancelTaskRequests).map((requestId) => (
-                  <li key={requestId}>
-                    Request #{requestId}:
-                    {cancelTaskRequests[requestId].metadata}
-                  </li>
+                {objectKeysInt(cancelTaskRequests).map((requestId, i) => (
+                  <ShowCancelTaskRequest
+                    key={i}
+                    chainId={chainId}
+                    taskId={taskId}
+                    requestId={requestId}
+                    request={cancelTaskRequests[requestId]}
+                    indexerMetadata={
+                      indexerTask?.cancelTaskRequests[requestId]?.cachedMetadata
+                    }
+                    task={blockchainTask ?? indexerTask}
+                    refresh={refresh}
+                  />
                 ))}
               </ul>
             </div>
@@ -561,11 +570,12 @@ export function ShowTask({
                 </AccordionContent>
               </AccordionItem>
             </Accordion>
-            {state === TaskState.Open && (
+            {(state === TaskState.Open || state === TaskState.Taken) && (
               <div className="mt-2">
                 <CancelTask
                   chainId={chainId}
                   taskId={taskId}
+                  taken={state === TaskState.Taken}
                   refresh={refresh}
                 />
               </div>

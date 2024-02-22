@@ -5,6 +5,7 @@ import { Address, formatUnits } from "viem"
 export interface ShowReward {
   to: Address
   amount: bigint
+  partialAmount?: bigint
 }
 
 export function ShowReward({

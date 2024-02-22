@@ -18,10 +18,8 @@ import { chains } from "@/config/wagmi-config"
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
   Dialog,
-  DialogClose,
   DialogContent,
   DialogDescription,
-  DialogFooter,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -46,10 +44,12 @@ const formSchema = z.object({
 export function CancelTask({
   chainId,
   taskId,
+  taken,
   refresh,
 }: {
   chainId: number
   taskId: bigint
+  taken: boolean
   refresh: () => Promise<void>
 }) {
   const connectedChainId = useChainId()
@@ -246,7 +246,9 @@ export function CancelTask({
       dismiss()
       dismiss = toast({
         title: "Success!",
-        description: "The task has been cancelled.",
+        description: taken
+          ? "The task request has been submitted."
+          : "The task has been cancelled.",
         variant: "success",
         action: (
           <ToastAction
@@ -279,6 +281,8 @@ export function CancelTask({
           <DialogDescription>
             This action cannot be undone. This will permanently close this task.
             The task creator will be refunded the entire budget.
+            {taken &&
+              "The task has already been given to an applicant. Canceling the task will create a request, but it will only be cancelled if they accept it."}
           </DialogDescription>
         </DialogHeader>
         <Form {...form}>

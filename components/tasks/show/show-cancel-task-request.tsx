@@ -3,8 +3,8 @@
 import { useEffect, useState } from "react"
 import { TasksContract } from "@/openrd-indexer/contracts/Tasks"
 import {
-  Application,
-  Reward,
+  CancelTaskRequest,
+  RequestType,
   Task,
   TaskState,
 } from "@/openrd-indexer/types/tasks"
@@ -19,8 +19,6 @@ import {
 } from "wagmi"
 
 import { chains } from "@/config/wagmi-config"
-import { getUser } from "@/lib/indexer"
-import { useENS } from "@/hooks/useENS"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -30,38 +28,28 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card"
-import { Link } from "@/components/ui/link"
+import { Separator } from "@/components/ui/separator"
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from "@/components/ui/use-toast"
 import { SanitizeHTML } from "@/components/sanitize-html"
 
-import { ShowERC20Reward } from "./show-erc20-reward"
-import { ShowNativeReward } from "./show-native-reward"
-
-export interface ShowApplicationMetadata {
-  teamSize?: number
-  plan?: string
-  background?: string
+export interface ShowRequestMetadata {
+  reason?: string
 }
 
-export interface ShowApplicantMetadata {
-  title?: string
-  description?: string
-}
-
-export function ShowApplication({
+export function ShowCancelTaskRequest({
   chainId,
   taskId,
-  applicationId,
-  application,
+  requestId,
+  request,
   indexerMetadata,
   task,
   refresh,
 }: {
   chainId: number
   taskId: bigint
-  applicationId: number
-  application: Application
+  requestId: number
+  request: CancelTaskRequest
   indexerMetadata?: string
   task?: Task
   refresh: () => Promise<void>
@@ -72,52 +60,27 @@ export function ShowApplication({
   const { data: walletClient } = useWalletClient()
   const publicClient = usePublicClient()
   const { toast } = useToast()
-  const applicantENS = useENS({ address: application.applicant })
+
+  const executorApplication = task
+    ? task.applications[task.executorApplication]
+    : undefined
 
   const [directMetadata, setDirectMetadata] = useState<
-    ShowApplicationMetadata | undefined
+    ShowRequestMetadata | undefined
   >(undefined)
   useEffect(() => {
     const getMetadata = async () => {
-      const metadata = await fetchMetadata(application.metadata)
+      const metadata = await fetchMetadata(request.metadata)
       setDirectMetadata(
-        metadata ? (JSON.parse(metadata) as ShowApplicationMetadata) : {}
+        metadata ? (JSON.parse(metadata) as ShowRequestMetadata) : {}
       )
     }
 
     getMetadata().catch(console.error)
-  }, [application.metadata])
+  }, [request.metadata])
 
-  const indexedMetadata = indexerMetadata
-    ? (JSON.parse(indexerMetadata) as ShowApplicationMetadata)
-    : undefined
-  const teamSize = directMetadata?.teamSize ?? indexedMetadata?.teamSize
-  const plan =
-    directMetadata?.plan ?? indexedMetadata?.plan ?? "No plan was provided."
-  const background = directMetadata?.background ?? indexedMetadata?.background
-
-  const [applicantMetadata, setApplicantMetadata] = useState<
-    ShowApplicantMetadata | undefined
-  >(undefined)
-  useEffect(() => {
-    const getApplicantMetadata = async () => {
-      const user = await getUser(application.applicant)
-      setApplicantMetadata(
-        user.metadata
-          ? (JSON.parse(user.metadata) as ShowApplicantMetadata)
-          : {}
-      )
-    }
-
-    getApplicantMetadata().catch(console.error)
-  }, [application.applicant])
-  const userTitle =
-    applicantMetadata?.title ?? applicantENS ?? application.applicant
-  const userDescription = applicantMetadata?.description
-
-  const [approvingApplication, setApprovingApplication] =
-    useState<boolean>(false)
-  async function approveApplication() {
+  const [approvingRequest, setApprovingRequest] = useState<boolean>(false)
+  async function approveRequest() {
     if (connectedChainId !== chainId) {
       const switchChainResult = await switchChainAsync?.({
         chainId: chainId,
@@ -133,7 +96,7 @@ export function ShowApplication({
         return
       }
     }
-    if (approvingApplication) {
+    if (approvingRequest) {
       toast({
         title: "Please wait",
         description: "The past approve is still running.",
@@ -142,7 +105,7 @@ export function ShowApplication({
       return
     }
     const approve = async () => {
-      setApprovingApplication(true)
+      setApprovingRequest(true)
       let { dismiss } = toast({
         title: "Generating transaction",
         description: "Please sign the transaction in your wallet...",
@@ -151,7 +114,7 @@ export function ShowApplication({
       if (!publicClient || !walletClient) {
         dismiss()
         toast({
-          title: "Application approve failed",
+          title: "Request approve failed",
           description: `${publicClient ? "Wallet" : "Public"}Client is undefined.`,
           variant: "destructive",
         })
@@ -162,8 +125,8 @@ export function ShowApplication({
           account: walletClient.account.address,
           abi: TasksContract.abi,
           address: TasksContract.address,
-          functionName: "acceptApplications",
-          args: [taskId, [applicationId]],
+          functionName: "acceptRequest",
+          args: [taskId, RequestType.CancelTask, requestId, false],
           chain: chains.find((c) => c.id == chainId),
         })
         .catch((err) => {
@@ -183,7 +146,7 @@ export function ShowApplication({
       if (typeof transactionRequest === "string") {
         dismiss()
         toast({
-          title: "Application approve failed",
+          title: "Request approve failed",
           description: transactionRequest,
           variant: "destructive",
         })
@@ -198,7 +161,7 @@ export function ShowApplication({
       if (!transactionHash) {
         dismiss()
         toast({
-          title: "Application approve failed",
+          title: "Request approve failed",
           description: "Transaction rejected.",
           variant: "destructive",
         })
@@ -239,7 +202,7 @@ export function ShowApplication({
         description: "Parsing transaction logs...",
       }).dismiss
 
-      let applicationAccepted = false
+      let requestAccepted = false
       receipt.logs.forEach((log) => {
         try {
           if (
@@ -249,25 +212,25 @@ export function ShowApplication({
             return
           }
 
-          const applicationAcceptedEvent = decodeEventLog({
+          const requestAcceptedEvent = decodeEventLog({
             abi: TasksContract.abi,
-            eventName: "ApplicationAccepted",
+            eventName: "RequestAccepted",
             topics: log.topics,
             data: log.data,
           })
           if (
-            applicationAcceptedEvent.args.taskId === taskId &&
-            applicationAcceptedEvent.args.applicationId === applicationId
+            requestAcceptedEvent.args.taskId === taskId &&
+            requestAcceptedEvent.args.requestId === requestId
           ) {
-            applicationAccepted = true
+            requestAccepted = true
           }
         } catch {}
       })
-      if (!applicationAccepted) {
+      if (!requestAccepted) {
         dismiss()
         toast({
           title: "Error confirming approve",
-          description: "The application approve possibly failed.",
+          description: "The request approve possibly failed.",
           variant: "destructive",
         })
         return
@@ -276,7 +239,7 @@ export function ShowApplication({
       dismiss()
       dismiss = toast({
         title: "Success!",
-        description: "The application has been approved.",
+        description: "The request has been approved.",
         variant: "success",
         action: (
           <ToastAction
@@ -292,11 +255,11 @@ export function ShowApplication({
     }
 
     await approve().catch(console.error)
-    setApprovingApplication(false)
+    setApprovingRequest(false)
   }
 
-  const [takingTask, setTakingTask] = useState<boolean>(false)
-  async function takeTask() {
+  const [executingRequest, setExecutingRequest] = useState<boolean>(false)
+  async function executeRequest() {
     if (connectedChainId !== chainId) {
       const switchChainResult = await switchChainAsync?.({
         chainId: chainId,
@@ -312,16 +275,16 @@ export function ShowApplication({
         return
       }
     }
-    if (approvingApplication) {
+    if (executingRequest) {
       toast({
         title: "Please wait",
-        description: "The past take task is still running.",
+        description: "The past submission is still running.",
         variant: "destructive",
       })
       return
     }
-    const take = async () => {
-      setApprovingApplication(true)
+    const execute = async () => {
+      setExecutingRequest(true)
       let { dismiss } = toast({
         title: "Generating transaction",
         description: "Please sign the transaction in your wallet...",
@@ -330,7 +293,7 @@ export function ShowApplication({
       if (!publicClient || !walletClient) {
         dismiss()
         toast({
-          title: "Take task failed",
+          title: "Request execute failed",
           description: `${publicClient ? "Wallet" : "Public"}Client is undefined.`,
           variant: "destructive",
         })
@@ -341,8 +304,8 @@ export function ShowApplication({
           account: walletClient.account.address,
           abi: TasksContract.abi,
           address: TasksContract.address,
-          functionName: "takeTask",
-          args: [taskId, applicationId],
+          functionName: "executeRequest",
+          args: [taskId, RequestType.CancelTask, requestId],
           chain: chains.find((c) => c.id == chainId),
         })
         .catch((err) => {
@@ -362,7 +325,7 @@ export function ShowApplication({
       if (typeof transactionRequest === "string") {
         dismiss()
         toast({
-          title: "Take task failed",
+          title: "Request execute failed",
           description: transactionRequest,
           variant: "destructive",
         })
@@ -377,7 +340,7 @@ export function ShowApplication({
       if (!transactionHash) {
         dismiss()
         toast({
-          title: "Take task failed",
+          title: "Request execute failed",
           description: "Transaction rejected.",
           variant: "destructive",
         })
@@ -387,7 +350,7 @@ export function ShowApplication({
       dismiss()
       dismiss = toast({
         duration: 120_000, // 2 minutes
-        title: "Take task submitted",
+        title: "Execute transaction submitted",
         description: "Waiting until confirmed on the blockchain...",
         action: (
           <ToastAction
@@ -414,11 +377,11 @@ export function ShowApplication({
       })
       dismiss()
       dismiss = toast({
-        title: "Task task transaction confirmed!",
+        title: "Execute transaction confirmed!",
         description: "Parsing transaction logs...",
       }).dismiss
 
-      let taskTaken = false
+      let requestExecuted = false
       receipt.logs.forEach((log) => {
         try {
           if (
@@ -428,25 +391,25 @@ export function ShowApplication({
             return
           }
 
-          const taskTakenEvent = decodeEventLog({
+          const requestExecutedEvent = decodeEventLog({
             abi: TasksContract.abi,
-            eventName: "TaskTaken",
+            eventName: "RequestExecuted",
             topics: log.topics,
             data: log.data,
           })
           if (
-            taskTakenEvent.args.taskId === taskId &&
-            taskTakenEvent.args.applicationId === applicationId
+            requestExecutedEvent.args.taskId === taskId &&
+            requestExecutedEvent.args.requestId === requestId
           ) {
-            taskTaken = true
+            requestExecuted = true
           }
         } catch {}
       })
-      if (!taskTaken) {
+      if (!requestExecuted) {
         dismiss()
         toast({
-          title: "Error confirming task taken",
-          description: "The task taken transaction possibly failed.",
+          title: "Error confirming execution",
+          description: "The request execute possibly failed.",
           variant: "destructive",
         })
         return
@@ -455,7 +418,7 @@ export function ShowApplication({
       dismiss()
       dismiss = toast({
         title: "Success!",
-        description: "The task has been taken.",
+        description: "The request has been executed.",
         variant: "success",
         action: (
           <ToastAction
@@ -470,9 +433,14 @@ export function ShowApplication({
       }).dismiss
     }
 
-    await take().catch(console.error)
-    setTakingTask(false)
+    await execute().catch(console.error)
+    setExecutingRequest(false)
   }
+
+  const indexedMetadata = indexerMetadata
+    ? (JSON.parse(indexerMetadata) as ShowRequestMetadata)
+    : undefined
+  const reason = directMetadata?.reason ?? indexedMetadata?.reason
 
   const [firstRender, setFirstRender] = useState(true)
   useEffect(() => {
@@ -484,81 +452,40 @@ export function ShowApplication({
       <CardHeader>
         <CardTitle className="flex space-x-2">
           {/* Would be cool to add a hover effect here to show stats of the person (completion rate etc.) */}
-          <Link href={`/profile/${application.applicant}`} className="shrink">
-            {userTitle}
-          </Link>
-          {application.accepted && <Badge variant="success">Accepted</Badge>}
-          {task?.state === TaskState.Taken &&
-            applicationId === task?.executorApplication && (
-              <Badge variant="secondary">Executor</Badge>
-            )}
+          <span>Request #{requestId}</span>
+          {request.request.accepted && (
+            <Badge variant="success">Accepted</Badge>
+          )}
+          {request.request.executed && <Badge>Executed</Badge>}
         </CardTitle>
-        {userDescription && <SanitizeHTML html={userDescription} />}
       </CardHeader>
-      <CardContent>
-        <div className="space-y-2">
-          {teamSize !== undefined && teamSize !== 0 && (
-            <span>Team size: {teamSize}</span>
-          )}
-          <SanitizeHTML html={plan} />
-          {background && <SanitizeHTML html={background} />}
-          {application.nativeReward.length !== 0 && (
-            <ShowNativeReward
-              chainId={chainId}
-              reward={application.nativeReward}
-            />
-          )}
-          {application.reward.length !== 0 &&
-            task &&
-            task.budget.map((b, i) => (
-              <ShowERC20Reward
-                key={i}
-                chainId={chainId}
-                budget={b}
-                reward={
-                  application.reward.reduce(
-                    (acc, value) => {
-                      if (acc.token === i) {
-                        acc.return.push(value)
-                      }
-                      if (value.nextToken) {
-                        acc.token++
-                      }
-                      return acc
-                    },
-                    { token: 0, return: [] as Reward[] }
-                  ).return
-                }
-              />
-            ))}
-        </div>
-      </CardContent>
-      {!firstRender &&
-        task?.state === TaskState.Open &&
-        application.accepted &&
-        account.address === application.applicant && (
-          <CardFooter>
+      <CardContent>{reason && <SanitizeHTML html={reason} />}</CardContent>
+      <CardFooter>
+        <Separator />
+      </CardFooter>
+      <CardFooter>
+        {!firstRender &&
+        !request.request.executed &&
+        task?.state === TaskState.Taken &&
+        request.request.accepted ? (
+          <Button
+            disabled={executingRequest}
+            onClick={() => executeRequest().catch(console.error)}
+          >
+            Execute
+          </Button>
+        ) : (
+          account.address &&
+          account.address === executorApplication?.applicant && (
             <Button
-              onClick={() => takeTask().catch(console.error)}
-              disabled={takingTask}
+              disabled={approvingRequest}
+              onClick={() => approveRequest().catch(console.error)}
             >
-              Take task
+              Accept
             </Button>
-          </CardFooter>
+          )
         )}
-      {!firstRender &&
-        task?.state === TaskState.Open &&
-        !application.accepted &&
-        account.address === task?.manager && (
-          <CardFooter>
-            <Button
-              onClick={() => approveApplication().catch(console.error)}
-              disabled={approvingApplication}
-            >
-              Approve application
-            </Button>
-          </CardFooter>
-        )}
+      </CardFooter>
     </Card>
   )
 }

@@ -20,12 +20,12 @@ export function ShowRecentEvents() {
 
   return (
     <div>
-      <span className="text-xl">Latest updates:</span>
+      <div className="mb-[10px] mt-[5px] text-lg">Latest updates:</div>
       {Array.from({ length: eventCount }, (value, index) => index)
         .slice(-5)
         .reverse()
         .map((eventId, i) => (
-          <ShowEvent key={i} eventIndex={eventId} viewTask={true} />
+          <ShowEvent key={i} eventIndex={eventId} viewTask={true} index={i} />
         ))}
     </div>
   )

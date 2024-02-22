@@ -19,14 +19,17 @@ import { Skeleton } from "@/components/ui/skeleton"
 interface ShowTaskSummaryMetadata {
   title?: string
   tags?: { tag?: string }[]
+  index: number
 }
 
 export function ShowTaskSummary({
   chainId,
   taskId,
+  index,
 }: {
   chainId: number
-  taskId: bigint
+  taskId: bigint,
+  index: number
 }) {
   const chain = chains.find((c) => c.id === chainId)
   const [indexerTask, setIndexerTask] = useState<IndexedTask | undefined>(
@@ -52,7 +55,7 @@ export function ShowTaskSummary({
   const tags = indexedMetadata?.tags ?? []
 
   return (
-    <Card className={`flex justify-between gap-x-[10px]`}>
+    <Card className={`flex justify-between gap-x-[10px] py-[20px] ${index !== 0 && 'rounded-none'} ${index === 0 && 'rounded-b-none'}`}>
       <div>
         <CardHeader>
           <CardTitle>
@@ -73,7 +76,7 @@ export function ShowTaskSummary({
           </div>
         </CardContent>
       </div>
-      <CardFooter className="my-auto mr-[80px] flex cursor-pointer items-center rounded-md border-[0.5px] border-[#87868645] !py-[5px] pb-0 text-center hover:bg-[#4747472b]">
+      <CardFooter className="my-auto mr-[80px] flex cursor-pointer items-center rounded-md border-[0.5px] border-[#87868645] !py-[5px] pb-0 text-center hover:bg-[#a5a5a511] dark:hover:bg-[#4747472b]">
         <Link className="" href={`/tasks/${chainId}:${taskId}`}>View task</Link>
       </CardFooter>
     </Card>

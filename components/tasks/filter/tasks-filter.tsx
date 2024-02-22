@@ -202,7 +202,7 @@ export function TasksFilter({
               <FormItem>
                 <FormControl>
                   <div>
-                    <div className='grid gap-y-[15px]'>
+                    <div className='grid gap-y-[10px]'>
                     {filter.map((filterItem, i) => (
                       <ErrorWrapper
                         key={i}

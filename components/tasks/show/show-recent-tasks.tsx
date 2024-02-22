@@ -16,9 +16,9 @@ export function ShowRecentTasks({ taskList }: { taskList: TaskIndentifier[] }) {
 
   return (
     <div>
-      <div className="mb-[10px] mt-[5px] text-xl">Latest tasks:</div>
+      <div className="mb-[10px] mt-[5px] text-lg">Latest tasks:</div>
       {taskList.slice(0, showTaskCount).map((task, i) => (
-        <ShowTaskSummary key={i} {...task} />
+        <ShowTaskSummary key={i} {...task} index={i} />
       ))}
       {showTaskCount < taskList.length && (
         <Button

@@ -26,10 +26,12 @@ export function ShowEvent({
   eventIndex,
   hideDescription,
   viewTask,
+  index,
 }: {
   eventIndex: number
   hideDescription?: boolean
   viewTask?: boolean
+  index: number
 }) {
   const [event, setEvent] = useState<TaskEvent | undefined>(undefined)
   const [transaction, setTransaction] = useState<Transaction | undefined>(
@@ -86,7 +88,7 @@ export function ShowEvent({
   const timestamp = block ? new Date(Number(block.timestamp) * 1000) : undefined
 
   return (
-    <Card>
+    <Card className={`flex justify-between gap-x-[10px] py-[20px] ${index !== 0 && 'rounded-none'} ${index === 0 && 'rounded-b-none'}`}>
       <CardHeader>
         <CardTitle>
           {title ?? <Skeleton className="h-6 w-[250px] bg-white" />}
@@ -97,9 +99,10 @@ export function ShowEvent({
             : ""}
         </CardDescription>
       </CardHeader>
-      <CardFooter className="space-x-5">
+      <CardFooter className="mr-[80px] grid gap-x-[10px] pb-0 text-center">
         {viewTask && (
           <Link
+          className="flex cursor-pointer items-center justify-center rounded-md border-[0.5px] border-[#87868645] !py-[5px] px-[8px] text-center hover:bg-[#a5a5a511] dark:hover:bg-[#4747472b]"
             href={
               event && event.type !== "TaskDraftCreated"
                 ? `/tasks/${event.chainId}:${event.type === "DisputeCreated" ? event.dispute.taskId : event.taskId}`
@@ -110,6 +113,7 @@ export function ShowEvent({
           </Link>
         )}
         <Link
+                  className="flex cursor-pointer items-center justify-center rounded-md border-[0.5px] border-[#87868645] !py-[5px] px-[8px] text-center hover:bg-[#a5a5a511] dark:hover:bg-[#4747472b]"
           href={
             chain && event
               ? `${chain.blockExplorers.default.url}/tx/${event.transactionHash}`

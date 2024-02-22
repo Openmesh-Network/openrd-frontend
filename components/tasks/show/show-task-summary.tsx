@@ -52,27 +52,29 @@ export function ShowTaskSummary({
   const tags = indexedMetadata?.tags ?? []
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          {title ?? <Skeleton className="h-6 w-[250px] bg-white" />}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="space-x-1">
-          <Badge variant="outline">
-            Chain: {chain?.name ?? chainId.toString()}
-          </Badge>
-          <Badge variant="outline">Task ID: {taskId.toString()}</Badge>
-          {tags
-            .filter((tag) => tag.tag !== undefined)
-            .map((tag, i) => (
-              <Badge key={i}>{tag.tag}</Badge>
-            ))}
-        </div>
-      </CardContent>
-      <CardFooter>
-        <Link href={`/tasks/${chainId}:${taskId}`}>View task</Link>
+    <Card className={`flex justify-between gap-x-[10px]`}>
+      <div>
+        <CardHeader>
+          <CardTitle>
+            {title ?? <Skeleton className="h-6 w-[250px] bg-white" />}
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-x-1">
+            <Badge variant="outline">
+              Chain: {chain?.name ?? chainId.toString()}
+            </Badge>
+            <Badge variant="outline">Task ID: {taskId.toString()}</Badge>
+            {tags
+              .filter((tag) => tag.tag !== undefined)
+              .map((tag, i) => (
+                <Badge key={i}>{tag.tag}</Badge>
+              ))}
+          </div>
+        </CardContent>
+      </div>
+      <CardFooter className="my-auto mr-[80px] flex cursor-pointer items-center rounded-md border-[0.5px] border-[#87868645] !py-[5px] pb-0 text-center hover:bg-[#4747472b]">
+        <Link className="" href={`/tasks/${chainId}:${taskId}`}>View task</Link>
       </CardFooter>
     </Card>
   )

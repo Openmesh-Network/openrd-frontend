@@ -1,5 +1,7 @@
 "use client"
 
+import Image from 'next/image'
+
 import { useEffect } from "react"
 import { Filter, ObjectFilter } from "@/openrd-indexer/api/filter"
 import { FilterTasksReturn } from "@/openrd-indexer/api/return-types"
@@ -200,12 +202,13 @@ export function TasksFilter({
               <FormItem>
                 <FormControl>
                   <div>
+                    <div className='grid gap-y-[15px]'>
                     {filter.map((filterItem, i) => (
                       <ErrorWrapper
                         key={i}
                         error={form.formState.errors.filter?.at?.(i)}
                       >
-                        <div className="flex gap-x-1 w-full">
+                        <div className="flex w-full gap-x-1">
                           <FilterControl
                             values={{
                               property: filterItem.property,
@@ -217,15 +220,21 @@ export function TasksFilter({
                             }}
                           />
                           <Button
+                          className='my-auto ml-[5px] h-fit p-[2px]'
                             onClick={() => removeFilter(i)}
                             variant="destructive"
                           >
-                            X
+                            <Image
+                              height={20}
+                              width={20}
+                              src={`/images/utils/x.svg`} alt={''}          />
                           </Button>
                         </div>
                       </ErrorWrapper>
                     ))}
+                    </div>
                     <Button
+                      className="mt-[20px] h-fit px-[8px] py-[5px]"
                       onClick={() =>
                         appendFilter({
                           property: filterFieldOptions[0].value,

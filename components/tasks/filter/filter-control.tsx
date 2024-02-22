@@ -150,7 +150,7 @@ export function FilterControl({
   onChange: (control: IFilterValues) => void
 }) {
   return (
-    <div className="flex w-full">
+    <div className="flex w-full gap-x-[15px]">
       <Combobox
         options={filterFieldOptions}
         value={values.property}

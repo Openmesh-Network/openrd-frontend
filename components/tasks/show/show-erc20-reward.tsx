@@ -7,6 +7,10 @@ import { usePublicClient } from "wagmi"
 
 import { ShowReward } from "./show-reward"
 
+export interface ShowERC20Reward extends Reward {
+  partialAmount?: bigint
+}
+
 export function ShowERC20Reward({
   chainId,
   budget,
@@ -14,7 +18,7 @@ export function ShowERC20Reward({
 }: {
   chainId: number
   budget: ERC20Transfer
-  reward: Reward[]
+  reward: ShowERC20Reward[]
 }) {
   const publicClient = usePublicClient({ chainId: chainId })
 

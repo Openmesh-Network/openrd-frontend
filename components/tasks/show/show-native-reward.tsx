@@ -6,12 +6,16 @@ import { chains } from "@/config/wagmi-config"
 
 import { ShowReward } from "./show-reward"
 
+export interface ShowNativeReward extends NativeReward {
+  partialAmount?: bigint
+}
+
 export function ShowNativeReward({
   chainId,
   reward,
 }: {
   chainId: number
-  reward: NativeReward[]
+  reward: ShowNativeReward[]
 }) {
   const chain = chains.find((c) => c.id === chainId)
   const name = chain?.nativeCurrency.name ?? "native currency"

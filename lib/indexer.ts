@@ -1,5 +1,6 @@
 import { ObjectFilter } from "@/openrd-indexer/api/filter"
 import {
+  DisputesReturn,
   EventReturn,
   FilterTasksReturn,
   TaskReturn,
@@ -92,4 +93,15 @@ export async function setMetadata(
     signature: signature,
   })
   checkError(res)
+}
+
+export async function getDisputes(
+  chainId: number,
+  taskId: bigint
+): Promise<DisputesReturn> {
+  const res = await axios.get(
+    `${backendBaseUrl}/disputes/${chainId.toString()}/${taskId.toString()}`
+  )
+  checkError(res)
+  return JSON.parse(JSON.stringify(res.data), reviver)
 }

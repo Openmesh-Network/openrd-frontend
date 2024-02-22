@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { DisputesReturn } from "@/openrd-indexer/api/return-types"
 import { TasksContract } from "@/openrd-indexer/contracts/Tasks"
 import {
   IndexedTask,
@@ -14,7 +15,7 @@ import { deepEqual, useAccount, usePublicClient } from "wagmi"
 
 import { chains } from "@/config/wagmi-config"
 import { arrayToIndexObject } from "@/lib/array-to-object"
-import { getTask, getUser } from "@/lib/indexer"
+import { getDisputes, getTask, getUser } from "@/lib/indexer"
 import { objectKeysInt } from "@/lib/object-keys"
 import { useAddressTitle } from "@/hooks/useAddressTitle"
 import {
@@ -35,8 +36,10 @@ import { EditMetadata } from "@/components/tasks/manage/edit-metadata"
 import { ExtendDeadline } from "@/components/tasks/manage/extend-deadline"
 import { IncreaseBudget } from "@/components/tasks/manage/increase-budget"
 
+import { DipsuteCreationForm } from "../forms/dispute-creation-form"
 import { ShowApplication } from "./show-application"
 import { ShowBudgetItem } from "./show-budget-item"
+import { ShowDispute } from "./show-dispute"
 import { ShowEvent } from "./show-event"
 import { ShowSubmission } from "./show-submission"
 
@@ -165,6 +168,15 @@ export function ShowTask({
     }
   }, [blockchainTask, indexerTask])
 
+  const [disputes, setDisputes] = useState<DisputesReturn>([])
+  const getIndexerDisputes = async () => {
+    const newDisputes = await getDisputes(chainId, taskId)
+    setDisputes(newDisputes)
+  }
+  useEffect(() => {
+    getIndexerDisputes().catch(console.error)
+  }, [chainId, taskId])
+
   const indexedMetadata = indexerTask?.cachedMetadata
     ? (JSON.parse(indexerTask?.cachedMetadata) as ShowTaskMetadata)
     : undefined
@@ -229,7 +241,7 @@ export function ShowTask({
             {state !== undefined && state !== TaskState.Open && (
               <TabsTrigger value="submissions">Submissions</TabsTrigger>
             )}
-            {false && state !== undefined && state !== TaskState.Open && (
+            {state !== undefined && state !== TaskState.Open && (
               <TabsTrigger value="disputes">Disputes</TabsTrigger>
             )}
             {resources && (
@@ -439,7 +451,7 @@ export function ShowTask({
                   ))}
               </div>
               <Separator />
-              {(blockchainTask || indexerTask) && (
+              {(blockchainTask || indexerTask) && state === TaskState.Taken && (
                 <div className="space-y-5">
                   <p className="text-2xl">Create submission:</p>
                   <SubmissionCreationForm
@@ -455,11 +467,26 @@ export function ShowTask({
           <TabsContent value="disputes">
             <div className="space-y-7">
               <div className="space-y-1">
-                <span>Show disputes</span>
+                {disputes.map((dispute, i) => (
+                  <ShowDispute
+                    key={i}
+                    chainId={chainId}
+                    dispute={dispute}
+                    task={blockchainTask ?? indexerTask}
+                  />
+                ))}
               </div>
               <Separator />
               {(blockchainTask || indexerTask) && state === TaskState.Taken && (
-                <span>Create dispute</span>
+                <div className="space-y-5">
+                  <p className="text-2xl">Create dispute:</p>
+                  <DipsuteCreationForm
+                    chainId={chainId}
+                    taskId={taskId}
+                    task={(blockchainTask ?? indexerTask) as Task} // Cannot be undefined because of the conditional render
+                    refresh={() => getIndexerDisputes().catch(console.error)}
+                  />
+                </div>
               )}
             </div>
           </TabsContent>

@@ -1,12 +1,20 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { DAOContract } from "@/contracts/DAOContract"
+import { TrustlessManagementContract } from "@/contracts/TrustlessManagement"
 import { TasksContract } from "@/openrd-indexer/contracts/Tasks"
-import { Task, TaskState } from "@/openrd-indexer/types/tasks"
+import { TasksDisputesContract } from "@/openrd-indexer/contracts/TasksDisputes"
+import { Task } from "@/openrd-indexer/types/tasks"
 import { addToIpfs } from "@/openrd-indexer/utils/ipfs"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
-import { BaseError, ContractFunctionRevertedError, decodeEventLog } from "viem"
+import {
+  BaseError,
+  ContractFunctionRevertedError,
+  decodeEventLog,
+  toHex,
+} from "viem"
 import {
   useAccount,
   useChainId,
@@ -17,6 +25,7 @@ import {
 import { z } from "zod"
 
 import { chains } from "@/config/wagmi-config"
+import { errorsOfAbi } from "@/lib/error-decoding"
 import { Alert } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import {
@@ -28,15 +37,26 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
+import { Input } from "@/components/ui/input"
 import { RichTextArea } from "@/components/ui/rich-textarea"
+import { Textarea } from "@/components/ui/textarea"
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from "@/components/ui/use-toast"
 
 const formSchema = z.object({
-  explanation: z.string(),
+  title: z.string().min(1, "Title cannot be empty."),
+  summary: z.string().min(1, "Summary cannot be empty."),
+  body: z.string(),
+  rewardPercentage: z.coerce
+    .number()
+    .min(0, "Negative rewards are not possible.")
+    .max(
+      100,
+      "Cannot ask for more than 100% of your agreed completion reward."
+    ),
 })
 
-export function SubmissionCreationForm({
+export function DipsuteCreationForm({
   chainId,
   taskId,
   task,
@@ -57,12 +77,25 @@ export function SubmissionCreationForm({
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      explanation: "",
+      title: "",
+      summary: "",
+      body: "",
+      rewardPercentage: 100,
     },
   })
 
   const [submitting, setSubmitting] = useState<boolean>(false)
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    const executorApplication = task.applications[task.executorApplication]
+    if (!executorApplication) {
+      toast({
+        title: "Executor application not found",
+        description: "Please try again later.",
+        variant: "destructive",
+      })
+      return
+    }
+
     if (connectedChainId !== chainId) {
       const switchChainResult = await switchChainAsync?.({
         chainId: chainId,
@@ -89,12 +122,14 @@ export function SubmissionCreationForm({
     const submit = async () => {
       setSubmitting(true)
       let { dismiss } = toast({
-        title: "Creating submission",
+        title: "Creating dispute",
         description: "Uploading metadata to IPFS...",
       })
 
       const metadata = {
-        explanation: values.explanation,
+        title: values.title,
+        summary: values.summary,
+        body: values.body,
       }
       const cid = await addToIpfs(JSON.stringify(metadata)).catch((err) => {
         console.error(err)
@@ -103,13 +138,13 @@ export function SubmissionCreationForm({
       if (!cid) {
         dismiss()
         toast({
-          title: "Submission creation failed",
+          title: "Dispute creation failed",
           description: "Could not upload metadata to IPFS.",
           variant: "destructive",
         })
         return
       }
-      console.log(`Sucessfully uploaded submission metadata to ipfs: ${cid}`)
+      console.log(`Sucessfully uploaded dispute metadata to ipfs: ${cid}`)
 
       dismiss()
       dismiss = toast({
@@ -120,7 +155,7 @@ export function SubmissionCreationForm({
       if (!publicClient || !walletClient) {
         dismiss()
         toast({
-          title: "Submission creation failed",
+          title: "Dispute creation failed",
           description: `${publicClient ? "Wallet" : "Public"}Client is undefined.`,
           variant: "destructive",
         })
@@ -129,10 +164,32 @@ export function SubmissionCreationForm({
       const transactionRequest = await publicClient
         .simulateContract({
           account: walletClient.account.address,
-          abi: TasksContract.abi,
-          address: TasksContract.address,
-          functionName: "createSubmission",
-          args: [taskId, `ipfs://${cid}`],
+          abi: [
+            ...TasksDisputesContract.abi,
+            ...errorsOfAbi(TrustlessManagementContract.abi),
+            ...errorsOfAbi(DAOContract.abi),
+          ],
+          address: TasksDisputesContract.address,
+          functionName: "createDispute",
+          args: [
+            task.disputeManager,
+            toHex(`ipfs://${cid}`),
+            BigInt(0),
+            task.deadline,
+            {
+              taskId: taskId,
+              partialNativeReward: executorApplication.nativeReward.map(
+                (reward) =>
+                  (reward.amount * BigInt(values.rewardPercentage)) /
+                  BigInt(100)
+              ),
+              partialReward: executorApplication.reward.map(
+                (reward) =>
+                  (reward.amount * BigInt(values.rewardPercentage)) /
+                  BigInt(100)
+              ),
+            },
+          ],
           chain: chains.find((c) => c.id == chainId),
         })
         .catch((err) => {
@@ -152,7 +209,7 @@ export function SubmissionCreationForm({
       if (typeof transactionRequest === "string") {
         dismiss()
         toast({
-          title: "Submission creation failed",
+          title: "Dispute creation failed",
           description: transactionRequest,
           variant: "destructive",
         })
@@ -167,7 +224,7 @@ export function SubmissionCreationForm({
       if (!transactionHash) {
         dismiss()
         toast({
-          title: "Submission creation failed",
+          title: "Dispute creation failed",
           description: "Transaction rejected.",
           variant: "destructive",
         })
@@ -177,7 +234,7 @@ export function SubmissionCreationForm({
       dismiss()
       dismiss = toast({
         duration: 120_000, // 2 minutes
-        title: "Submission transaction submitted",
+        title: "Dispute transaction submitted",
         description: "Waiting until confirmed on the blockchain...",
         action: (
           <ToastAction
@@ -204,11 +261,11 @@ export function SubmissionCreationForm({
       })
       dismiss()
       dismiss = toast({
-        title: "Submission transaction confirmed!",
+        title: "Dispute transaction confirmed!",
         description: "Parsing transaction logs...",
       }).dismiss
 
-      let submissionId: number | undefined
+      let disputeCreated = false
       receipt.logs.forEach((log) => {
         try {
           if (
@@ -218,22 +275,22 @@ export function SubmissionCreationForm({
             return
           }
 
-          const submissionCreatedEvent = decodeEventLog({
-            abi: TasksContract.abi,
-            eventName: "SubmissionCreated",
+          const disputeCreatedEvent = decodeEventLog({
+            abi: TasksDisputesContract.abi,
+            eventName: "DisputeCreated",
             topics: log.topics,
             data: log.data,
           })
-          if (submissionCreatedEvent.args.taskId === taskId) {
-            submissionId = submissionCreatedEvent.args.submissionId
+          if (disputeCreatedEvent.args.dispute.taskId === taskId) {
+            disputeCreated = true
           }
         } catch {}
       })
-      if (submissionId === undefined) {
+      if (disputeCreated === undefined) {
         dismiss()
         toast({
-          title: "Error retrieving submission id",
-          description: "The submission creation possibly failed.",
+          title: "Error retrieving dispute created event",
+          description: "The dispute creation possibly failed.",
           variant: "destructive",
         })
         return
@@ -242,7 +299,7 @@ export function SubmissionCreationForm({
       dismiss()
       dismiss = toast({
         title: "Success!",
-        description: "The submission has been created.",
+        description: "The dispute has been created.",
         variant: "success",
         action: (
           <ToastAction
@@ -272,7 +329,7 @@ export function SubmissionCreationForm({
     account.address !== task.applications[task.executorApplication]?.applicant
   ) {
     // Not the executor
-    return <Alert>Only the executor can create submissions.</Alert>
+    return <Alert>Only the executor can create disputes.</Alert>
   }
 
   return (
@@ -280,29 +337,102 @@ export function SubmissionCreationForm({
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
         <FormField
           control={form.control}
-          name="explanation"
+          name="title"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Delivered</FormLabel>
+              <FormLabel>Title</FormLabel>
+              <FormControl>
+                <Input
+                  {...field}
+                  onChange={(change) => {
+                    field.onChange(change)
+                    form.trigger("title")
+                  }}
+                />
+              </FormControl>
+              <FormDescription>
+                A single sentence or combination of keywords to describe the
+                dispute.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="summary"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Summary</FormLabel>
+              <FormControl>
+                <Textarea
+                  {...field}
+                  onChange={(change) => {
+                    field.onChange(change)
+                    form.trigger("summary")
+                  }}
+                />
+              </FormControl>
+              <FormDescription>
+                Short, high-level overview of what happened. Aim to provide 3-10
+                sentences.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="body"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Detailed explanation</FormLabel>
               <FormControl>
                 <RichTextArea
                   {...field}
                   onChange={(change) => {
                     field.onChange(change)
-                    form.trigger("explanation")
+                    form.trigger("body")
                   }}
                 />
               </FormControl>
               <FormDescription>
-                What has been delivered and where to find it. Proofs the task
-                has been completed as requested.
+                Explain the events that happened leading you to create a
+                dispute.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="rewardPercentage"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Reward (%)</FormLabel>
+              <FormControl>
+                <Input
+                  type="number"
+                  step={1}
+                  min={0}
+                  max={100}
+                  {...field}
+                  onChange={(change) => {
+                    field.onChange(change)
+                    form.trigger("rewardPercentage")
+                  }}
+                />
+              </FormControl>
+              <FormDescription>
+                How much of your application reward you think would be fair to
+                receive as compensation for the work you have delivered.
               </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
         <Button type="submit" disabled={submitting}>
-          Create submission
+          Create dispute
         </Button>
       </form>
     </Form>

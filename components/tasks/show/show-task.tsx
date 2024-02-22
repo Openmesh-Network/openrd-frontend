@@ -575,7 +575,11 @@ export function ShowTask({
                 <CancelTask
                   chainId={chainId}
                   taskId={taskId}
-                  taken={state === TaskState.Taken}
+                  needRequest={
+                    state === TaskState.Taken ||
+                    (deadline !== undefined &&
+                      Math.round(new Date().getTime() / 1000) > deadline)
+                  }
                   refresh={refresh}
                 />
               </div>

@@ -497,8 +497,8 @@ export function ShowTask({
             </TabsContent>
           )}
           <TabsContent value="requests">
-            <div className="grid grid-cols-1">
-              <span>Cancel Task Requests:</span>
+            <div className="space-y-5">
+              <p className="text-2xl">Cancel Task Requests:</p>
               <ul>
                 {objectKeysInt(cancelTaskRequests).map((requestId, i) => (
                   <ShowCancelTaskRequest

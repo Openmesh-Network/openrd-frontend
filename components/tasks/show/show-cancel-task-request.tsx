@@ -465,26 +465,26 @@ export function ShowCancelTaskRequest({
       </CardFooter>
       <CardFooter>
         {!firstRender &&
-        !request.request.executed &&
-        task?.state === TaskState.Taken &&
-        request.request.accepted ? (
-          <Button
-            disabled={executingRequest}
-            onClick={() => executeRequest().catch(console.error)}
-          >
-            Execute
-          </Button>
-        ) : (
-          account.address &&
-          account.address === executorApplication?.applicant && (
+          !request.request.executed &&
+          task?.state === TaskState.Taken &&
+          (request.request.accepted ? (
             <Button
-              disabled={approvingRequest}
-              onClick={() => approveRequest().catch(console.error)}
+              disabled={executingRequest}
+              onClick={() => executeRequest().catch(console.error)}
             >
-              Accept
+              Execute
             </Button>
-          )
-        )}
+          ) : (
+            account.address &&
+            account.address === executorApplication?.applicant && (
+              <Button
+                disabled={approvingRequest}
+                onClick={() => approveRequest().catch(console.error)}
+              >
+                Accept
+              </Button>
+            )
+          ))}
       </CardFooter>
     </Card>
   )

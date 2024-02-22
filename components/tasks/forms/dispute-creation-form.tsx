@@ -84,6 +84,24 @@ export function DipsuteCreationForm({
     },
   })
 
+  const [disputeCost, setDisputeCost] = useState<bigint>(BigInt(0))
+  useEffect(() => {
+    const getDisputeCost = async () => {
+      if (!publicClient) {
+        setDisputeCost(BigInt(0))
+        return
+      }
+
+      const daoDisputeCost = await publicClient.readContract({
+        abi: TasksDisputesContract.abi,
+        address: TasksDisputesContract.address,
+        functionName: "getDisputeCost",
+        args: [task.disputeManager],
+      })
+      setDisputeCost(daoDisputeCost)
+    }
+  }, [publicClient, task.disputeManager])
+
   const [submitting, setSubmitting] = useState<boolean>(false)
   async function onSubmit(values: z.infer<typeof formSchema>) {
     const executorApplication = task.applications[task.executorApplication]
@@ -191,6 +209,7 @@ export function DipsuteCreationForm({
             },
           ],
           chain: chains.find((c) => c.id == chainId),
+          value: disputeCost,
         })
         .catch((err) => {
           console.error(err)

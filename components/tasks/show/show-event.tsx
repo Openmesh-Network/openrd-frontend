@@ -99,7 +99,7 @@ export function ShowEvent({
             : ""}
         </CardDescription>
       </CardHeader>
-      <CardFooter className="mr-[80px] grid gap-x-[10px] pb-0 text-center">
+      <CardFooter className="mr-[80px] grid pb-0 text-center items-center">
         {viewTask && (
           <Link
           className="flex cursor-pointer items-center justify-center rounded-md border-[0.5px] border-[#87868645] !py-[5px] px-[8px] text-center hover:bg-[#a5a5a511] dark:hover:bg-[#4747472b]"

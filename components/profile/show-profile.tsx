@@ -93,7 +93,7 @@ export function ShowProfile({ address }: { address: Address }) {
           <div>
             {user?.tasks ? (
               <div className="grid grid-cols-1 gap-y-3">
-                {objectKeysInt(user.tasks).map((chainId) =>
+                {objectKeysInt(user.tasks).map((chainId, i) =>
                   Object.keys(user.tasks[chainId])
                     .reverse()
                     .map((taskIdString) => {
@@ -119,6 +119,7 @@ export function ShowProfile({ address }: { address: Address }) {
                               )}
                             </div>
                             <ShowTaskSummary
+                              index={i}
                               key={`${chainId}:${taskId}`}
                               chainId={chainId}
                               taskId={taskId}

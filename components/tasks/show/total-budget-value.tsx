@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client"
 
 import { useEffect, useState } from "react"
@@ -19,7 +20,24 @@ export function TotalBudgetValue() {
   return (
     <div>
       {budgetValue !== undefined ? (
-        <h2>{budgetValue} in task budgets</h2>
+        <div>
+          <div className="flex gap-x-[5px] text-xl font-bold">
+            <div>
+              ${budgetValue} 
+            </div>
+            <img
+              src={`/images/utils/usdc.svg`}
+              alt="image"
+              className={`ml-1 w-[15px]`}
+            />
+            <img
+              src={`/images/utils/usdt.svg`}
+              alt="image"
+              className={`w-[15px]`}
+            />
+          </div>
+          <div className="text-sm">Total Project Values</div>
+        </div>
       ) : (
         <h2>Loading...</h2>
       )}

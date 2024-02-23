@@ -520,7 +520,7 @@ export function ShowTask({
           <TabsContent value="events">
             <div className="grid grid-cols-1">
               {[...events].reverse().map((eventId, i) => (
-                <ShowEvent key={i} eventIndex={eventId} />
+                <ShowEvent index={i} key={i} eventIndex={eventId} />
               ))}
             </div>
           </TabsContent>

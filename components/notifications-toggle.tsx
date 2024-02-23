@@ -50,6 +50,7 @@ export function NotificationsToggle() {
             .reverse()
             .map((eventId, i) => (
               <ShowEvent
+                index={i}
                 key={i}
                 eventIndex={eventId}
                 hideDescription={true}

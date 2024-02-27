@@ -9,7 +9,7 @@ export default function TaskPage({
 }) {
   const split = params.chainIdTaskId?.split("%3A", 2) // %3A = :
   if (!split || split.length < 2) {
-    return <span>Incorrect chain+task identifier.</span>
+    return <span>Incorrect chain+task identifier!</span>
   }
 
   const chainId = parseInt(split[0])

@@ -212,6 +212,7 @@ export function ShowTask({
     blockchainTask?.submissions ?? indexerTask?.submissions ?? {}
   const cancelTaskRequests =
     blockchainTask?.cancelTaskRequests ?? indexerTask?.cancelTaskRequests ?? {}
+  const usdValue = indexerTask?.usdValue ?? 0
 
   const managerTitle = useAddressTitle(manager)
   const disputeManagerTitle = useAddressTitle(disputeManager)
@@ -222,7 +223,7 @@ export function ShowTask({
   return (
     <div>
       <div className="flex max-w-[980px] flex-col items-start gap-2">
-        <h1 className="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
+        <h1 className="text-3xl font-bold leading-tight tracking-tighter md:text-2xl">
           {title}
         </h1>
       </div>
@@ -232,8 +233,25 @@ export function ShowTask({
             Chain: {chain?.name ?? chainId.toString()}
           </Badge>
           <Badge variant="outline">Task ID: {taskId.toString()}</Badge>
-          {tags.map?.((tag, i) => <Badge key={i}>{tag.tag}</Badge>)}
         </div>
+        {
+          tags?.length > 0 && (
+            <div className="flex text-[11px] font-semibold text-[#505050]  md:text-[14px]">
+            <p className="">Tags:</p>
+            <div className="flex flex-wrap gap-y-[10px] italic">
+              {tags?.map?.((tag, index) => (
+                  <p
+                    className="ml-1 border-b border-[#505050]"
+                    key={index}
+                  >
+                    {tag.tag}
+                    {index !== tags.length - 1 && ', '}
+                  </p>
+                ))}
+            </div>
+          </div>
+          )
+        }
         <Tabs defaultValue="description">
           <TabsList>
             <TabsTrigger value="description">Description</TabsTrigger>

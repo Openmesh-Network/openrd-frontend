@@ -44,7 +44,7 @@ import { ShowCancelTaskRequest } from "./show-cancel-task-request"
 import { ShowDispute } from "./show-dispute"
 import { ShowEvent } from "./show-event"
 import { ShowSubmission } from "./show-submission"
-import { statusToColor, statusToString, timestampToDate } from '../../../openrd-indexer/utils/general-functions';
+import { statusToColor, statusToString, timestampToDate, timestampToDateFormatted } from '../../../openrd-indexer/utils/general-functions';
 
 // These variables could contain anything
 // Should not assume these types are correct
@@ -347,7 +347,7 @@ export function ShowTask({
           <div className="mt-[25px] flex text-[12px] font-bold !leading-[150%] text-[#000000] lg:block lg:text-[16px]">
             <p className="mr-[10px] lg:mr-0"> Deadline: </p>
             <p className="font-medium text-[#303030]">
-              {timestampToDate(String(deadline))}
+              {timestampToDateFormatted(String(deadline))}
             </p>
           </div>
           {/* {task.status === 'open' && (

@@ -395,21 +395,25 @@ export function TaskCreationForm() {
         return
       }
 
+      setTimeout(() => {
+        push(`/tasks/${walletClient.chain.id}:${taskId}`)
+      }, 2000); 
+
       dismiss()
       dismiss = toast({
         title: "Success!",
         description: "The task has been created.",
         variant: "success",
-        action: (
-          <ToastAction
-            altText="View task"
-            onClick={() => {
-              push(`/tasks/${walletClient.chain.id}:${taskId}`)
-            }}
-          >
-            View task
-          </ToastAction>
-        ),
+        // action: (
+        //   <ToastAction
+        //     altText="View task"
+        //     onClick={() => {
+        //       push(`/tasks/${walletClient.chain.id}:${taskId}`)
+        //     }}
+        //   >
+        //     View task
+        //   </ToastAction>
+        // ),
       }).dismiss
     }
 

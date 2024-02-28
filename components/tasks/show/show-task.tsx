@@ -1,7 +1,7 @@
 /* eslint-disable @next/next/no-img-element */
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useRef } from "react"
 import { DisputesReturn } from "@/openrd-indexer/api/return-types"
 import { TasksContract } from "@/openrd-indexer/contracts/Tasks"
 import {
@@ -83,6 +83,8 @@ export function ShowTask({
   const [indexerTask, setIndexerTask] = useState<IndexedTask | undefined>(
     undefined
   )
+
+  const applyRef = useRef<HTMLDivElement>(null);
 
   const getBlockchainTask = async () => {
     if (!publicClient) {
@@ -352,16 +354,17 @@ export function ShowTask({
               {timestampToDateFormatted(String(deadline))}
             </p>
           </div>
-          {state === TaskState.Taken && (
+          {state === TaskState.Open && (
             <div className="mt-[25px] ">
               <a
                  onClick={() => {
                   setActiveTab('applications')
                   setTimeout(() => {
-                    window.scrollTo({
-                      top: document.body.scrollHeight,
-                      behavior: 'smooth',
-                    });
+                    if (applyRef.current) {
+                      applyRef.current.scrollIntoView({
+                        behavior: 'smooth',
+                      });
+                    }
                   }, 100);
                  }}
                 className="flex h-[43px] w-[163px] cursor-pointer items-center justify-center rounded-[10px] bg-[#12AD50] text-[12px] font-bold text-white hover:bg-[#0b9040] lg:text-[16px] "
@@ -568,7 +571,7 @@ export function ShowTask({
               <Separator />
               {(blockchainTask || indexerTask) && state === TaskState.Open && (
                 <div className="space-y-5 pb-[20px]">
-                  <p className="text-2xl">Apply for task:</p>
+                  <p ref={applyRef} className="text-2xl">Apply for task:</p>
                   <ApplicationCreationForm
                     chainId={chainId}
                     taskId={taskId}

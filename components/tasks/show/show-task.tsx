@@ -68,6 +68,8 @@ export function ShowTask({
   chainId: number
   taskId: bigint
 }) {
+  const [activeTab, setActiveTab] = useState('description');
+
   const account = useAccount()
   const chain = chains.find((c) => c.id === chainId)
   const publicClient = usePublicClient({ chainId: chainId })
@@ -344,12 +346,30 @@ export function ShowTask({
                 </p>
             </div>
           </div>
-          <div className="mt-[25px] flex text-[12px] font-bold !leading-[150%] text-[#000000] lg:block lg:text-[16px]">
+          <div className="mt-[25px] flex text-[12px] font-bold !leading-[150%] text-grey dark:text-light lg:block lg:text-[16px]">
             <p className="mr-[10px] lg:mr-0"> Deadline: </p>
-            <p className="font-medium text-[#303030]">
+            <p className="font-medium text-[#000] dark:text-[#fff]">
               {timestampToDateFormatted(String(deadline))}
             </p>
           </div>
+          {state === TaskState.Taken && (
+            <div className="mt-[25px] ">
+              <a
+                 onClick={() => {
+                  setActiveTab('applications')
+                  setTimeout(() => {
+                    window.scrollTo({
+                      top: document.body.scrollHeight,
+                      behavior: 'smooth',
+                    });
+                  }, 100);
+                 }}
+                className="flex h-[43px] w-[163px] cursor-pointer items-center justify-center rounded-[10px] bg-[#12AD50] text-[12px] font-bold text-white hover:bg-[#0b9040] lg:text-[16px] "
+              >
+                {'Apply now'}
+              </a>
+            </div>
+          )}
           {/* {task.status === 'open' && (
             <div className="mt-[25px] ">
               <a
@@ -384,7 +404,7 @@ export function ShowTask({
         </div>
       </div>
       <div className="grid grid-cols-1 gap-4">
-        <Tabs defaultValue="description">
+        <Tabs defaultValue="description" value={activeTab} onValueChange={setActiveTab}>
           <TabsList>
             <TabsTrigger value="description">Description</TabsTrigger>
             <TabsTrigger value="general">General info</TabsTrigger>
@@ -547,7 +567,7 @@ export function ShowTask({
               </div>
               <Separator />
               {(blockchainTask || indexerTask) && state === TaskState.Open && (
-                <div className="space-y-5">
+                <div className="space-y-5 pb-[20px]">
                   <p className="text-2xl">Apply for task:</p>
                   <ApplicationCreationForm
                     chainId={chainId}

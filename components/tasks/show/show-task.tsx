@@ -44,7 +44,7 @@ import { ShowCancelTaskRequest } from "./show-cancel-task-request"
 import { ShowDispute } from "./show-dispute"
 import { ShowEvent } from "./show-event"
 import { ShowSubmission } from "./show-submission"
-import { statusToColor, statusToString, timestampToDate, timestampToDateFormatted } from '../../../openrd-indexer/utils/general-functions';
+import { statusToColor, statusToString, timestampToDate, timestampToDateFormatted } from '../../../lib/general-functions';
 
 // These variables could contain anything
 // Should not assume these types are correct

@@ -333,7 +333,7 @@ export function ShowTask({
         </div>
         <div className="w-full text-grey dark:text-light lg:w-[163px]">
           <div className="mt-[25px] text-[12px] font-bold lg:mt-0 lg:text-[16px]">
-            <div className="flex !leading-[150%]">Status:</div>
+            <div className="flex !leading-[150%]">Status :</div>
             <div className={`${statusToColor(String(state))} mt-[6px] flex items-center gap-x-[3px]`}>
                 <svg
                   className="size-[20px]"

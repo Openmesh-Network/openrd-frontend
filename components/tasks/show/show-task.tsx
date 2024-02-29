@@ -249,7 +249,7 @@ export function ShowTask({
                 <div className="flex flex-wrap gap-y-[10px] italic">
                   {tags?.map?.((tag, index) => (
                       <p
-                        className="ml-1 border-b border-[#505050] dark:border-[#7F8DA3]"
+                        className="ml-1 border-b-[0.5px] border-[#505050] dark:border-[#7F8DA3]"
                         key={index}
                       >
                         {tag.tag}

@@ -480,7 +480,7 @@ export function ShowApplication({
   }, [])
 
   return (
-    <Card>
+    <Card className="!rounded-none !border-0 !border-b-[1px] !shadow-none">
       <CardHeader>
         <CardTitle className="flex space-x-2">
           {/* Would be cool to add a hover effect here to show stats of the person (completion rate etc.) */}
@@ -495,13 +495,27 @@ export function ShowApplication({
         </CardTitle>
         {userDescription && <SanitizeHTML html={userDescription} />}
       </CardHeader>
-      <CardContent>
+      <CardContent className="">
         <div className="space-y-2">
           {teamSize !== undefined && teamSize !== 0 && (
             <span>Team size: {teamSize}</span>
           )}
-          <SanitizeHTML html={plan} />
-          {background && <SanitizeHTML html={background} />}
+          {plan && (
+            <div className="mb-8">
+              <div className="mb-4 text-grey dark:text-light">
+                Plan
+              </div>
+              <SanitizeHTML html={plan} />
+            </div>
+          )}
+          {background && (
+            <div className="">
+              <div className="mb-4 text-grey dark:text-light">
+                Background
+              </div>
+              <SanitizeHTML html={background}/>
+            </div>
+          )}
           {application.nativeReward.length !== 0 && (
             <ShowNativeReward
               chainId={chainId}

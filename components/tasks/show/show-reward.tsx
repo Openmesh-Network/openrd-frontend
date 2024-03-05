@@ -32,7 +32,7 @@ export function ShowReward({
         </span>
         {
           name === 'MATIC' && (
-            <img
+          <img
             alt="matic"
             src="/images/task/polygon-matic-logo.svg"
             className="w-[15px]"
@@ -41,7 +41,7 @@ export function ShowReward({
         }
         {
           name === 'ETHER' && (
-            <img
+          <img
             alt="matic"
             src="/images/task/ethereum-eth-logo.svg"
             className="w-[12px]"

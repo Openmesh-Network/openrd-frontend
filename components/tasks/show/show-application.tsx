@@ -1,3 +1,4 @@
+/* eslint-disable @next/next/no-img-element */
 "use client"
 
 import { useEffect, useState } from "react"
@@ -480,13 +481,20 @@ export function ShowApplication({
   }, [])
 
   return (
-    <Card className="!rounded-none !border-0 !border-b-[1px] !shadow-none">
+    <Card className="!rounded-none !border-0 !border-b-[2px] !shadow-none">
       <CardHeader>
         <CardTitle className="flex space-x-2">
           {/* Would be cool to add a hover effect here to show stats of the person (completion rate etc.) */}
-          <Link href={`/profile/${application.applicant}`} className="shrink">
-            {userTitle}
-          </Link>
+          <div className="flex gap-x-[15px]">
+            <img
+              alt="matic"
+              src={`https://effigy.im/a/${application.applicant}.svg`}
+              className="w-[35px] rounded-full"
+            ></img>
+            <Link href={`/profile/${application.applicant}`} className="shrink text-[20px]">
+              {userTitle}
+            </Link>
+          </div>
           {application.accepted && <Badge variant="success">Accepted</Badge>}
           {task?.state === TaskState.Taken &&
             applicationId === task?.executorApplication && (

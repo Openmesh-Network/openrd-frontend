@@ -516,6 +516,9 @@ export function ShowApplication({
               <SanitizeHTML html={background}/>
             </div>
           )}
+          <div className="!mt-8 mb-4 text-grey dark:text-light">
+            Budget
+          </div>
           {application.nativeReward.length !== 0 && (
             <ShowNativeReward
               chainId={chainId}

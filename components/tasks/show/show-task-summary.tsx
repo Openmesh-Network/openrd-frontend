@@ -5,6 +5,7 @@ import { IndexedTask, Task } from "@/openrd-indexer/types/tasks"
 
 import { chains } from "@/config/wagmi-config"
 import { getTask } from "@/lib/indexer"
+import { SanitizeHTML } from "@/components/sanitize-html"
 import { Badge } from "@/components/ui/badge"
 import {
   Card,
@@ -18,12 +19,8 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { arrayToIndexObject } from "@/lib/array-to-object"
 import { TasksContract } from "@/openrd-indexer/contracts/Tasks"
 import { usePublicClient } from "wagmi"
-
-interface ShowTaskSummaryMetadata {
-  title?: string
-  tags?: { tag?: string }[]
-  index: number
-}
+import { ShowTaskMetadata } from "./show-task"
+import { fetchMetadata } from "@/openrd-indexer/utils/metadata-fetch"
 
 export function ShowTaskSummary({
   chainId,
@@ -40,6 +37,9 @@ export function ShowTaskSummary({
   const [indexerTask, setIndexerTask] = useState<IndexedTask | undefined>(
     undefined
   )
+  const [directMetadata, setDirectMetadata] = useState<
+    ShowTaskMetadata | undefined
+  >(undefined)
 
   const [blockchainTask, setBlockchainTask] = useState<Task | undefined>(
     undefined
@@ -102,11 +102,30 @@ export function ShowTaskSummary({
     })
   }, [chainId, taskId])
 
+  useEffect(() => {
+    const getMetadata = async () => {
+      if (!blockchainTask?.metadata) {
+        return
+      }
+
+      const metadata = await fetchMetadata(blockchainTask?.metadata)
+      setDirectMetadata(
+        metadata ? (JSON.parse(metadata) as ShowTaskMetadata) : {}
+      )
+    }
+
+    getMetadata().catch(console.error)
+  }, [blockchainTask?.metadata])
+
   const indexedMetadata = indexerTask?.cachedMetadata
-    ? (JSON.parse(indexerTask?.cachedMetadata) as ShowTaskSummaryMetadata)
+    ? (JSON.parse(indexerTask?.cachedMetadata) as ShowTaskMetadata)
     : undefined
   const title = indexedMetadata?.title
   const tags = indexedMetadata?.tags ?? []
+  const description =
+  directMetadata?.description ??
+  indexedMetadata?.description ??
+  "No description was provided."
 
   return (
     <Card className={`flex justify-between gap-x-[10px] py-[20px] ${index !== 0 && 'rounded-none'} ${index === 0 && 'rounded-b-none'}`}>
@@ -115,15 +134,15 @@ export function ShowTaskSummary({
           <CardTitle>
             {title ?? <Skeleton className="h-6 w-[250px] bg-white" />}
           </CardTitle>
+          <div>
+          <SanitizeHTML html={description} />
+          </div>
         </CardHeader>
         <CardContent>
           <div className="space-x-1">
             <Badge variant="outline">
               Chain: {chain?.name ?? chainId.toString()}
             </Badge>
-            <div>
-              {blockchainTask?.budget[0]?.tokenContract}
-            </div>
             <Badge variant="outline">Task ID: {taskId.toString()}</Badge>
             {tags
               .filter((tag) => tag.tag !== undefined)

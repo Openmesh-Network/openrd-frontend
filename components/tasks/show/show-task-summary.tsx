@@ -154,7 +154,7 @@ export function ShowTaskSummary({
           </div>
         </CardContent>
       </div>
-      <CardFooter className="my-auto mr-[80px] flex cursor-pointer items-center rounded-md border-[0.5px] border-[#87868645] !py-[5px] pb-0 text-center hover:bg-[#a5a5a511] dark:hover:bg-[#4747472b]">
+      <CardFooter className="my-auto mr-[80px] flex cursor-pointer items-center rounded-md border-[0.5px] border-[#0354EC] bg-[#fff] !py-[5px] pb-0 text-center text-[#0354EC] hover:bg-[#0354EC] hover:text-[#fff]">
         <Link className="" href={`/tasks/${chainId}:${taskId}`}>View task</Link>
       </CardFooter>
     </Card>

@@ -9,7 +9,6 @@ import {
   Task,
   TaskState,
 } from "@/openrd-indexer/types/tasks"
-import { fetchMetadata } from "@/openrd-indexer/utils/metadata-fetch"
 import { BaseError, ContractFunctionRevertedError, decodeEventLog } from "viem"
 import {
   useAccount,
@@ -22,6 +21,7 @@ import {
 import { chains } from "@/config/wagmi-config"
 import { getUser } from "@/lib/indexer"
 import { useENS } from "@/hooks/useENS"
+import { useMetadata } from "@/hooks/useMetadata"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -75,19 +75,11 @@ export function ShowApplication({
   const { toast } = useToast()
   const applicantENS = useENS({ address: application.applicant })
 
-  const [directMetadata, setDirectMetadata] = useState<
-    ShowApplicationMetadata | undefined
-  >(undefined)
-  useEffect(() => {
-    const getMetadata = async () => {
-      const metadata = await fetchMetadata(application.metadata)
-      setDirectMetadata(
-        metadata ? (JSON.parse(metadata) as ShowApplicationMetadata) : {}
-      )
-    }
-
-    getMetadata().catch(console.error)
-  }, [application.metadata])
+  const directMetadata = useMetadata<ShowApplicationMetadata | undefined>({
+    url: application.metadata,
+    defaultValue: undefined,
+    emptyValue: {},
+  })
 
   const indexedMetadata = indexerMetadata
     ? (JSON.parse(indexerMetadata) as ShowApplicationMetadata)
@@ -491,7 +483,10 @@ export function ShowApplication({
               src={`https://effigy.im/a/${application.applicant}.svg`}
               className="w-[35px] rounded-full"
             ></img>
-            <Link href={`/profile/${application.applicant}`} className="shrink text-[20px]">
+            <Link
+              href={`/profile/${application.applicant}`}
+              className="shrink text-[20px]"
+            >
               {userTitle}
             </Link>
           </div>
@@ -510,23 +505,17 @@ export function ShowApplication({
           )}
           {plan && (
             <div className="mb-8">
-              <div className="mb-4 text-grey dark:text-light">
-                Plan
-              </div>
+              <div className="mb-4 text-grey dark:text-light">Plan</div>
               <SanitizeHTML html={plan} />
             </div>
           )}
           {background && (
             <div className="">
-              <div className="mb-4 text-grey dark:text-light">
-                Background
-              </div>
-              <SanitizeHTML html={background}/>
+              <div className="mb-4 text-grey dark:text-light">Background</div>
+              <SanitizeHTML html={background} />
             </div>
           )}
-          <div className="!mt-8 mb-4 text-grey dark:text-light">
-            Budget
-          </div>
+          <div className="!mt-8 mb-4 text-grey dark:text-light">Budget</div>
           {application.nativeReward.length !== 0 && (
             <ShowNativeReward
               chainId={chainId}

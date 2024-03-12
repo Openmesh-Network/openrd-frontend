@@ -10,15 +10,20 @@ import {
   Task,
   TaskState,
 } from "@/openrd-indexer/types/tasks"
-import { fetchMetadata } from "@/openrd-indexer/utils/metadata-fetch"
 import { formatUnits } from "viem"
 import { deepEqual, useAccount, usePublicClient } from "wagmi"
 
 import { chains } from "@/config/wagmi-config"
 import { arrayToIndexObject } from "@/lib/array-to-object"
+import {
+  statusToColor,
+  statusToString,
+  timestampToDateFormatted,
+} from "@/lib/general-functions"
 import { getDisputes, getTask, getUser } from "@/lib/indexer"
 import { objectKeysInt } from "@/lib/object-keys"
 import { useAddressTitle } from "@/hooks/useAddressTitle"
+import { useMetadata } from "@/hooks/useMetadata"
 import {
   Accordion,
   AccordionContent,
@@ -37,12 +42,6 @@ import { EditMetadata } from "@/components/tasks/manage/edit-metadata"
 import { ExtendDeadline } from "@/components/tasks/manage/extend-deadline"
 import { IncreaseBudget } from "@/components/tasks/manage/increase-budget"
 
-import {
-  statusToColor,
-  statusToString,
-  timestampToDate,
-  timestampToDateFormatted,
-} from "../../../lib/general-functions"
 import { DipsuteCreationForm } from "../forms/dispute-creation-form"
 import { ShowApplication } from "./show-application"
 import { ShowBudgetItem } from "./show-budget-item"
@@ -82,9 +81,11 @@ export function ShowTask({
   const [blockchainTask, setBlockchainTask] = useState<Task | undefined>(
     undefined
   )
-  const [directMetadata, setDirectMetadata] = useState<
-    ShowTaskMetadata | undefined
-  >(undefined)
+  const directMetadata = useMetadata<ShowTaskMetadata | undefined>({
+    url: blockchainTask?.metadata,
+    defaultValue: undefined,
+    emptyValue: {},
+  })
   const [indexerTask, setIndexerTask] = useState<IndexedTask | undefined>(
     undefined
   )
@@ -147,21 +148,6 @@ export function ShowTask({
       setIndexerTask(undefined)
     })
   }, [chainId, taskId])
-
-  useEffect(() => {
-    const getMetadata = async () => {
-      if (!blockchainTask?.metadata) {
-        return
-      }
-
-      const metadata = await fetchMetadata(blockchainTask?.metadata)
-      setDirectMetadata(
-        metadata ? (JSON.parse(metadata) as ShowTaskMetadata) : {}
-      )
-    }
-
-    getMetadata().catch(console.error)
-  }, [blockchainTask?.metadata])
 
   const refresh = async () => {
     getBlockchainTask().catch(console.error)

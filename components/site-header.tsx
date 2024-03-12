@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { ConnectButton } from "@rainbow-me/rainbowkit"
 import { useAccount } from "wagmi"
 
 import { NavItem } from "@/types/nav"
@@ -34,7 +33,7 @@ export function SiteHeader() {
           <nav className="flex items-center space-x-1">
             <NotificationsToggle />
             <ThemeToggle />
-            <ConnectButton />
+            <w3m-button />
           </nav>
         </div>
       </div>

@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { IndexedTask } from "@/openrd-indexer/types/tasks"
+import { IndexedTask, Task } from "@/openrd-indexer/types/tasks"
 
 import { chains } from "@/config/wagmi-config"
 import { getTask } from "@/lib/indexer"
@@ -15,6 +15,9 @@ import {
 } from "@/components/ui/card"
 import { Link } from "@/components/ui/link"
 import { Skeleton } from "@/components/ui/skeleton"
+import { arrayToIndexObject } from "@/lib/array-to-object"
+import { TasksContract } from "@/openrd-indexer/contracts/Tasks"
+import { usePublicClient } from "wagmi"
 
 interface ShowTaskSummaryMetadata {
   title?: string
@@ -32,9 +35,60 @@ export function ShowTaskSummary({
   index: number
 }) {
   const chain = chains.find((c) => c.id === chainId)
+  const publicClient = usePublicClient({ chainId: chainId })
+
   const [indexerTask, setIndexerTask] = useState<IndexedTask | undefined>(
     undefined
   )
+
+  const [blockchainTask, setBlockchainTask] = useState<Task | undefined>(
+    undefined
+  )
+
+  const getBlockchainTask = async () => {
+    if (!publicClient) {
+      return
+    }
+
+    const rawTask = await publicClient.readContract({
+      abi: TasksContract.abi,
+      address: TasksContract.address,
+      functionName: "getTask",
+      args: [taskId],
+    })
+
+    const task: Task = {
+      applications: arrayToIndexObject([
+        ...rawTask.applications.map((application) => {
+          return {
+            ...application,
+            nativeReward: [...application.nativeReward],
+            reward: [...application.reward],
+          }
+        }),
+      ]),
+      budget: [...rawTask.budget],
+      cancelTaskRequests: arrayToIndexObject([...rawTask.cancelTaskRequests]),
+      creator: rawTask.creator,
+      deadline: rawTask.deadline,
+      disputeManager: rawTask.disputeManager,
+      escrow: rawTask.escrow,
+      executorApplication: rawTask.executorApplication,
+      manager: rawTask.manager,
+      metadata: rawTask.metadata,
+      nativeBudget: rawTask.nativeBudget,
+      state: rawTask.state,
+      submissions: arrayToIndexObject([...rawTask.submissions]),
+    }
+    setBlockchainTask(task)
+  }
+
+  useEffect(() => {
+    getBlockchainTask().catch((err) => {
+      console.error(err)
+      setBlockchainTask(undefined)
+    })
+  }, [taskId, publicClient])
 
   useEffect(() => {
     const getIndexerTask = async () => {
@@ -67,6 +121,9 @@ export function ShowTaskSummary({
             <Badge variant="outline">
               Chain: {chain?.name ?? chainId.toString()}
             </Badge>
+            <div>
+              {blockchainTask?.budget[0]?.tokenContract}
+            </div>
             <Badge variant="outline">Task ID: {taskId.toString()}</Badge>
             {tags
               .filter((tag) => tag.tag !== undefined)

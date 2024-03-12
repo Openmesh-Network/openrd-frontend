@@ -1,26 +1,21 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { TasksContract } from "@/openrd-indexer/contracts/Tasks"
 import { IndexedTask, Task } from "@/openrd-indexer/types/tasks"
+import { usePublicClient } from "wagmi"
 
 import { chains } from "@/config/wagmi-config"
+import { arrayToIndexObject } from "@/lib/array-to-object"
 import { getTask } from "@/lib/indexer"
-import { SanitizeHTML } from "@/components/sanitize-html"
+import { useMetadata } from "@/hooks/useMetadata"
 import { Badge } from "@/components/ui/badge"
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
+import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Link } from "@/components/ui/link"
 import { Skeleton } from "@/components/ui/skeleton"
-import { arrayToIndexObject } from "@/lib/array-to-object"
-import { TasksContract } from "@/openrd-indexer/contracts/Tasks"
-import { usePublicClient } from "wagmi"
+import { SanitizeHTML } from "@/components/sanitize-html"
+
 import { ShowTaskMetadata } from "./show-task"
-import { fetchMetadata } from "@/openrd-indexer/utils/metadata-fetch"
 
 export function ShowTaskSummary({
   chainId,
@@ -28,7 +23,7 @@ export function ShowTaskSummary({
   index,
 }: {
   chainId: number
-  taskId: bigint,
+  taskId: bigint
   index: number
 }) {
   const chain = chains.find((c) => c.id === chainId)
@@ -37,13 +32,15 @@ export function ShowTaskSummary({
   const [indexerTask, setIndexerTask] = useState<IndexedTask | undefined>(
     undefined
   )
-  const [directMetadata, setDirectMetadata] = useState<
-    ShowTaskMetadata | undefined
-  >(undefined)
 
   const [blockchainTask, setBlockchainTask] = useState<Task | undefined>(
     undefined
   )
+  const directMetadata = useMetadata<ShowTaskMetadata | undefined>({
+    url: blockchainTask?.metadata,
+    defaultValue: undefined,
+    emptyValue: {},
+  })
 
   const getBlockchainTask = async () => {
     if (!publicClient) {
@@ -102,21 +99,6 @@ export function ShowTaskSummary({
     })
   }, [chainId, taskId])
 
-  useEffect(() => {
-    const getMetadata = async () => {
-      if (!blockchainTask?.metadata) {
-        return
-      }
-
-      const metadata = await fetchMetadata(blockchainTask?.metadata)
-      setDirectMetadata(
-        metadata ? (JSON.parse(metadata) as ShowTaskMetadata) : {}
-      )
-    }
-
-    getMetadata().catch(console.error)
-  }, [blockchainTask?.metadata])
-
   const indexedMetadata = indexerTask?.cachedMetadata
     ? (JSON.parse(indexerTask?.cachedMetadata) as ShowTaskMetadata)
     : undefined
@@ -124,18 +106,20 @@ export function ShowTaskSummary({
   const tags = indexedMetadata?.tags ?? []
   const usdValue = indexerTask?.usdValue ?? 0
   const description =
-  directMetadata?.description ??
-  indexedMetadata?.description ??
-  "No description was provided."
+    directMetadata?.description ??
+    indexedMetadata?.description ??
+    "No description was provided."
 
   return (
-    <Card className={`flex justify-between gap-x-[10px] border-x-0 border-b-[2px] border-t-0 py-[20px] !shadow-none ${index !== 0 && 'rounded-none'} ${index === 0 && 'rounded-b-none'}`}>
+    <Card
+      className={`flex justify-between gap-x-[10px] border-x-0 border-b-[2px] border-t-0 py-[20px] !shadow-none ${index !== 0 && "rounded-none"} ${index === 0 && "rounded-b-none"}`}
+    >
       <div>
         <CardHeader className="!pb-0">
           <div className="text-lg font-bold">
             {title ?? <Skeleton className="h-6 w-[250px] bg-white" />}
           </div>
-          <div  className="max-h-[100px] overflow-hidden">
+          <div className="max-h-[100px] overflow-hidden">
             <SanitizeHTML html={description} />
           </div>
         </CardHeader>
@@ -155,7 +139,9 @@ export function ShowTaskSummary({
         </CardContent>
       </div>
       <CardFooter className="my-auto mr-[80px] flex cursor-pointer items-center rounded-md border-[0.5px] border-[#0354EC] bg-[#fff] !py-[5px] pb-0 text-center text-[#0354EC] hover:bg-[#0354EC] hover:text-[#fff]">
-        <Link className="" href={`/tasks/${chainId}:${taskId}`}>View task</Link>
+        <Link className="" href={`/tasks/${chainId}:${taskId}`}>
+          View task
+        </Link>
       </CardFooter>
     </Card>
   )

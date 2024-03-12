@@ -8,7 +8,6 @@ import {
   Task,
   TaskState,
 } from "@/openrd-indexer/types/tasks"
-import { fetchMetadata } from "@/openrd-indexer/utils/metadata-fetch"
 import { BaseError, ContractFunctionRevertedError, decodeEventLog } from "viem"
 import {
   useAccount,
@@ -19,6 +18,7 @@ import {
 } from "wagmi"
 
 import { chains } from "@/config/wagmi-config"
+import { useMetadata } from "@/hooks/useMetadata"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -65,19 +65,11 @@ export function ShowCancelTaskRequest({
     ? task.applications[task.executorApplication]
     : undefined
 
-  const [directMetadata, setDirectMetadata] = useState<
-    ShowRequestMetadata | undefined
-  >(undefined)
-  useEffect(() => {
-    const getMetadata = async () => {
-      const metadata = await fetchMetadata(request.metadata)
-      setDirectMetadata(
-        metadata ? (JSON.parse(metadata) as ShowRequestMetadata) : {}
-      )
-    }
-
-    getMetadata().catch(console.error)
-  }, [request.metadata])
+  const directMetadata = useMetadata<ShowRequestMetadata | undefined>({
+    url: request.metadata,
+    defaultValue: undefined,
+    emptyValue: {},
+  })
 
   const [approvingRequest, setApprovingRequest] = useState<boolean>(false)
   async function approveRequest() {

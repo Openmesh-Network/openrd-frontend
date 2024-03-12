@@ -7,11 +7,10 @@ import {
   Task,
   TaskState,
 } from "@/openrd-indexer/types/tasks"
-import { fetchMetadata } from "@/openrd-indexer/utils/metadata-fetch"
 import { useAccount } from "wagmi"
 
+import { useMetadata } from "@/hooks/useMetadata"
 import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
 import {
   Card,
   CardContent,
@@ -53,33 +52,19 @@ export function ShowSubmission({
 }) {
   const account = useAccount()
 
-  const [directMetadata, setDirectMetadata] = useState<
-    ShowSubmissionMetadata | undefined
-  >(undefined)
-  useEffect(() => {
-    const getMetadata = async () => {
-      const metadata = await fetchMetadata(submission.metadata)
-      setDirectMetadata(
-        metadata ? (JSON.parse(metadata) as ShowSubmissionMetadata) : {}
-      )
-    }
+  const directMetadata = useMetadata<ShowSubmissionMetadata | undefined>({
+    url: submission.metadata,
+    defaultValue: undefined,
+    emptyValue: {},
+  })
 
-    getMetadata().catch(console.error)
-  }, [submission.metadata])
-
-  const [directFeedbackMetadata, setDirectFeedbackMetadata] = useState<
+  const directFeedbackMetadata = useMetadata<
     ShowSubmissionFeedbackMetadata | undefined
-  >(undefined)
-  useEffect(() => {
-    const getMetadata = async () => {
-      const metadata = await fetchMetadata(submission.feedback)
-      setDirectFeedbackMetadata(
-        metadata ? (JSON.parse(metadata) as ShowSubmissionFeedbackMetadata) : {}
-      )
-    }
-
-    getMetadata().catch(console.error)
-  }, [submission.feedback])
+  >({
+    url: submission.metadata,
+    defaultValue: undefined,
+    emptyValue: {},
+  })
 
   const indexedMetadata = indexerMetadata
     ? (JSON.parse(indexerMetadata) as ShowSubmissionMetadata)

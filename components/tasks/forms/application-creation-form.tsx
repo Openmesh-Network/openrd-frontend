@@ -50,6 +50,7 @@ import {
   TokenMetadataRequest,
   TokenMetadataResponse,
 } from "@/app/api/tokenMetadata/route"
+import { AddToIpfsRequest, AddToIpfsResponse } from "@/app/api/addToIpfs/route"
 
 const formSchema = z.object({
   // Onchain fields
@@ -194,10 +195,16 @@ export function ApplicationCreationForm({
         plan: values.plan,
         background: values.background,
       }
-      const cid = await addToIpfs(JSON.stringify(metadata)).catch((err) => {
-        console.error(err)
-        return undefined
-      })
+      const addToIpfsRequest: AddToIpfsRequest = {
+        json: JSON.stringify(metadata),
+      }
+      const cid = await axios
+        .post("/api/addToIpfs", addToIpfsRequest)
+        .then((response) => (response.data as AddToIpfsResponse).cid)
+        .catch((err) => {
+          console.error(err)
+          return undefined
+        })
       if (!cid) {
         dismiss()
         toast({

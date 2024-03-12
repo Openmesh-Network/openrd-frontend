@@ -42,6 +42,8 @@ import { RichTextArea } from "@/components/ui/rich-textarea"
 import { Textarea } from "@/components/ui/textarea"
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from "@/components/ui/use-toast"
+import { AddToIpfsRequest, AddToIpfsResponse } from "@/app/api/addToIpfs/route"
+import axios from "axios"
 
 const formSchema = z.object({
   title: z.string().min(1, "Title cannot be empty."),
@@ -149,10 +151,16 @@ export function DipsuteCreationForm({
         summary: values.summary,
         body: values.body,
       }
-      const cid = await addToIpfs(JSON.stringify(metadata)).catch((err) => {
-        console.error(err)
-        return undefined
-      })
+      const addToIpfsRequest: AddToIpfsRequest = {
+        json: JSON.stringify(metadata),
+      }
+      const cid = await axios
+        .post("/api/addToIpfs", addToIpfsRequest)
+        .then((response) => (response.data as AddToIpfsResponse).cid)
+        .catch((err) => {
+          console.error(err)
+          return undefined
+        })
       if (!cid) {
         dismiss()
         toast({

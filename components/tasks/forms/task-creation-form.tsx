@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
 import { TasksContract } from "@/openrd-indexer/contracts/Tasks"
-import { addToIpfs } from "@/openrd-indexer/utils/ipfs"
 import { zodResolver } from "@hookform/resolvers/zod"
 import axios from "axios"
 import { useFieldArray, useForm } from "react-hook-form"
@@ -42,6 +41,7 @@ import {
 import { ERC20AllowanceCheck } from "@/components/web3/erc20-allowance-check"
 import { ERC20BalanceInput } from "@/components/web3/erc20-balance-input"
 import { NativeBalanceInput } from "@/components/web3/native-balance-input"
+import { AddToIpfsRequest, AddToIpfsResponse } from "@/app/api/addToIpfs/route"
 import { TokensRequest, TokensResponse } from "@/app/api/tokens/route"
 
 const formSchema = z.object({
@@ -222,10 +222,16 @@ export function TaskCreationForm() {
         resources: values.resources,
         links: values.links,
       }
-      const cid = await addToIpfs(JSON.stringify(metadata)).catch((err) => {
-        console.error(err)
-        return undefined
-      })
+      const addToIpfsRequest: AddToIpfsRequest = {
+        json: JSON.stringify(metadata),
+      }
+      const cid = await axios
+        .post("/api/addToIpfs", addToIpfsRequest)
+        .then((response) => (response.data as AddToIpfsResponse).cid)
+        .catch((err) => {
+          console.error(err)
+          return undefined
+        })
       if (!cid) {
         dismiss()
         toast({
@@ -397,7 +403,7 @@ export function TaskCreationForm() {
 
       setTimeout(() => {
         push(`/tasks/${walletClient.chain.id}:${taskId}`)
-      }, 2000); 
+      }, 2000)
 
       dismiss()
       dismiss = toast({

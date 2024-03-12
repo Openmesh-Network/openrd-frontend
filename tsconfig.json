@@ -9,7 +9,7 @@
     "incremental": true,
     "esModuleInterop": true,
     "allowSyntheticDefaultImports": true,
-    "module": "esnext",
+    "module": "ESNext",
     "target": "ESNext",
     "moduleResolution": "Bundler",
     "resolveJsonModule": true,
@@ -17,15 +17,15 @@
     "jsx": "preserve",
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./*"],
+      "@/*": ["./*"]
     },
     "plugins": [
       {
-        "name": "next",
-      },
+        "name": "next"
+      }
     ],
-    "strictNullChecks": true,
+    "strictNullChecks": true
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
-  "exclude": ["node_modules", "openrd-indexer"],
+  "exclude": ["node_modules", "openrd-indexer"]
 }

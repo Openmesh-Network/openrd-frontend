@@ -30,20 +30,23 @@ const defaultOptions = {
   disallowedTagsMode: "recursiveEscape",
 } as sanitizeHtml.IOptions
 
-const sanitize = (dirty: string, options?: sanitizeHtml.IOptions) =>
+const sanitize = (dirty: string, options?: sanitizeHtml.IOptions, styleClass?: string) =>
   sanitizeHtml(dirty, { ...defaultOptions, ...options })
 
 const SanitizeHTML = ({
   html,
   options,
+  styleClass,
 }: {
   html: string
   options?: sanitizeHtml.IOptions
+  styleClass?: string,
 }) => (
   <RichTextArea
     value={sanitize(html, options)}
     readOnly={true}
     modules={{ toolbar: false }}
+    styleClass={styleClass}
   />
 )
 

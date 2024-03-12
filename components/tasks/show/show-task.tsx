@@ -446,7 +446,7 @@ export function ShowTask({
               )}
           </TabsList>
           <TabsContent value="description">
-            <SanitizeHTML html={description} />
+            <SanitizeHTML html={description} styleClass="!text-lg" />
           </TabsContent>
           <TabsContent value="general">
             <div className="grid grid-cols-1 space-y-3">

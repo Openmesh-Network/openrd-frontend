@@ -15,10 +15,11 @@ const QuillNoSSRWrapper = dynamic(() => import("react-quill"), {
 export interface RichTextAreaProps extends Omit<ReactQuillProps, "onChange"> {
   value?: string
   onChange?: (value: string) => void
+  styleClass?: string
 }
 
 const RichTextArea = React.forwardRef<HTMLDivElement, RichTextAreaProps>(
-  ({ value, onChange, ...props }, ref) => {
+  ({ value, onChange, styleClass, ...props }, ref) => {
     const modules = {
       toolbar: [
         [{ header: "1" }, { header: "2" }, { font: [] }],
@@ -60,7 +61,7 @@ const RichTextArea = React.forwardRef<HTMLDivElement, RichTextAreaProps>(
     ]
 
     return (
-      <div ref={ref} className="text-sm">
+      <div ref={ref} className={`text-sm ${styleClass}`}>
         <QuillNoSSRWrapper
           modules={modules}
           formats={formats}

@@ -122,6 +122,7 @@ export function ShowTaskSummary({
     : undefined
   const title = indexedMetadata?.title
   const tags = indexedMetadata?.tags ?? []
+  const usdValue = indexerTask?.usdValue ?? 0
   const description =
   directMetadata?.description ??
   indexedMetadata?.description ??
@@ -144,6 +145,7 @@ export function ShowTaskSummary({
               Chain: {chain?.name ?? chainId.toString()}
             </Badge>
             <Badge variant="outline">Task ID: {taskId.toString()}</Badge>
+            <Badge variant="outline">Budget: ${usdValue}</Badge>
             {tags
               .filter((tag) => tag.tag !== undefined)
               .map((tag, i) => (

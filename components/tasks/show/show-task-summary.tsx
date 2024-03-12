@@ -134,8 +134,8 @@ export function ShowTaskSummary({
           <CardTitle>
             {title ?? <Skeleton className="h-6 w-[250px] bg-white" />}
           </CardTitle>
-          <div>
-          <SanitizeHTML html={description} />
+          <div style={{ border: 'none' }}>
+            <SanitizeHTML html={description} />
           </div>
         </CardHeader>
         <CardContent>

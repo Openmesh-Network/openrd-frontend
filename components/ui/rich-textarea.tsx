@@ -6,6 +6,7 @@ import type { ReactQuillProps } from "react-quill"
 
 import { Input } from "./input"
 import './react-quill.css'
+import "react-quill/dist/quill.snow.css"
 
 const QuillNoSSRWrapper = dynamic(() => import("react-quill"), {
   ssr: false,
@@ -63,6 +64,7 @@ const RichTextArea = React.forwardRef<HTMLDivElement, RichTextAreaProps>(
     return (
       <div ref={ref} className={`text-sm ${styleClass}`}>
         <QuillNoSSRWrapper
+          theme="snow"
           modules={modules}
           formats={formats}
           {...props}

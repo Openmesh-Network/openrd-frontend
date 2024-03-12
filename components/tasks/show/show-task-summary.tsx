@@ -131,10 +131,10 @@ export function ShowTaskSummary({
     <Card className={`flex justify-between gap-x-[10px] py-[20px] ${index !== 0 && 'rounded-none'} ${index === 0 && 'rounded-b-none'}`}>
       <div>
         <CardHeader>
-          <CardTitle>
+          <div className="text-lg font-bold">
             {title ?? <Skeleton className="h-6 w-[250px] bg-white" />}
-          </CardTitle>
-          <div style={{ border: 'none' }}>
+          </div>
+          <div className="max-h-[100px] overflow-hidden">
             <SanitizeHTML html={description} />
           </div>
         </CardHeader>

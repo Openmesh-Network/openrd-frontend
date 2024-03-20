@@ -448,7 +448,7 @@ export function ShowTask({
                   <ul>
                     {links.map?.((link, i) => (
                       <li key={i}>
-                        <Link href={link.url} target="_blank">
+                        <Link href={link.url} target="_blank" className="hover:text-[#0354EC]">
                           {link.name ? `${link.name}: ` : ""}
                           {link.url}
                         </Link>
@@ -465,15 +465,15 @@ export function ShowTask({
                   : "Unknown"}
               </span>
               <Link href={manager ? `/profile/${manager}` : undefined}>
-                Manager: {managerTitle ?? "Unknown"}
+                Manager: <span className="hover:text-[#0354EC]">{managerTitle ?? "Unknown"}</span>
               </Link>
               <Link
                 href={disputeManager ? `/profile/${disputeManager}` : undefined}
               >
-                Dispute Manager: {disputeManagerTitle ?? "Unknown"}
+                Dispute Manager: <span className="hover:text-[#0354EC]">{disputeManagerTitle ?? "Unknown"}</span>
               </Link>
               <Link href={creator ? `/profile/${creator}` : undefined}>
-                Creator: {creatorTitle ?? "Unknown"}
+                Creator: <span className="hover:text-[#0354EC]">{creatorTitle ?? "Unknown"}</span>
               </Link>
               <span>
                 State: {state !== undefined ? TaskState[state] : "Unknown"}
@@ -486,7 +486,7 @@ export function ShowTask({
                 }
                 target="_blank"
               >
-                Escrow: {escrow ?? "Unknown"}
+                Escrow: <span className="hover:text-[#0354EC]">{escrow ?? "Unknown"}</span>
               </Link>
               <Separator />
               {nativeBudget !== BigInt(0) && (

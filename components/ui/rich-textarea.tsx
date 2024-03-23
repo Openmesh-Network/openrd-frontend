@@ -7,6 +7,7 @@ import type { ReactQuillProps } from "react-quill"
 import { Input } from "./input"
 import './react-quill.css'
 import "react-quill/dist/quill.snow.css"
+import "react-quill/dist/quill.bubble.css"
 
 const QuillNoSSRWrapper = dynamic(() => import("react-quill"), {
   ssr: false,
@@ -17,10 +18,11 @@ export interface RichTextAreaProps extends Omit<ReactQuillProps, "onChange"> {
   value?: string
   onChange?: (value: string) => void
   styleClass?: string
+  themeSelected?: string
 }
 
 const RichTextArea = React.forwardRef<HTMLDivElement, RichTextAreaProps>(
-  ({ value, onChange, styleClass, ...props }, ref) => {
+  ({ value, onChange, styleClass, themeSelected, ...props }, ref) => {
     const modules = {
       toolbar: [
         [{ header: "1" }, { header: "2" }, { font: [] }],
@@ -64,7 +66,7 @@ const RichTextArea = React.forwardRef<HTMLDivElement, RichTextAreaProps>(
     return (
       <div ref={ref} className={`text-sm ${styleClass}`}>
         <QuillNoSSRWrapper
-          theme="snow"
+          theme={themeSelected ?? "snow"}
           modules={modules}
           formats={formats}
           {...props}

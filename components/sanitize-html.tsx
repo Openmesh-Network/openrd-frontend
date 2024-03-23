@@ -43,6 +43,7 @@ const SanitizeHTML = ({
   styleClass?: string,
 }) => (
   <RichTextArea
+   themeSelected="bubble"
     value={sanitize(html, options)}
     readOnly={true}
     modules={{ toolbar: false }}

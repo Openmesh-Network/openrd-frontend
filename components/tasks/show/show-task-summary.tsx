@@ -112,7 +112,7 @@ export function ShowTaskSummary({
 
   return (
     <Card
-      className={`flex justify-between gap-x-[10px] border-x-0 border-b-[2px] border-t-0 py-[20px] !shadow-none ${index !== 0 && "rounded-none"} ${index === 0 && "rounded-b-none"}`}
+      className={`flex justify-between gap-x-[10px] border-x-0 border-b-2 border-t-0 py-[20px] !shadow-none ${index !== 0 && "rounded-none"} ${index === 0 && "rounded-b-none"}`}
     >
       <div>
         <CardHeader className="!pb-0">
@@ -138,7 +138,7 @@ export function ShowTaskSummary({
           </div>
         </CardContent>
       </div>
-      <CardFooter className="my-auto mr-[80px] flex cursor-pointer items-center rounded-md border-[0.5px] border-[#0354EC] bg-[#fff] !py-[5px] pb-0 text-center text-[#0354EC] hover:bg-[#0354EC] hover:text-[#fff]">
+      <CardFooter className="my-auto mr-[80px] flex cursor-pointer items-center rounded-md border-[0.5px] border-[#0354EC] bg-white !py-[2px] px-[10px] text-center text-[15px] text-[#0354EC] hover:bg-[#0354EC] hover:text-white">
         <Link className="" href={`/tasks/${chainId}:${taskId}`}>
           View task
         </Link>

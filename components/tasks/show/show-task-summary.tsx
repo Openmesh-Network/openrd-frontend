@@ -116,9 +116,11 @@ export function ShowTaskSummary({
     >
       <div>
         <CardHeader className="!pb-0">
-          <div className="text-lg font-bold">
-            {title ?? <Skeleton className="h-6 w-[250px] bg-white" />}
-          </div>
+          <Link className="" href={`/tasks/${chainId}:${taskId}`}>
+            <div className="cursor-pointer text-lg font-bold">
+              {title ?? <Skeleton className="h-6 w-[250px] bg-white" />}
+            </div>
+          </Link>
           <div className="max-h-[100px] overflow-hidden">
             <SanitizeHTML html={description} />
           </div>

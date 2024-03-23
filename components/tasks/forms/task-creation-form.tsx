@@ -15,6 +15,7 @@ import {
 } from "viem"
 import { useAccount, useChainId, usePublicClient, useWalletClient } from "wagmi"
 import { z } from "zod"
+import Image from 'next/image'
 
 import { chains } from "@/config/wagmi-config"
 import { validAddress, validAddressOrEmpty } from "@/lib/regex"
@@ -627,37 +628,42 @@ export function TaskCreationForm() {
           <FormLabel>Links</FormLabel>
           <FormControl>
             <div>
-              {links.map((link, i) => (
-                <ErrorWrapper
-                  key={i}
-                  error={form.formState.errors.links?.at?.(i)}
-                >
-                  <div className="flex gap-x-1">
-                    <Input
-                      placeholder="Name"
-                      value={link.name}
-                      onChange={(change) => {
-                        updateLink(i, { ...link, name: change.target.value })
-                        form.trigger("links")
-                      }}
-                    />
-                    <Input
-                      placeholder="URL"
-                      value={link.url}
-                      onChange={(change) => {
-                        updateLink(i, { ...link, url: change.target.value })
-                        form.trigger("links")
-                      }}
-                    />
-                    <Button onClick={() => removeLink(i)} variant="destructive">
-                      X
-                    </Button>
-                    {form.formState.errors.links && (
-                      <p>{form.formState.errors.links[i]?.message}</p>
-                    )}
-                  </div>
-                </ErrorWrapper>
-              ))}
+              <div className="mb-[10px] grid gap-y-[10px]">
+                {links.map((link, i) => (
+                  <ErrorWrapper
+                    key={i}
+                    error={form.formState.errors.links?.at?.(i)}
+                  >
+                    <div className="flex gap-x-4">
+                      <Input
+                        placeholder="Name"
+                        value={link.name}
+                        onChange={(change) => {
+                          updateLink(i, { ...link, name: change.target.value })
+                          form.trigger("links")
+                        }}
+                      />
+                      <Input
+                        placeholder="URL"
+                        value={link.url}
+                        onChange={(change) => {
+                          updateLink(i, { ...link, url: change.target.value })
+                          form.trigger("links")
+                        }}
+                      />
+                      <Button onClick={() => removeLink(i)} variant="destructive"  className='my-auto h-[25px] w-[45px] p-[2px]'>
+                        <Image
+                          height={20}
+                          width={20}
+                          src={`/images/utils/x.svg`} alt={''}          />
+                      </Button>
+                      {form.formState.errors.links && (
+                        <p>{form.formState.errors.links[i]?.message}</p>
+                      )}
+                    </div>
+                  </ErrorWrapper>
+                ))}
+              </div>
               <Button onClick={() => appendLink({ name: "", url: "" })}>
                 Add link
               </Button>

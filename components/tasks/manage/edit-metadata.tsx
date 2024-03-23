@@ -473,7 +473,7 @@ export function EditMetadata({
                   key={i}
                   error={form.formState.errors.links?.at?.(i)}
                 >
-                  <div className="flex gap-x-1">
+                  <div className="flex gap-x-4">
                     <Input
                       placeholder="Name"
                       value={link.name}

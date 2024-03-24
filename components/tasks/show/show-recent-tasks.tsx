@@ -1,7 +1,7 @@
 /* eslint-disable tailwindcss/no-unnecessary-arbitrary-value */
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 
@@ -11,9 +11,23 @@ export interface TaskIndentifier {
   chainId: number
   taskId: bigint
 }
+interface TaskWithDeadline extends TaskIndentifier {
+  deadline: number;
+}
 
 export function ShowRecentTasks({ taskList }: { taskList: TaskIndentifier[] }) {
   const [showTaskCount, setShowTaskCount] = useState<number>(10)
+  const [orderedTasks, setOrderedTasks] = useState<TaskWithDeadline[]>([]);
+  const [orderTasksByDeadlineAsc, setOrderTasksByDeadlineAsc] = useState<boolean>(false);
+
+  function handleSetOrderTasksByDeadlineAsc() {
+    const sortedTasks = [...orderedTasks].sort((a, b) => {
+      return orderTasksByDeadlineAsc ? a.deadline - b.deadline : b.deadline - a.deadline;
+    });
+
+    setOrderTasksByDeadlineAsc(!orderTasksByDeadlineAsc);
+    setOrderedTasks(sortedTasks);
+  }
 
   return (
     <div>
@@ -21,10 +35,6 @@ export function ShowRecentTasks({ taskList }: { taskList: TaskIndentifier[] }) {
         <div className="w-[45%]">
           <p
             onClick={() => {
-              // console.log('as tasks')
-              // console.log(finalTasks)
-              // console.log('filtered tasks')
-              // console.log(filteredTasks)
             }}
             className=""
           >
@@ -33,11 +43,6 @@ export function ShowRecentTasks({ taskList }: { taskList: TaskIndentifier[] }) {
         </div>
         <div className="flex w-[20%] items-center">
           <p className="pr-[10px]">Budget</p>
-            {/* <img
-              src="/images/task/vectorDown.svg"
-              alt="image"
-              className={`w-[14px]`}
-            /> */}
           <svg
             width="11"
             className={`w-[10px] cursor-pointer lg:w-[14px]`}
@@ -67,6 +72,7 @@ export function ShowRecentTasks({ taskList }: { taskList: TaskIndentifier[] }) {
           <svg
             width="11"
             height="7"
+            onClick={handleSetOrderTasksByDeadlineAsc}
             className={`w-[10px] cursor-pointer lg:w-[14px]`}
             viewBox="0 0 11 7"
             fill="none"

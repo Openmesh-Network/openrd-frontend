@@ -1,3 +1,4 @@
+/* eslint-disable tailwindcss/no-unnecessary-arbitrary-value */
 "use client"
 
 import { useEffect, useState } from "react"
@@ -16,6 +17,7 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { SanitizeHTML } from "@/components/sanitize-html"
 
 import { ShowTaskMetadata } from "./show-task"
+import { daysUntil, timestampToDateFormatted } from "@/lib/general-functions"
 
 export function ShowTaskSummary({
   chainId,
@@ -109,42 +111,50 @@ export function ShowTaskSummary({
     directMetadata?.description ??
     indexedMetadata?.description ??
     "No description was provided."
+  const deadline = blockchainTask?.deadline ?? indexerTask?.deadline
 
   return (
     <Card
-      className={`flex justify-between gap-x-[10px] border-x-0 border-b-2 border-t-0 py-[20px] !shadow-none ${index !== 0 && "rounded-none"} ${index === 0 && "rounded-b-none"}`}
+      className={`flex w-full justify-between gap-x-[10px] border-x-0 border-b-2 border-t-0 py-[20px] !shadow-none ${index !== 0 && "rounded-none"} ${index === 0 && "rounded-b-none"}`}
     >
-      <div>
-        <CardHeader className="!pb-0">
-          <Link className="" href={`/tasks/${chainId}:${taskId}`}>
-            <div className="cursor-pointer text-lg font-bold">
-              {title ?? <Skeleton className="h-6 w-[250px] bg-white" />}
+      <div className="w-full flex px-[25px]">
+        <div className="w-[50%]">
+          <CardHeader className="!pb-0">
+            <Link className="" href={`/tasks/${chainId}:${taskId}`}>
+              <div className="cursor-pointer text-lg font-bold">
+                {title ?? <Skeleton className="h-6 w-[250px] bg-white" />}
+              </div>
+            </Link>
+            <div className="max-h-[100px] overflow-hidden">
+              <SanitizeHTML html={description} />
             </div>
-          </Link>
-          <div className="max-h-[100px] overflow-hidden">
-            <SanitizeHTML html={description} />
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="space-x-1">
-            <Badge variant="outline">
-              Chain: {chain?.name ?? chainId.toString()}
-            </Badge>
-            <Badge variant="outline">Task ID: {taskId.toString()}</Badge>
-            <Badge variant="outline">Budget: ${usdValue}</Badge>
-            {tags
-              .filter((tag) => tag.tag !== undefined)
-              .map((tag, i) => (
-                <Badge key={i}>{tag.tag}</Badge>
-              ))}
-          </div>
-        </CardContent>
+          </CardHeader>
+          <CardContent className="">
+            <div className="space-x-1">
+              <Badge variant="outline">
+                Chain: {chain?.name ?? chainId.toString()}
+              </Badge>
+              <Badge variant="outline">Task ID: {taskId.toString()}</Badge>
+              {tags
+                .filter((tag) => tag.tag !== undefined)
+                .map((tag, i) => (
+                  <Badge key={i}>{tag.tag}</Badge>
+                ))}
+            </div>
+          </CardContent>
+        </div>
+        <div className="w-[22%] pt-8">
+         ${usdValue}
+        </div>
+        <div className="w-[10%] pt-8">
+         {daysUntil(String(deadline))}
+        </div>
       </div>
-      <CardFooter className="my-auto mr-[80px] flex cursor-pointer items-center rounded-md border-[0.5px] border-[#0354EC] bg-white !py-[2px] px-[10px] text-center text-[15px] text-[#0354EC] hover:bg-[#0354EC] hover:text-white">
-        <Link className="" href={`/tasks/${chainId}:${taskId}`}>
+      <a className="my-auto" href={`/tasks/${chainId}:${taskId}`}>
+        <CardFooter className="my-auto mr-4 w-fit cursor-pointer whitespace-nowrap rounded-md border-[0.5px] border-[#0354EC] bg-transparent !py-[2px] px-[10px] text-center text-[15px] text-[#0354EC] hover:bg-[#0354EC] hover:text-white">
           View task
-        </Link>
-      </CardFooter>
+        </CardFooter>
+      </a>
     </Card>
   )
 }

@@ -40,6 +40,22 @@ export function timestampToDateFormatted(timestamp: string) {
     return `${day || ''} ${month || ''} ${year || ''}`
   }
 
+export function daysUntil(timestamp: string) {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Reset time to start of the day for accurate comparison
+    const targetDate = new Date(Number(timestamp) * 1000);
+    const timeDifference = targetDate.getTime() - today.getTime();
+    const daysDifference = timeDifference / (1000 * 3600 * 24);
+
+    if (daysDifference > 0) {
+        return `${Math.floor(daysDifference)} days left`;
+    } else if (daysDifference === 0) {
+        return "today";
+    } else {
+        return "ended";
+    }
+}
+
 export function statusToString(status: string) {
     console.log(`the status here ${status}`);
 

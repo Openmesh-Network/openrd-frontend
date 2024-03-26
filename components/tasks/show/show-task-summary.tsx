@@ -125,8 +125,8 @@ export function ShowTaskSummary({
     <Card
       className={`flex w-full justify-between gap-x-[10px] border-x-0 border-b-2 border-t-0 py-[20px] !shadow-none ${index !== 0 && "rounded-none"} ${index === 0 && "rounded-b-none"}`}
     >
-      <div className="w-full flex px-[25px]">
-        <div className="w-[50%]">
+      <div className="flex w-full px-[25px]">
+        <div className="w-[60%] lg:w-[55%] xl:w-[50%]">
           <CardHeader className="!pb-0">
             <Link className="" href={`/tasks/${chainId}:${taskId}`}>
               <div className="cursor-pointer text-lg font-bold">
@@ -154,7 +154,7 @@ export function ShowTaskSummary({
         <div className="w-[22%] pt-8">
          ${usdValue}
         </div>
-        <div className="w-[10%] pt-8">
+        <div className="w-[16%] pt-8 lg:w-[13%] xl:w-[10%]">
          {daysUntil(String(deadline))}
         </div>
       </div>

@@ -105,7 +105,7 @@ export function ShowTaskSummary({
 
   useEffect(() => {
     if (blockchainTask && onTaskInfo) {
-      onTaskInfo({ chainId, taskId, deadline: Number(blockchainTask.deadline) });
+      onTaskInfo({ chainId, taskId, deadline: Number(blockchainTask.deadline), budget: indexerTask?.usdValue ?? 0});
     }
   }, [blockchainTask, chainId, taskId]);
 

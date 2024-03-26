@@ -6,6 +6,10 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 
 import { ShowTaskSummary } from "./show-task-summary"
+import { zodResolver } from "@hookform/resolvers/zod"
+import { useFieldArray, useForm } from "react-hook-form"
+import { z } from "zod"
+import { defaultFilter, formSchema } from "../filter/tasks-filter"
 
 export interface TaskIndentifier {
   chainId: number
@@ -17,17 +21,36 @@ interface TaskWithDeadline extends TaskIndentifier {
 
 export function ShowRecentTasks({ taskList }: { taskList: TaskIndentifier[] }) {
   const [showTaskCount, setShowTaskCount] = useState<number>(10)
-  const [orderedTasks, setOrderedTasks] = useState<TaskWithDeadline[]>([]);
+  const [metadataTasks, setMetadataTasks] = useState<TaskWithDeadline[]>([]);
+  const [orderedTasksFinal, setOrderedTasksFinal] = useState<TaskIndentifier[]>(taskList);
   const [orderTasksByDeadlineAsc, setOrderTasksByDeadlineAsc] = useState<boolean>(false);
 
-  function handleSetOrderTasksByDeadlineAsc() {
-    const sortedTasks = [...orderedTasks].sort((a, b) => {
+  const handleTaskInfo = (taskInfo: TaskWithDeadline) => {
+    setMetadataTasks((currentTasks) => {
+      const index = currentTasks.findIndex(t => t.taskId === taskInfo.taskId);
+      if (index >= 0) {
+        currentTasks[index] = taskInfo;
+      } else {
+        currentTasks.push(taskInfo);
+      }
+      return [...currentTasks];
+    });
+  };
+
+
+  function handleOrderTaskByDeadline() {
+    const sortedTasks = [...metadataTasks].sort((a, b) => {
       return orderTasksByDeadlineAsc ? a.deadline - b.deadline : b.deadline - a.deadline;
     });
-
+    
+    setOrderedTasksFinal(sortedTasks)
     setOrderTasksByDeadlineAsc(!orderTasksByDeadlineAsc);
-    setOrderedTasks(sortedTasks);
   }
+
+  useEffect(() => {
+    setOrderedTasksFinal(taskList);
+  }, [taskList]);
+
 
   return (
     <div>
@@ -71,9 +94,9 @@ export function ShowRecentTasks({ taskList }: { taskList: TaskIndentifier[] }) {
           <p className="pr-[10px]">Ends</p>
           <svg
             width="11"
+            onClick={handleOrderTaskByDeadline}
             height="7"
-            onClick={handleSetOrderTasksByDeadlineAsc}
-            className={`w-[10px] cursor-pointer lg:w-[14px]`}
+            className={`w-[10px] cursor-pointer lg:w-[14px] ${orderTasksByDeadlineAsc && 'rotate-180'}`}
             viewBox="0 0 11 7"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -95,8 +118,11 @@ export function ShowRecentTasks({ taskList }: { taskList: TaskIndentifier[] }) {
           </svg>
         </div>
       </div>
-      {taskList.slice(0, showTaskCount).map((task, i) => (
-        <ShowTaskSummary key={i} {...task} index={i} />
+      {orderedTasksFinal.slice(0, showTaskCount).map((task, i) => (
+        <ShowTaskSummary key={`${task.taskId}-${i}`} {...task} index={i} onTaskInfo={(value) => {
+          console.log(value)
+          handleTaskInfo(value)
+        }} />
       ))}
       {showTaskCount < taskList.length && (
         <Button

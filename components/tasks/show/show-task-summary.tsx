@@ -23,10 +23,12 @@ export function ShowTaskSummary({
   chainId,
   taskId,
   index,
+  onTaskInfo,
 }: {
   chainId: number
   taskId: bigint
   index: number
+  onTaskInfo?: (taskInfo: any) => void
 }) {
   const chain = chains.find((c) => c.id === chainId)
   const publicClient = usePublicClient({ chainId: chainId })
@@ -100,6 +102,12 @@ export function ShowTaskSummary({
       setIndexerTask(undefined)
     })
   }, [chainId, taskId])
+
+  useEffect(() => {
+    if (blockchainTask && onTaskInfo) {
+      onTaskInfo({ chainId, taskId, deadline: Number(blockchainTask.deadline) });
+    }
+  }, [blockchainTask, chainId, taskId]);
 
   const indexedMetadata = indexerTask?.cachedMetadata
     ? (JSON.parse(indexerTask?.cachedMetadata) as ShowTaskMetadata)

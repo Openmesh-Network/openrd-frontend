@@ -120,7 +120,7 @@ function applyType(
   return parsedFilter
 }
 
-const formSchema = z.object({
+export const formSchema = z.object({
   filter: z
     .object({
       property: z.nativeEnum(FilterProperty),
@@ -135,17 +135,20 @@ const formSchema = z.object({
     .array(),
 })
 
+// Temporarly also show testnets
+const mainnets = chains /*.filter((c) => !c.testnet)*/
+  .map((c) => c.id)
+
+export const defaultFilter = [
+  { property: FilterProperty.ChainId, value: { oneOf: mainnets.join(",") } },
+]
+
 export function TasksFilter({
   onFilterApplied,
 }: {
   onFilterApplied: (filtered: FilterTasksReturn) => void
 }) {
-  // Temporarly also show testnets
-  const mainnets = chains /*.filter((c) => !c.testnet)*/
-    .map((c) => c.id)
-  const defaultFilter = [
-    { property: FilterProperty.ChainId, value: { oneOf: mainnets.join(",") } },
-  ]
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),

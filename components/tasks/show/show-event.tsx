@@ -88,10 +88,10 @@ export function ShowEvent({
   const timestamp = block ? new Date(Number(block.timestamp) * 1000) : undefined
 
   return (
-    <Card className={`flex justify-between gap-x-[10px] py-[20px] ${index !== 0 && 'rounded-none'} ${index === 0 && 'rounded-b-none'}`}>
+    <Card className={`gap-x-[10px] max-w-[250px] md:max-w-full py-[10px] md:flex md:justify-between md:py-[20px] ${index !== 0 && 'rounded-none'} ${index === 0 && 'rounded-b-none'}`}>
       <CardHeader>
         <CardTitle>
-          {title ?? <Skeleton className="h-6 w-[250px] bg-white" />}
+          {title ?? <Skeleton className="bg-white md:h-6 md:w-[250px]" />}
         </CardTitle>
         <CardDescription>
           {!hideDescription && sender && timestamp
@@ -99,7 +99,7 @@ export function ShowEvent({
             : ""}
         </CardDescription>
       </CardHeader>
-      <CardFooter className="mr-[80px] grid pb-0 text-center items-center">
+      <CardFooter className="mb-2 grid items-center gap-y-2 pb-0 text-center text-sm md:mb-0 md:mr-[80px] md:text-base">
         {viewTask && (
           <Link
           className="flex cursor-pointer items-center justify-center rounded-md border-[0.5px] border-[#87868645] !py-[5px] px-[8px] text-center hover:bg-[#a5a5a511] dark:hover:bg-[#4747472b]"
@@ -113,7 +113,7 @@ export function ShowEvent({
           </Link>
         )}
         <Link
-                  className="flex cursor-pointer items-center justify-center rounded-md border-[0.5px] border-[#87868645] !py-[5px] px-[8px] text-center hover:bg-[#a5a5a511] dark:hover:bg-[#4747472b]"
+          className="flex cursor-pointer items-center justify-center rounded-md border-[0.5px] border-[#87868645] !py-[5px] px-[8px] text-center hover:bg-[#a5a5a511] dark:hover:bg-[#4747472b]"
           href={
             chain && event
               ? `${chain.blockExplorers.default.url}/tx/${event.transactionHash}`

@@ -20,7 +20,7 @@ export function ShowRecentEvents() {
 
   return (
     <div>
-      <div className="mb-[10px] mt-[5px] text-lg">Latest updates:</div>
+      <div className="mb-[10px] mt-[5px] md:text-lg">Latest updates:</div>
       {Array.from({ length: eventCount }, (value, index) => index)
         .slice(-5)
         .reverse()

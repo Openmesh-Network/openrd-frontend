@@ -11,17 +11,17 @@ import { UniqueInteractors } from "@/components/tasks/show/unique-interactors"
 export default function IndexPage() {
   return (
     <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
-      <div className="flex justify-between gap-x-[20px]">
+      <div className="grid gap-[20px] md:flex md:justify-between">
         <div className="grid gap-6">
           <div className="flex max-w-[980px] flex-col items-start gap-2">
             <h1 className="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
               {siteConfig.name}
             </h1>
-            <p className="max-w-[700px] text-lg text-muted-foreground">
+            <p className="max-w-[700px] text-base text-muted-foreground md:text-lg">
               {siteConfig.description}
             </p>
           </div>
-          <div className="flex gap-4">
+          <div className="grid w-full gap-4 md:flex md:w-fit">
             <Link
               href={siteConfig.links.guide}
               target="_blank"
@@ -50,7 +50,7 @@ export default function IndexPage() {
         </div>
         <TotalBudgetValue />
       </div>
-      <div className="mb-[15px] mt-[25px] flex gap-x-[45px]">
+      <div className="mb-[15px] mt-[25px] hidden gap-x-[45px] lg:flex">
         <UniqueInteractors />
         <TaskCounter state={TaskState.Open} />
         <TaskCounter state={TaskState.Taken} />

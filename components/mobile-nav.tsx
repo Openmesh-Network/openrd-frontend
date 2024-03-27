@@ -50,7 +50,7 @@ export function MobileNav({ items }: MainNavProps) {
         </button>
         <nav
             id="navbarCollapse"
-            className={`navbar border-body-color/50 dark:border-body-color/20 dark:bg-dark absolute right-0 z-50 w-full rounded border-[.5px] bg-white px-6 py-4 duration-300 lg:visible lg:static lg:mr-[95px] lg:w-auto lg:border-none lg:!bg-transparent lg:p-0 lg:opacity-100 ${
+            className={`navbar border-body-color/50 dark:border-body-color/20 dark:bg-dark absolute right-0 z-50 w-full rounded border-[.5px] bg-white px-6 py-4 duration-300 dark:bg-[#000] lg:visible lg:static lg:mr-[95px] lg:w-auto lg:border-none lg:!bg-transparent lg:p-0 lg:opacity-100 ${
             navbarOpen
                 ? 'visibility top-full opacity-100'
                 : 'invisible top-[120%] opacity-0'
@@ -77,7 +77,9 @@ export function MobileNav({ items }: MainNavProps) {
                 <li className="mt-2">
                     <NotificationsToggle />
                     <ThemeToggle />
-                    <w3m-button />
+                    <div className="mt-2">
+                        <w3m-button />
+                    </div>
                 </li>
             </ul>
     </nav>

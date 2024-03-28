@@ -219,7 +219,7 @@ export function ShowTask({
 
   return (
     <div>
-      <div className="flex justify-between gap-x-[20px]">
+      <div className="md:flex md:justify-between gap-x-[20px]">
         <div>
           <div className="flex max-w-[980px] flex-col items-start gap-2">
             <h1 className="text-3xl font-bold leading-tight tracking-tighter md:text-2xl">
@@ -265,7 +265,7 @@ export function ShowTask({
                 </span>
               </div>
             </div>
-            <div className="mb-[5px] flex text-[12px] font-medium text-grey dark:text-light lg:text-[16px]">
+            <div className="mb-[5px] md:flex text-[12px] font-medium text-grey dark:text-light lg:text-[16px]">
               <div className="mr-[50px] flex">
                 <svg
                   className="mr-[10px] size-[22px]"
@@ -317,7 +317,7 @@ export function ShowTask({
           </div>
         </div>
         <div className="w-full text-grey dark:text-light lg:w-[163px]">
-          <div className="mt-[25px] text-[12px] font-bold lg:mt-0 lg:text-[16px]">
+          <div className=" flex md:grid items-center gap-x-4 md:mt-[25px] text-[12px] font-bold lg:mt-0 lg:text-[16px]">
             <div className="flex !leading-[150%]">Status :</div>
             <div
               className={`${statusToColor(String(state))} mt-[6px] flex items-center gap-x-[3px]`}
@@ -347,7 +347,7 @@ export function ShowTask({
             </p>
           </div>
           {state === TaskState.Open && (
-            <div className="mt-[25px] ">
+            <div className="mt-[25px] mb-6 md:mb-0">
               <a
                 onClick={() => {
                   setActiveTab("applications")
@@ -404,7 +404,7 @@ export function ShowTask({
           value={activeTab}
           onValueChange={setActiveTab}
         >
-          <TabsList>
+          <TabsList className="max-w-[250px] !overflow-auto md:max-w-full">
             <TabsTrigger value="description">Description</TabsTrigger>
             <TabsTrigger value="general">General info</TabsTrigger>
             <TabsTrigger value="applications">Applications</TabsTrigger>

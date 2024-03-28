@@ -473,7 +473,7 @@ export function ShowApplication({
   }, [])
 
   return (
-    <Card className="!rounded-none !border-0 !border-b-[2px] !shadow-none">
+    <Card className="!rounded-none !border-0 !border-b-2 !shadow-none">
       <CardHeader>
         <CardTitle className="flex space-x-2">
           {/* Would be cool to add a hover effect here to show stats of the person (completion rate etc.) */}

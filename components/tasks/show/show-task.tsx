@@ -219,7 +219,7 @@ export function ShowTask({
 
   return (
     <div>
-      <div className="md:flex md:justify-between gap-x-[20px]">
+      <div className="gap-x-[20px] md:flex md:justify-between">
         <div>
           <div className="flex max-w-[980px] flex-col items-start gap-2">
             <h1 className="text-3xl font-bold leading-tight tracking-tighter md:text-2xl">
@@ -265,7 +265,7 @@ export function ShowTask({
                 </span>
               </div>
             </div>
-            <div className="mb-[5px] md:flex text-[12px] font-medium text-grey dark:text-light lg:text-[16px]">
+            <div className="mb-[5px] text-[12px] font-medium text-grey dark:text-light md:flex lg:text-[16px]">
               <div className="mr-[50px] flex">
                 <svg
                   className="mr-[10px] size-[22px]"
@@ -317,7 +317,7 @@ export function ShowTask({
           </div>
         </div>
         <div className="w-full text-grey dark:text-light lg:w-[163px]">
-          <div className=" flex md:grid items-center gap-x-4 md:mt-[25px] text-[12px] font-bold lg:mt-0 lg:text-[16px]">
+          <div className=" flex items-center gap-x-4 text-[12px] font-bold md:mt-[25px] md:grid lg:mt-0 lg:text-[16px]">
             <div className="flex !leading-[150%]">Status :</div>
             <div
               className={`${statusToColor(String(state))} mt-[6px] flex items-center gap-x-[3px]`}
@@ -347,7 +347,7 @@ export function ShowTask({
             </p>
           </div>
           {state === TaskState.Open && (
-            <div className="mt-[25px] mb-6 md:mb-0">
+            <div className="mb-6 mt-[25px] md:mb-0">
               <a
                 onClick={() => {
                   setActiveTab("applications")
@@ -435,7 +435,7 @@ export function ShowTask({
             <SanitizeHTML html={description} styleClass="!text-lg" />
           </TabsContent>
           <TabsContent value="general">
-            <div className="grid grid-cols-1 space-y-3">
+            <div className="grid grid-cols-1 space-y-3 text-xs md:text-base">
               {projectSize !== undefined && projectSize !== 0 && (
                 <span>Estimated amount of (combined) hours: {projectSize}</span>
               )}
@@ -465,15 +465,15 @@ export function ShowTask({
                   : "Unknown"}
               </span>
               <Link href={manager ? `/profile/${manager}` : undefined}>
-                Manager: <span className="hover:text-[#0354EC]">{managerTitle ?? "Unknown"}</span>
+                Manager: <span className="break-words hover:text-[#0354EC]">{managerTitle ?? "Unknown"}</span>
               </Link>
               <Link
                 href={disputeManager ? `/profile/${disputeManager}` : undefined}
               >
-                Dispute Manager: <span className="hover:text-[#0354EC]">{disputeManagerTitle ?? "Unknown"}</span>
+                Dispute Manager: <span className="break-words hover:text-[#0354EC]">{disputeManagerTitle ?? "Unknown"}</span>
               </Link>
               <Link href={creator ? `/profile/${creator}` : undefined}>
-                Creator: <span className="hover:text-[#0354EC]">{creatorTitle ?? "Unknown"}</span>
+                Creator: <span className="break-words hover:text-[#0354EC]">{creatorTitle ?? "Unknown"}</span>
               </Link>
               <span>
                 State: {state !== undefined ? TaskState[state] : "Unknown"}
@@ -486,7 +486,7 @@ export function ShowTask({
                 }
                 target="_blank"
               >
-                Escrow: <span className="hover:text-[#0354EC]">{escrow ?? "Unknown"}</span>
+                Escrow: <span className="break-words hover:text-[#0354EC]">{escrow ?? "Unknown"}</span>
               </Link>
               <Separator />
               {nativeBudget !== BigInt(0) && (

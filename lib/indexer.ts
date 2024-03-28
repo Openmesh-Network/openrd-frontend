@@ -50,6 +50,8 @@ export async function getUser(address: Address): Promise<UserReturn> {
 export async function filterTasks(
   filter: ObjectFilter
 ): Promise<FilterTasksReturn> {
+  console.log('the filter received')
+  console.log(filter)
   const res = await axios.post(
     `${backendBaseUrl}/filterTasks/`,
     JSON.parse(JSON.stringify(filter, replacer))

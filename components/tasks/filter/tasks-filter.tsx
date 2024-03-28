@@ -2,7 +2,7 @@
 
 import Image from 'next/image'
 
-import { useEffect } from "react"
+import { useEffect, useState, ChangeEvent } from "react"
 import { Filter, ObjectFilter } from "@/openrd-indexer/api/filter"
 import { FilterTasksReturn } from "@/openrd-indexer/api/return-types"
 import { parseBigInt } from "@/openrd-indexer/utils/parseBigInt"
@@ -149,6 +149,24 @@ export function TasksFilter({
   onFilterApplied: (filtered: FilterTasksReturn) => void
 }) {
 
+  const [tasksSearchBar, setTasksSearchBar] = useState('')
+
+
+  const handleSearchBarInput = (event: ChangeEvent<HTMLInputElement>) => {
+    const input = event.target
+    const value = input.value
+
+    if (tasksSearchBar.length + value.length > 100) {
+      return
+    }
+
+    setTasksSearchBar(value)
+
+    if (value === '') {
+      onSubmit(form.getValues()).catch(console.error)
+    }
+  }
+
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -179,6 +197,36 @@ export function TasksFilter({
 
     getFilteredTasks().catch(console.error)
   }
+  
+  async function searchBarFilter(value: string) {
+    const getFilteredTasks = async () => {
+      const filteredTasks = await filterTasks(
+      {
+        "cachedMetadata": {
+          "oneOf": [
+            {
+              "objectFilter": {
+                "title": {
+                  "includes": value
+                }
+              }
+            },
+            {
+              "objectFilter": {
+                "description": {
+                  "includes": value
+                }
+              }
+            },
+          ]
+        }
+    }
+      )
+      onFilterApplied(filteredTasks)
+    }
+
+    getFilteredTasks().catch(console.error)
+  }
 
   useEffect(() => {
     // Initial get tasks (with just default filter applied)
@@ -198,6 +246,18 @@ export function TasksFilter({
   return (
     <Accordion type="single" collapsible>
       <AccordionItem value="item-1">
+        <input
+          type="text"
+          onInput={handleSearchBarInput}
+          onKeyPress={(e) => {
+            if (e.key === 'Enter') {
+              searchBarFilter(tasksSearchBar)
+            }
+          }}
+          value={tasksSearchBar}
+          placeholder="Search tasks, projects"
+          className="h-[35px] mb-8 w-full rounded-[8px] border-[0.7px] border-[#0085FF] bg-white px-5 py-[12px] text-[14px] font-light text-[#000000] placeholder-[#9b9b9b] outline-none focus:border-primary dark:bg-opacity-10 md:h-[44px] md:w-[600px] md:text-[16px]"
+        />
         <AccordionTrigger className="text-xl">Filter tasks</AccordionTrigger>
         <AccordionContent>
           <Form {...form}>

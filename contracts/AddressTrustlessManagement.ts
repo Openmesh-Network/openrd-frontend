@@ -1,25 +1,11 @@
-export const TrustlessManagementContract = {
+export const AddressTrustlessManagementContract = {
+  address: "0xDE87dC6C365dD751e650AAe2f2f6A7a599aed58E",
   abi: [
-    {
-      type: "constructor",
-      inputs: [
-        {
-          name: "_tagManager",
-          type: "address",
-          internalType: "contract ITagManager",
-        },
-      ],
-      stateMutability: "nonpayable",
-    },
     {
       type: "function",
       name: "asDAO",
       inputs: [
-        {
-          name: "_dao",
-          type: "address",
-          internalType: "contract IDAO",
-        },
+        { name: "_dao", type: "address", internalType: "contract IDAO" },
         { name: "_role", type: "uint256", internalType: "uint256" },
         {
           name: "_actions",
@@ -31,18 +17,10 @@ export const TrustlessManagementContract = {
             { name: "data", type: "bytes", internalType: "bytes" },
           ],
         },
-        {
-          name: "_failureMap",
-          type: "uint256",
-          internalType: "uint256",
-        },
+        { name: "_failureMap", type: "uint256", internalType: "uint256" },
       ],
       outputs: [
-        {
-          name: "returnValues",
-          type: "bytes[]",
-          internalType: "bytes[]",
-        },
+        { name: "returnValues", type: "bytes[]", internalType: "bytes[]" },
         { name: "failureMap", type: "uint256", internalType: "uint256" },
       ],
       stateMutability: "nonpayable",
@@ -51,11 +29,7 @@ export const TrustlessManagementContract = {
       type: "function",
       name: "changeFullAccess",
       inputs: [
-        {
-          name: "_dao",
-          type: "address",
-          internalType: "contract IDAO",
-        },
+        { name: "_dao", type: "address", internalType: "contract IDAO" },
         { name: "_role", type: "uint256", internalType: "uint256" },
         {
           name: "_permissionChecker",
@@ -70,18 +44,10 @@ export const TrustlessManagementContract = {
       type: "function",
       name: "changeFunctionAccess",
       inputs: [
-        {
-          name: "_dao",
-          type: "address",
-          internalType: "contract IDAO",
-        },
+        { name: "_dao", type: "address", internalType: "contract IDAO" },
         { name: "_role", type: "uint256", internalType: "uint256" },
         { name: "_zone", type: "address", internalType: "address" },
-        {
-          name: "_functionSelector",
-          type: "bytes4",
-          internalType: "bytes4",
-        },
+        { name: "_functionSelector", type: "bytes4", internalType: "bytes4" },
         {
           name: "_permissionChecker",
           type: "address",
@@ -95,18 +61,10 @@ export const TrustlessManagementContract = {
       type: "function",
       name: "changeFunctionBlacklist",
       inputs: [
-        {
-          name: "_dao",
-          type: "address",
-          internalType: "contract IDAO",
-        },
+        { name: "_dao", type: "address", internalType: "contract IDAO" },
         { name: "_role", type: "uint256", internalType: "uint256" },
         { name: "_zone", type: "address", internalType: "address" },
-        {
-          name: "_functionSelector",
-          type: "bytes4",
-          internalType: "bytes4",
-        },
+        { name: "_functionSelector", type: "bytes4", internalType: "bytes4" },
         {
           name: "_permissionChecker",
           type: "address",
@@ -120,11 +78,7 @@ export const TrustlessManagementContract = {
       type: "function",
       name: "changeZoneAccess",
       inputs: [
-        {
-          name: "_dao",
-          type: "address",
-          internalType: "contract IDAO",
-        },
+        { name: "_dao", type: "address", internalType: "contract IDAO" },
         { name: "_role", type: "uint256", internalType: "uint256" },
         { name: "_zone", type: "address", internalType: "address" },
         {
@@ -140,11 +94,7 @@ export const TrustlessManagementContract = {
       type: "function",
       name: "changeZoneBlacklist",
       inputs: [
-        {
-          name: "_dao",
-          type: "address",
-          internalType: "contract IDAO",
-        },
+        { name: "_dao", type: "address", internalType: "contract IDAO" },
         { name: "_role", type: "uint256", internalType: "uint256" },
         { name: "_zone", type: "address", internalType: "address" },
         {
@@ -161,20 +111,16 @@ export const TrustlessManagementContract = {
       name: "hasRole",
       inputs: [
         { name: "_account", type: "address", internalType: "address" },
-        { name: "_tag", type: "uint256", internalType: "uint256" },
+        { name: "_address", type: "uint256", internalType: "uint256" },
       ],
       outputs: [{ name: "", type: "bool", internalType: "bool" }],
-      stateMutability: "view",
+      stateMutability: "pure",
     },
     {
       type: "function",
       name: "isAllowed",
       inputs: [
-        {
-          name: "_dao",
-          type: "address",
-          internalType: "contract IDAO",
-        },
+        { name: "_dao", type: "address", internalType: "contract IDAO" },
         { name: "_role", type: "uint256", internalType: "uint256" },
         {
           name: "_actions",
@@ -201,11 +147,7 @@ export const TrustlessManagementContract = {
       type: "function",
       name: "setAdmin",
       inputs: [
-        {
-          name: "_dao",
-          type: "address",
-          internalType: "contract IDAO",
-        },
+        { name: "_dao", type: "address", internalType: "contract IDAO" },
         { name: "_admin", type: "address", internalType: "address" },
       ],
       outputs: [],

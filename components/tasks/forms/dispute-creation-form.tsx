@@ -1,18 +1,21 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { AddressTrustlessManagementContract } from "@/contracts/AddressTrustlessManagement"
 import { DAOContract } from "@/contracts/DAOContract"
-import { TrustlessManagementContract } from "@/contracts/TrustlessManagement"
+import { PessimisticActionsContract } from "@/contracts/PessimisticActions"
 import { TasksContract } from "@/openrd-indexer/contracts/Tasks"
 import { TasksDisputesContract } from "@/openrd-indexer/contracts/TasksDisputes"
 import { Task } from "@/openrd-indexer/types/tasks"
-import { addToIpfs } from "@/openrd-indexer/utils/ipfs"
 import { zodResolver } from "@hookform/resolvers/zod"
+import axios from "axios"
 import { useForm } from "react-hook-form"
 import {
   BaseError,
   ContractFunctionRevertedError,
   decodeEventLog,
+  decodeFunctionData,
+  formatUnits,
   toHex,
 } from "viem"
 import {
@@ -43,7 +46,6 @@ import { Textarea } from "@/components/ui/textarea"
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from "@/components/ui/use-toast"
 import { AddToIpfsRequest, AddToIpfsResponse } from "@/app/api/addToIpfs/route"
-import axios from "axios"
 
 const formSchema = z.object({
   title: z.string().min(1, "Title cannot be empty."),
@@ -75,6 +77,9 @@ export function DipsuteCreationForm({
   const { data: walletClient } = useWalletClient()
   const publicClient = usePublicClient()
   const { toast } = useToast()
+  const nativeCurrency =
+    chains.find((c) => c.id === chainId)?.nativeCurrency ??
+    chains[0].nativeCurrency
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -97,11 +102,13 @@ export function DipsuteCreationForm({
       const daoDisputeCost = await publicClient.readContract({
         abi: TasksDisputesContract.abi,
         address: TasksDisputesContract.address,
-        functionName: "getDisputeCost",
+        functionName: "getCost",
         args: [task.disputeManager],
       })
       setDisputeCost(daoDisputeCost)
     }
+
+    getDisputeCost().catch(console.error)
   }, [publicClient, task.disputeManager])
 
   const [submitting, setSubmitting] = useState<boolean>(false)
@@ -187,12 +194,34 @@ export function DipsuteCreationForm({
         })
         return
       }
+      // Assumes default dispute installation
+      const managementInfo = {
+        manager: AddressTrustlessManagementContract.address,
+        role: BigInt(TasksDisputesContract.address),
+        trustlessActions: PessimisticActionsContract.address,
+      }
+      const trustlessActionsInfo = {
+        manager: AddressTrustlessManagementContract.address,
+        role: BigInt(PessimisticActionsContract.address),
+      }
+      const disputeInfo = {
+        taskId: taskId,
+        partialNativeReward: executorApplication.nativeReward.map(
+          (reward) =>
+            (reward.amount * BigInt(values.rewardPercentage)) / BigInt(100)
+        ),
+        partialReward: executorApplication.reward.map(
+          (reward) =>
+            (reward.amount * BigInt(values.rewardPercentage)) / BigInt(100)
+        ),
+      }
       const transactionRequest = await publicClient
         .simulateContract({
           account: walletClient.account.address,
           abi: [
             ...TasksDisputesContract.abi,
-            ...errorsOfAbi(TrustlessManagementContract.abi),
+            ...errorsOfAbi(AddressTrustlessManagementContract.abi),
+            ...errorsOfAbi(PessimisticActionsContract.abi),
             ...errorsOfAbi(DAOContract.abi),
           ],
           address: TasksDisputesContract.address,
@@ -200,21 +229,9 @@ export function DipsuteCreationForm({
           args: [
             task.disputeManager,
             toHex(`ipfs://${cid}`),
-            BigInt(0),
-            task.deadline,
-            {
-              taskId: taskId,
-              partialNativeReward: executorApplication.nativeReward.map(
-                (reward) =>
-                  (reward.amount * BigInt(values.rewardPercentage)) /
-                  BigInt(100)
-              ),
-              partialReward: executorApplication.reward.map(
-                (reward) =>
-                  (reward.amount * BigInt(values.rewardPercentage)) /
-                  BigInt(100)
-              ),
-            },
+            managementInfo,
+            trustlessActionsInfo,
+            disputeInfo,
           ],
           chain: chains.find((c) => c.id == chainId),
           value: disputeCost,
@@ -303,12 +320,19 @@ export function DipsuteCreationForm({
           }
 
           const disputeCreatedEvent = decodeEventLog({
-            abi: TasksDisputesContract.abi,
-            eventName: "DisputeCreated",
+            abi: PessimisticActionsContract.abi,
+            eventName: "ActionCreated",
             topics: log.topics,
             data: log.data,
           })
-          if (disputeCreatedEvent.args.dispute.taskId === taskId) {
+          const tasksAction = decodeFunctionData({
+            abi: TasksContract.abi,
+            data: disputeCreatedEvent.args.actions[0].data,
+          })
+          if (
+            tasksAction.functionName === "completeByDispute" &&
+            tasksAction.args[0] === taskId
+          ) {
             disputeCreated = true
           }
         } catch {}
@@ -459,7 +483,8 @@ export function DipsuteCreationForm({
           )}
         />
         <Button type="submit" disabled={submitting}>
-          Create dispute
+          Create dispute ({formatUnits(disputeCost, nativeCurrency.decimals)}{" "}
+          {nativeCurrency.symbol})
         </Button>
       </form>
     </Form>

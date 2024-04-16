@@ -7,6 +7,7 @@ import { Block, Transaction } from "viem"
 import { usePublicClient } from "wagmi"
 
 import { chains } from "@/config/wagmi-config"
+import { formatAddress } from "@/lib/general-functions"
 import { getEvent } from "@/lib/indexer"
 import { useAddressTitle } from "@/hooks/useAddressTitle"
 import {
@@ -18,7 +19,6 @@ import {
 } from "@/components/ui/card"
 import { Link } from "@/components/ui/link"
 import { Skeleton } from "@/components/ui/skeleton"
-import { formatAddress } from "@/lib/general-functions"
 
 interface UserInfo {
   title?: string
@@ -90,39 +90,36 @@ export function ShowEvent({
   const timestamp = block ? new Date(Number(block.timestamp) * 1000) : undefined
 
   return (
-    <Card className={`max-w-[250px] gap-x-[10px] !border-x-0 !border-b-2 py-[10px] !shadow-none md:flex md:max-w-full md:justify-between md:py-[20px] ${index !== 0 && 'rounded-none'} ${index === 0 && 'rounded-b-none'}`}>
+    <Card
+      className={`max-w-[250px] gap-x-[10px] !border-x-0 !border-b-2 py-[10px] !shadow-none md:flex md:max-w-full md:justify-between md:py-[20px] ${index !== 0 && "rounded-none"} ${index === 0 && "rounded-b-none"}`}
+    >
       <CardHeader>
         <div className="flex items-center gap-x-2">
           <img
             alt="ethereum avatar"
             src={`https://effigy.im/a/${sender}.svg`}
             className="w-[25px] rounded-full"
-          ></img>     
+          ></img>
           <div className="text-base font-normal">
             {sender && formatAddress(sender)}
-          </div>  
+          </div>
         </div>
         <div className="!mt-3 ml-8 grid gap-y-1">
-        <CardTitle className="!text-base !font-medium">
-          {title ?? <Skeleton className="bg-white md:h-6 md:w-[250px]" />}
-        </CardTitle>
-        <CardDescription className="!text-xs">
-          {!hideDescription && sender && timestamp
-            ? `${timestamp.toTimeString()} ${timestamp.toDateString()}`
-            : ""}
-        </CardDescription>
+          <CardTitle className="!text-base !font-medium">
+            {title ?? <Skeleton className="bg-white md:h-6 md:w-[250px]" />}
+          </CardTitle>
+          <CardDescription className="!text-xs">
+            {!hideDescription && sender && timestamp
+              ? `${timestamp.toTimeString()} ${timestamp.toDateString()}`
+              : ""}
+          </CardDescription>
         </div>
-
       </CardHeader>
       <CardFooter className="mb-2 grid items-center gap-y-2 pb-0 text-center text-sm md:mb-0 md:mr-[80px] md:gap-y-0 md:text-base">
         {viewTask && (
           <Link
-          className="flex cursor-pointer items-center justify-center rounded-md border-[0.5px] border-[#87868645] !py-[5px] px-[8px] text-center hover:bg-[#a5a5a511] dark:hover:bg-[#4747472b]"
-            href={
-              event && event.type !== "TaskDraftCreated"
-                ? `/tasks/${event.chainId}:${event.type === "DisputeCreated" ? event.dispute.taskId : event.taskId}`
-                : undefined
-            }
+            className="flex cursor-pointer items-center justify-center rounded-md border-[0.5px] border-[#87868645] !py-[5px] px-[8px] text-center hover:bg-[#a5a5a511] dark:hover:bg-[#4747472b]"
+            href={getTaskLinkFromEvent(event)}
           >
             View task
           </Link>
@@ -141,4 +138,24 @@ export function ShowEvent({
       </CardFooter>
     </Card>
   )
+}
+
+function getTaskLinkFromEvent(event?: TaskEvent): string | undefined {
+  if (!event) {
+    return undefined
+  }
+
+  let taskId: bigint
+  if (event.type === "TaskDraftCreated") {
+    return undefined
+  } else if (event.type === "DisputeCreated") {
+    if (!event.dispute) {
+      return undefined
+    }
+    taskId = event.dispute.taskId
+  } else {
+    taskId = event.taskId
+  }
+
+  return `/tasks/${event.chainId}:${taskId}`
 }

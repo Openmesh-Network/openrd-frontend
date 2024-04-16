@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import { useRouter } from "next/navigation"
 import { TasksContract } from "@/openrd-indexer/contracts/Tasks"
 import { zodResolver } from "@hookform/resolvers/zod"
@@ -15,7 +16,6 @@ import {
 } from "viem"
 import { useAccount, useChainId, usePublicClient, useWalletClient } from "wagmi"
 import { z } from "zod"
-import Image from 'next/image'
 
 import { chains } from "@/config/wagmi-config"
 import { validAddress, validAddressOrEmpty } from "@/lib/regex"
@@ -115,13 +115,12 @@ export function TaskCreationForm() {
     })
   }, [account.address])
   const disputeManagerOptions: SelectableAddresses = {
-    "0x519ce4C129a981B2CBB4C3990B1391dA24E8EbF3": { name: "Openmesh" },
+    "0x6a956DaD77262E80a11dFE3277737Ac6d9469759": {
+      name: "Openmesh Dispute Department",
+    },
   }
   const draftOptions: SelectableAddresses = {
     ["" as Address]: { name: "Coming Soon!" },
-    // "": "None",
-    // "0x519ce4C129a981B2CBB4C3990B1391dA24E8EbF3":
-    //   "Openmesh Smart Contracts Department",
   }
 
   const [tokens, setTokens] = useState<SelectableAddresses>({})
@@ -651,11 +650,17 @@ export function TaskCreationForm() {
                           form.trigger("links")
                         }}
                       />
-                      <Button onClick={() => removeLink(i)} variant="destructive"  className='my-auto h-[25px] w-[45px] p-[2px]'>
+                      <Button
+                        onClick={() => removeLink(i)}
+                        variant="destructive"
+                        className="my-auto h-[25px] w-[45px] p-[2px]"
+                      >
                         <Image
                           height={20}
                           width={20}
-                          src={`/images/utils/x.svg`} alt={''}          />
+                          src={`/images/utils/x.svg`}
+                          alt={""}
+                        />
                       </Button>
                       {form.formState.errors.links && (
                         <p>{form.formState.errors.links[i]?.message}</p>

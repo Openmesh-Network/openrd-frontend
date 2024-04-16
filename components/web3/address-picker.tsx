@@ -189,16 +189,7 @@ AddressPicker.displayName = "AddressPicker"
 
 function Logo({ src }: { src?: string }) {
   return (
-    <div>
-      {src && (
-        <Image
-          alt="logo"
-          src={src as string} // Typescript doesnt catch the guard correctly, cannot be undefined
-          width={20}
-          height={20}
-        />
-      )}
-    </div>
+    <div>{src && <Image alt="logo" src={src} width={20} height={20} />}</div>
   )
 }
 

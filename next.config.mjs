@@ -38,6 +38,11 @@ const nextConfig = {
     )
     return webpackConfig
   },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "25mb", // For IPFS uploading
+    },
+  },
 }
 
 export default nextConfig

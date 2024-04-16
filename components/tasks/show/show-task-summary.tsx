@@ -8,6 +8,7 @@ import { usePublicClient } from "wagmi"
 
 import { chains } from "@/config/wagmi-config"
 import { arrayToIndexObject } from "@/lib/array-to-object"
+import { daysUntil, timestampToDateFormatted } from "@/lib/general-functions"
 import { getTask } from "@/lib/indexer"
 import { useMetadata } from "@/hooks/useMetadata"
 import { Badge } from "@/components/ui/badge"
@@ -17,7 +18,6 @@ import { Skeleton } from "@/components/ui/skeleton"
 import { SanitizeHTML } from "@/components/sanitize-html"
 
 import { ShowTaskMetadata } from "./show-task"
-import { daysUntil, timestampToDateFormatted } from "@/lib/general-functions"
 
 export function ShowTaskSummary({
   chainId,
@@ -105,9 +105,14 @@ export function ShowTaskSummary({
 
   useEffect(() => {
     if (blockchainTask && onTaskInfo) {
-      onTaskInfo({ chainId, taskId, deadline: Number(blockchainTask.deadline), budget: indexerTask?.usdValue ?? 0});
+      onTaskInfo({
+        chainId,
+        taskId,
+        deadline: Number(blockchainTask.deadline),
+        budget: indexerTask?.usdValue ?? 0,
+      })
     }
-  }, [blockchainTask, chainId, taskId]);
+  }, [blockchainTask, chainId, taskId])
 
   const indexedMetadata = indexerTask?.cachedMetadata
     ? (JSON.parse(indexerTask?.cachedMetadata) as ShowTaskMetadata)
@@ -151,18 +156,14 @@ export function ShowTaskSummary({
             </div>
           </CardContent>
         </div>
-        <div className="w-[22%] pt-8">
-         ${usdValue}
-        </div>
+        <div className="w-[22%] pt-8">${usdValue}</div>
         <div className="w-[16%] pt-8 lg:w-[13%] xl:w-[10%]">
-         {daysUntil(String(deadline))}
+          {daysUntil(String(deadline))}
         </div>
       </div>
-      <a className="my-auto" href={`/tasks/${chainId}:${taskId}`}>
-        <CardFooter className="my-auto mr-4 w-fit cursor-pointer whitespace-nowrap rounded-md border-[0.5px] border-[#0354EC] bg-transparent !py-[2px]  px-[10px] text-[15px] text-[#0354EC] hover:bg-[#0354EC] hover:text-white">
-          View task
-        </CardFooter>
-      </a>
+      <CardFooter className="my-auto mr-4 w-fit cursor-pointer whitespace-nowrap rounded-md border-[0.5px] border-[#0354EC] bg-transparent !py-[2px]  px-[10px] text-[15px] text-[#0354EC] hover:bg-[#0354EC] hover:text-white">
+        <Link href={`/tasks/${chainId}:${taskId}`}>View task</Link>
+      </CardFooter>
     </Card>
   )
 }

@@ -25,6 +25,6 @@ export const siteConfig = {
   links: {
     guide: "https://discord.gg/6QDSHqbBvP", // Should be replaced when the guide is made
     docs: "https://open-mesh.gitbook.io/l3a-dao-documentation/about/openr-and-d-101",
-    forum: "https://forum.openmesh.network/",
+    forum: "https://circle.openmesh.network/",
   },
 }

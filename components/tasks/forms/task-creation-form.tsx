@@ -13,6 +13,7 @@ import {
   ContractFunctionRevertedError,
   decodeEventLog,
   isAddress,
+  zeroAddress,
 } from "viem"
 import { useAccount, useChainId, usePublicClient, useWalletClient } from "wagmi"
 import { z } from "zod"
@@ -172,7 +173,7 @@ export function TaskCreationForm() {
     defaultValues: {
       deadline: new Date(),
       manager: account.address ?? "",
-      disputeManger: "0x519ce4C129a981B2CBB4C3990B1391dA24E8EbF3",
+      disputeManger: Object.keys(disputeManagerOptions)[0],
       nativeBudget: BigInt(0),
       budget: [],
       preapprove: [],

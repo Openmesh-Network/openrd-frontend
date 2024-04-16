@@ -1,6 +1,6 @@
 import { defaultWagmiConfig } from "@web3modal/wagmi/react/config"
 import { cookieStorage, createStorage } from "wagmi"
-import { mainnet, polygon, polygonMumbai, sepolia } from "wagmi/chains"
+import { arbitrumSepolia, mainnet, polygon, sepolia } from "wagmi/chains"
 
 import { siteConfig } from "./site"
 
@@ -16,7 +16,7 @@ const metadata = {
 }
 
 export const projectId = "0ec5e8af894898c29bc27a1c4dc11e78" as const
-export const chains = [mainnet, sepolia, polygon, polygonMumbai] as const
+export const chains = [mainnet, sepolia, polygon, arbitrumSepolia] as const
 export const config = defaultWagmiConfig({
   chains,
   projectId,

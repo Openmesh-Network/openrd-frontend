@@ -228,7 +228,7 @@ export function DipsuteCreationForm({
           functionName: "createDispute",
           args: [
             task.disputeManager,
-            toHex(`ipfs://${cid}`),
+            `ipfs://${cid}`,
             managementInfo,
             trustlessActionsInfo,
             disputeInfo,

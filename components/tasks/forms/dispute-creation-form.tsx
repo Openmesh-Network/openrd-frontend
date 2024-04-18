@@ -16,7 +16,6 @@ import {
   decodeEventLog,
   decodeFunctionData,
   formatUnits,
-  toHex,
 } from "viem"
 import {
   useAccount,

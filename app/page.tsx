@@ -50,11 +50,13 @@ export default function IndexPage() {
         </div>
         <TotalBudgetValue />
       </div>
-      <div className="mb-[15px] mt-[25px] hidden gap-x-[45px] lg:flex">
+      <div className="mb-[15px] mt-[25px] gap-y-[15px] gap-x-[45px] lg:flex flex-wrap justify-evenly">
+        <div className="w-full md:w-auto flex flex-wrap gap-y-[15px] gap-x-[45px] justify-evenly">
         <UniqueInteractors />
         <TaskCounter state={TaskState.Open} />
         <TaskCounter state={TaskState.Taken} />
         <TaskCounter state={TaskState.Closed} />
+        </div>
       </div>
       <ShowRecentEvents />
     </section>

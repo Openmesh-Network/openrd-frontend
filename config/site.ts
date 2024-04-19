@@ -18,7 +18,7 @@ export const siteConfig = {
     //   href: "/organizations/",
     // },
     // {
-    //   title: "RFPs",
+    //   title: "Request for Proposals",
     //   href: "/rfps/",
     // },
   ],

@@ -17,10 +17,10 @@ export const siteConfig = {
     //   title: "Organizations",
     //   href: "/organizations/",
     // },
-    // {
-    //   title: "RFPs",
-    //   href: "/rfps/",
-    // },
+    {
+      title: "Request for Proposals",
+      href: "/rfps/",
+    },
   ],
   links: {
     guide: "https://discord.gg/6QDSHqbBvP", // Should be replaced when the guide is made

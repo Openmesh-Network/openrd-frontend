@@ -91,7 +91,7 @@ export function ShowEvent({
 
   return (
     <Card
-      className={`max-w-[250px] gap-x-[10px] !border-x-0 !border-b-2 py-[10px] !shadow-none md:flex md:max-w-full md:justify-between md:py-[20px] ${index !== 0 && "rounded-none"} ${index === 0 && "rounded-b-none"}`}
+      className={`max-w-[1000px] gap-x-[10px] !border-x-0 !border-b-2 py-[10px] !shadow-none md:flex md:max-w-full md:justify-between md:py-[20px] ${index !== 0 && "rounded-none"} ${index === 0 && "rounded-b-none"}`}
     >
       <CardHeader>
         <div className="flex items-center gap-x-2">

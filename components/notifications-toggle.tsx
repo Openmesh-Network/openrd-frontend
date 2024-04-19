@@ -3,13 +3,13 @@
 import * as React from "react"
 
 import { userEvents } from "@/lib/indexer"
-import { useAbstractWalletClient } from "@/hooks/useAbstractWalletClient"
 import { buttonVariants } from "@/components/ui/button"
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
+import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 
 import { Icons } from "./icons"
 import { ShowEvent } from "./tasks/show/show-event"

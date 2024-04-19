@@ -19,7 +19,6 @@ import { z } from "zod"
 
 import { chains } from "@/config/wagmi-config"
 import { validAddress, validAddressOrEmpty } from "@/lib/regex"
-import { useAbstractWalletClient } from "@/hooks/useAbstractWalletClient"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import { ErrorWrapper } from "@/components/ui/error-wrapper"
@@ -36,6 +35,7 @@ import { Input } from "@/components/ui/input"
 import { RichTextArea } from "@/components/ui/rich-textarea"
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from "@/components/ui/use-toast"
+import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 import {
   AddressPicker,
   SelectableAddresses,

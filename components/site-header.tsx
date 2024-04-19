@@ -6,7 +6,7 @@ import Link from "next/link"
 
 import { NavItem } from "@/types/nav"
 import { siteConfig } from "@/config/site"
-import { useAbstractWalletClient } from "@/hooks/useAbstractWalletClient"
+import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 import { MainNav } from "@/components/main-nav"
 import { ThemeToggle } from "@/components/theme-toggle"
 

@@ -12,7 +12,6 @@ import { BaseError, ContractFunctionRevertedError, decodeEventLog } from "viem"
 import { useChainId, usePublicClient, useSwitchChain } from "wagmi"
 
 import { chains } from "@/config/wagmi-config"
-import { useAbstractWalletClient } from "@/hooks/useAbstractWalletClient"
 import { useMetadata } from "@/hooks/useMetadata"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -26,6 +25,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from "@/components/ui/use-toast"
+import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 import { SanitizeHTML } from "@/components/sanitize-html"
 
 export interface ShowRequestMetadata {

@@ -22,7 +22,6 @@ import { z } from "zod"
 
 import { chains } from "@/config/wagmi-config"
 import { errorsOfAbi } from "@/lib/error-decoding"
-import { useAbstractWalletClient } from "@/hooks/useAbstractWalletClient"
 import { Alert } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import {
@@ -39,6 +38,7 @@ import { RichTextArea } from "@/components/ui/rich-textarea"
 import { Textarea } from "@/components/ui/textarea"
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from "@/components/ui/use-toast"
+import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 import { AddToIpfsRequest, AddToIpfsResponse } from "@/app/api/addToIpfs/route"
 
 const formSchema = z.object({

@@ -8,7 +8,6 @@ import {
   TaskState,
 } from "@/openrd-indexer/types/tasks"
 
-import { useAbstractWalletClient } from "@/hooks/useAbstractWalletClient"
 import { useMetadata } from "@/hooks/useMetadata"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -19,6 +18,7 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Separator } from "@/components/ui/separator"
+import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 import { SanitizeHTML } from "@/components/sanitize-html"
 
 import { SubmissionReviewForm } from "../forms/submission-review-form"

@@ -6,11 +6,9 @@ import { siteConfig } from "@/config/site"
 import { fontSans } from "@/lib/fonts"
 import { cn } from "@/lib/utils"
 import { Toaster } from "@/components/ui/toaster"
-import { SettingsProvider } from "@/components/context/settings"
+import { ContextProvider } from "@/components/context/context-provider"
 import { SiteHeader } from "@/components/site-header"
 import { TailwindIndicator } from "@/components/tailwind-indicator"
-import { ThemeProvider } from "@/components/theme-provider"
-import { Web3Provider } from "@/components/web3/web3-provider"
 
 export const metadata: Metadata = {
   title: {
@@ -47,18 +45,14 @@ export default function RootLayout({ children }: RootLayoutProps) {
             fontSans.variable
           )}
         >
-          <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <SettingsProvider>
-              <Web3Provider>
-                <div className="relative flex min-h-screen flex-col">
-                  <SiteHeader />
-                  <div className="flex-1">{children}</div>
-                </div>
-                <Toaster />
-                <TailwindIndicator />
-              </Web3Provider>
-            </SettingsProvider>
-          </ThemeProvider>
+          <ContextProvider>
+            <div className="relative flex min-h-screen flex-col">
+              <SiteHeader />
+              <div className="flex-1">{children}</div>
+            </div>
+            <Toaster />
+            <TailwindIndicator />
+          </ContextProvider>
         </body>
       </html>
     </>

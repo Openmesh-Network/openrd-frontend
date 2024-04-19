@@ -9,7 +9,6 @@ import { useChainId, usePublicClient, useSwitchChain } from "wagmi"
 import { z } from "zod"
 
 import { chains } from "@/config/wagmi-config"
-import { useAbstractWalletClient } from "@/hooks/useAbstractWalletClient"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import {
@@ -23,6 +22,7 @@ import {
 } from "@/components/ui/form"
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from "@/components/ui/use-toast"
+import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 
 export function ExtendDeadline({
   chainId,

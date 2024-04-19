@@ -4,9 +4,9 @@ import { useState } from "react"
 import { Account } from "viem"
 import { useConnect, useDisconnect } from "wagmi"
 
-import { useAbstractWalletClient } from "@/hooks/useAbstractWalletClient"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 import { useSetSettings, useSettings } from "@/components/context/settings"
 
 export function ConnectButton({}: {}) {

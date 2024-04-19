@@ -11,7 +11,6 @@ import { useChainId, usePublicClient, useSwitchChain } from "wagmi"
 import { z } from "zod"
 
 import { chains } from "@/config/wagmi-config"
-import { useAbstractWalletClient } from "@/hooks/useAbstractWalletClient"
 import { Button } from "@/components/ui/button"
 import { Combobox } from "@/components/ui/combobox"
 import {
@@ -26,6 +25,7 @@ import {
 import { RichTextArea } from "@/components/ui/rich-textarea"
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from "@/components/ui/use-toast"
+import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 import { AddToIpfsRequest, AddToIpfsResponse } from "@/app/api/addToIpfs/route"
 
 const formSchema = z.object({

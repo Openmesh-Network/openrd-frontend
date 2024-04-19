@@ -6,11 +6,11 @@ import { Address, erc20Abi, formatUnits, maxUint256, parseAbiItem } from "viem"
 import { usePublicClient } from "wagmi"
 
 import { chains } from "@/config/wagmi-config"
-import { useAbstractWalletClient } from "@/hooks/useAbstractWalletClient"
 import { Alert, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { ToastAction } from "@/components/ui/toast"
 import { toast } from "@/components/ui/use-toast"
+import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 
 export interface ERC20AllowanceCheck {
   chainId?: number

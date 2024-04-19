@@ -14,7 +14,6 @@ import { useChainId, usePublicClient, useSwitchChain } from "wagmi"
 
 import { chains } from "@/config/wagmi-config"
 import { getUser } from "@/lib/indexer"
-import { useAbstractWalletClient } from "@/hooks/useAbstractWalletClient"
 import { useENS } from "@/hooks/useENS"
 import { useMetadata } from "@/hooks/useMetadata"
 import { Badge } from "@/components/ui/badge"
@@ -29,6 +28,7 @@ import {
 import { Link } from "@/components/ui/link"
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from "@/components/ui/use-toast"
+import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 import { SanitizeHTML } from "@/components/sanitize-html"
 
 import { ShowERC20Reward } from "./show-erc20-reward"

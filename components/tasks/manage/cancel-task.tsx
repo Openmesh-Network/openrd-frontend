@@ -10,7 +10,6 @@ import { useChainId, usePublicClient, useSwitchChain } from "wagmi"
 import { z } from "zod"
 
 import { chains } from "@/config/wagmi-config"
-import { useAbstractWalletClient } from "@/hooks/useAbstractWalletClient"
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
   Dialog,
@@ -32,6 +31,7 @@ import {
 import { RichTextArea } from "@/components/ui/rich-textarea"
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from "@/components/ui/use-toast"
+import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 
 const formSchema = z.object({
   reason: z.string(),

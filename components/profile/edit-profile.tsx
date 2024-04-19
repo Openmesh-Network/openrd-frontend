@@ -2,10 +2,9 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { addToIpfs } from "@/openrd-indexer/utils/ipfs"
 import { zodResolver } from "@hookform/resolvers/zod"
+import axios from "axios"
 import { useForm } from "react-hook-form"
-import { useAccount, useWalletClient } from "wagmi"
 import { z } from "zod"
 
 import { setMetadata } from "@/lib/indexer"
@@ -23,6 +22,8 @@ import { Input } from "@/components/ui/input"
 import { RichTextArea } from "@/components/ui/rich-textarea"
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from "@/components/ui/use-toast"
+import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
+import { AddToIpfsRequest, AddToIpfsResponse } from "@/app/api/addToIpfs/route"
 
 const formSchema = z.object({
   // Onchain fields
@@ -31,7 +32,7 @@ const formSchema = z.object({
 })
 
 export function EditProfile() {
-  const { data: walletClient } = useWalletClient()
+  const walletClient = useAbstractWalletClient()
   const { toast } = useToast()
   const { push } = useRouter()
 
@@ -64,10 +65,16 @@ export function EditProfile() {
         title: values.title,
         description: values.description,
       }
-      const cid = await addToIpfs(JSON.stringify(metadata)).catch((err) => {
-        console.error(err)
-        return undefined
-      })
+      const addToIpfsRequest: AddToIpfsRequest = {
+        json: JSON.stringify(metadata),
+      }
+      const cid = await axios
+        .post("/api/addToIpfs", addToIpfsRequest)
+        .then((response) => (response.data as AddToIpfsResponse).cid)
+        .catch((err) => {
+          console.error(err)
+          return undefined
+        })
       if (!cid) {
         dismiss()
         toast({
@@ -85,7 +92,7 @@ export function EditProfile() {
         description: "Please sign the message in your wallet...",
       }).dismiss
 
-      if (!walletClient) {
+      if (!walletClient?.account) {
         dismiss()
         toast({
           title: "Profile edit failed",
@@ -98,6 +105,7 @@ export function EditProfile() {
       const metadataUri = `ipfs://${cid}`
       const signature = await walletClient
         .signMessage({
+          account: walletClient.account,
           message: `OpenR&D metadata: ${metadataUri}`,
         })
         .catch((err) => {
@@ -125,7 +133,9 @@ export function EditProfile() {
           <ToastAction
             altText="View profile"
             onClick={() => {
-              push(`/profile/${walletClient.account.address}`)
+              if (walletClient.account) {
+                push(`/profile/${walletClient.account.address}`)
+              }
             }}
           >
             View profile

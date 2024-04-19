@@ -6,12 +6,7 @@ import { addToIpfs } from "@/openrd-indexer/utils/ipfs"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useFieldArray, useForm } from "react-hook-form"
 import { BaseError, ContractFunctionRevertedError, decodeEventLog } from "viem"
-import {
-  useChainId,
-  usePublicClient,
-  useSwitchChain,
-  useWalletClient,
-} from "wagmi"
+import { useChainId, usePublicClient, useSwitchChain } from "wagmi"
 import { z } from "zod"
 
 import { chains } from "@/config/wagmi-config"
@@ -30,6 +25,7 @@ import { Input } from "@/components/ui/input"
 import { RichTextArea } from "@/components/ui/rich-textarea"
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from "@/components/ui/use-toast"
+import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 
 import { ShowTaskMetadata } from "../show/show-task"
 
@@ -65,7 +61,7 @@ export function EditMetadata({
 }) {
   const connectedChainId = useChainId()
   const { switchChainAsync } = useSwitchChain()
-  const { data: walletClient } = useWalletClient()
+  const walletClient = useAbstractWalletClient()
   const publicClient = usePublicClient()
   const { toast } = useToast()
 
@@ -144,7 +140,7 @@ export function EditMetadata({
         description: "Please sign the transaction in your wallet...",
       }).dismiss
 
-      if (!publicClient || !walletClient) {
+      if (!publicClient || !walletClient?.account) {
         dismiss()
         toast({
           title: "Metadata update failed",
@@ -155,7 +151,7 @@ export function EditMetadata({
       }
       const transactionRequest = await publicClient
         .simulateContract({
-          account: walletClient.account.address,
+          account: walletClient.account,
           abi: TasksContract.abi,
           address: TasksContract.address,
           functionName: "editMetadata",

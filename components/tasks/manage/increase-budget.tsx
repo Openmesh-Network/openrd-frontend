@@ -12,13 +12,7 @@ import {
   ContractFunctionRevertedError,
   decodeEventLog,
 } from "viem"
-import {
-  useAccount,
-  useChainId,
-  usePublicClient,
-  useSwitchChain,
-  useWalletClient,
-} from "wagmi"
+import { useChainId, usePublicClient, useSwitchChain } from "wagmi"
 import { z } from "zod"
 
 import { chains } from "@/config/wagmi-config"
@@ -36,6 +30,7 @@ import {
 } from "@/components/ui/form"
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from "@/components/ui/use-toast"
+import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 import {
   AddressPicker,
   SelectableAddresses,
@@ -75,10 +70,9 @@ export function IncreaseBudget({
   budget: ERC20Transfer[]
   refresh: () => Promise<void>
 }) {
-  const account = useAccount()
   const connectedChainId = useChainId()
   const { switchChainAsync } = useSwitchChain()
-  const { data: walletClient } = useWalletClient()
+  const walletClient = useAbstractWalletClient()
   const publicClient = usePublicClient()
   const { toast } = useToast()
 
@@ -123,7 +117,7 @@ export function IncreaseBudget({
         description: "Please sign the transaction in your wallet...",
       })
 
-      if (!publicClient || !walletClient) {
+      if (!publicClient || !walletClient?.account) {
         dismiss()
         toast({
           title: "Budget increase failed",
@@ -134,7 +128,7 @@ export function IncreaseBudget({
       }
       const transactionRequest = await publicClient
         .simulateContract({
-          account: walletClient.account.address,
+          account: walletClient.account,
           abi: TasksContract.abi,
           address: TasksContract.address,
           functionName: "increaseBudget",
@@ -338,7 +332,7 @@ export function IncreaseBudget({
                     field.onChange(change)
                     form.trigger("nativeBudget")
                   }}
-                  account={account.address}
+                  account={walletClient?.account?.address}
                 />
               </FormControl>
               <FormDescription>
@@ -375,14 +369,14 @@ export function IncreaseBudget({
                         updateBudget(i, { ...budgetItem, amount: change })
                         form.trigger("budget")
                       }}
-                      account={account.address}
+                      account={walletClient?.account?.address}
                     />
                   </div>
                   <ERC20AllowanceCheck
                     spender={TasksContract.address}
                     token={budgetItem.tokenContract as Address}
                     amount={budgetItem.amount - budget[i].amount}
-                    account={account.address}
+                    account={walletClient?.account?.address}
                   />
                 </ErrorWrapper>
               ))}

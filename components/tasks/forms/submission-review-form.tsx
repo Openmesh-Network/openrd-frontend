@@ -3,16 +3,11 @@
 import { useState } from "react"
 import { TasksContract } from "@/openrd-indexer/contracts/Tasks"
 import { SubmissionJudgement } from "@/openrd-indexer/types/tasks"
-import { addToIpfs } from "@/openrd-indexer/utils/ipfs"
 import { zodResolver } from "@hookform/resolvers/zod"
+import axios from "axios"
 import { useForm } from "react-hook-form"
 import { BaseError, ContractFunctionRevertedError, decodeEventLog } from "viem"
-import {
-  useChainId,
-  usePublicClient,
-  useSwitchChain,
-  useWalletClient,
-} from "wagmi"
+import { useChainId, usePublicClient, useSwitchChain } from "wagmi"
 import { z } from "zod"
 
 import { chains } from "@/config/wagmi-config"
@@ -30,7 +25,7 @@ import {
 import { RichTextArea } from "@/components/ui/rich-textarea"
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from "@/components/ui/use-toast"
-import axios from "axios"
+import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 import { AddToIpfsRequest, AddToIpfsResponse } from "@/app/api/addToIpfs/route"
 
 const formSchema = z.object({
@@ -52,7 +47,7 @@ export function SubmissionReviewForm({
 }) {
   const connectedChainId = useChainId()
   const { switchChainAsync } = useSwitchChain()
-  const { data: walletClient } = useWalletClient()
+  const walletClient = useAbstractWalletClient()
   const publicClient = usePublicClient()
   const { toast } = useToast()
 
@@ -129,7 +124,7 @@ export function SubmissionReviewForm({
         description: "Please sign the transaction in your wallet...",
       }).dismiss
 
-      if (!publicClient || !walletClient) {
+      if (!publicClient || !walletClient?.account) {
         dismiss()
         toast({
           title: "Submission review failed",
@@ -140,7 +135,7 @@ export function SubmissionReviewForm({
       }
       const transactionRequest = await publicClient
         .simulateContract({
-          account: walletClient.account.address,
+          account: walletClient.account,
           abi: TasksContract.abi,
           address: TasksContract.address,
           functionName: "reviewSubmission",

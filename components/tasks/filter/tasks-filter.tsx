@@ -271,7 +271,7 @@ export function TasksFilter({
                         key={i}
                         error={form.formState.errors.filter?.at?.(i)}
                       >
-                        <div className="flex w-full gap-x-1">
+                        <div className="flex w-full gap-x-1 ">
                           <FilterControl
                             values={{
                               property: filterItem.property,

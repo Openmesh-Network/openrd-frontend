@@ -1,24 +1,24 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useAccount } from "wagmi"
-
 import Image from "next/image"
 import Link from "next/link"
 
 import { NavItem } from "@/types/nav"
 import { siteConfig } from "@/config/site"
+import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 import { MainNav } from "@/components/main-nav"
 import { ThemeToggle } from "@/components/theme-toggle"
 
-import { NotificationsToggle } from "./notifications-toggle"
 import { MobileNav } from "./mobile-nav"
+import { NotificationsToggle } from "./notifications-toggle"
+import { ConnectButton } from "./web3/connect-button"
 
 export function SiteHeader() {
   const [navItems, setNavItems] = useState<NavItem[]>(siteConfig.mainNav)
   const [navbarOpen, setNavbarOpen] = useState(false)
 
-  const account = useAccount()
+  const walletClient = useAbstractWalletClient()
 
   function navbarToggleHandler() {
     setNavbarOpen(!navbarOpen)
@@ -26,14 +26,14 @@ export function SiteHeader() {
 
   useEffect(() => {
     let items = [...siteConfig.mainNav]
-    if (account.isConnected && account.address) {
+    if (walletClient?.account?.address) {
       items.push({
         title: "My Profile",
-        href: `/profile/${account.address}`,
+        href: `/profile/${walletClient.account.address}`,
       })
     }
     setNavItems(items)
-  }, [account.address, account.isConnected])
+  }, [walletClient?.account?.address])
 
   return (
     <header className="bg-background sticky top-0 z-40 w-full border-b">
@@ -43,7 +43,7 @@ export function SiteHeader() {
           <nav className="flex items-center space-x-1">
             <NotificationsToggle />
             <ThemeToggle />
-            <w3m-button />
+            <ConnectButton />
           </nav>
         </div>
       </div>

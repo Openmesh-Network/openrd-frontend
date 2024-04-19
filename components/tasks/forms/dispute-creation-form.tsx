@@ -17,13 +17,7 @@ import {
   decodeFunctionData,
   formatUnits,
 } from "viem"
-import {
-  useAccount,
-  useChainId,
-  usePublicClient,
-  useSwitchChain,
-  useWalletClient,
-} from "wagmi"
+import { useChainId, usePublicClient, useSwitchChain } from "wagmi"
 import { z } from "zod"
 
 import { chains } from "@/config/wagmi-config"
@@ -44,6 +38,7 @@ import { RichTextArea } from "@/components/ui/rich-textarea"
 import { Textarea } from "@/components/ui/textarea"
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from "@/components/ui/use-toast"
+import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 import { AddToIpfsRequest, AddToIpfsResponse } from "@/app/api/addToIpfs/route"
 
 const formSchema = z.object({
@@ -70,10 +65,9 @@ export function DipsuteCreationForm({
   task: Task
   refresh: () => Promise<void>
 }) {
-  const account = useAccount()
   const connectedChainId = useChainId()
   const { switchChainAsync } = useSwitchChain()
-  const { data: walletClient } = useWalletClient()
+  const walletClient = useAbstractWalletClient()
   const publicClient = usePublicClient()
   const { toast } = useToast()
   const nativeCurrency =
@@ -184,7 +178,7 @@ export function DipsuteCreationForm({
         description: "Please sign the transaction in your wallet...",
       }).dismiss
 
-      if (!publicClient || !walletClient) {
+      if (!publicClient || !walletClient?.account) {
         dismiss()
         toast({
           title: "Dispute creation failed",
@@ -216,7 +210,7 @@ export function DipsuteCreationForm({
       }
       const transactionRequest = await publicClient
         .simulateContract({
-          account: walletClient.account.address,
+          account: walletClient.account,
           abi: [
             ...TasksDisputesContract.abi,
             ...errorsOfAbi(AddressTrustlessManagementContract.abi),
@@ -375,8 +369,9 @@ export function DipsuteCreationForm({
 
   if (
     firstRender ||
-    !account.address ||
-    account.address !== task.applications[task.executorApplication]?.applicant
+    !walletClient?.account?.address ||
+    walletClient.account.address !==
+      task.applications[task.executorApplication]?.applicant
   ) {
     // Not the executor
     return <Alert>Only the executor can create disputes.</Alert>

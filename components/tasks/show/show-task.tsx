@@ -11,7 +11,7 @@ import {
   TaskState,
 } from "@/openrd-indexer/types/tasks"
 import { formatUnits } from "viem"
-import { deepEqual, useAccount, usePublicClient } from "wagmi"
+import { deepEqual, usePublicClient } from "wagmi"
 
 import { chains } from "@/config/wagmi-config"
 import { arrayToIndexObject } from "@/lib/array-to-object"
@@ -34,6 +34,7 @@ import { Badge } from "@/components/ui/badge"
 import { Link } from "@/components/ui/link"
 import { Separator } from "@/components/ui/separator"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 import { SanitizeHTML } from "@/components/sanitize-html"
 import { ApplicationCreationForm } from "@/components/tasks/forms/application-creation-form"
 import { SubmissionCreationForm } from "@/components/tasks/forms/submission-creation-form"
@@ -74,7 +75,7 @@ export function ShowTask({
 }) {
   const [activeTab, setActiveTab] = useState("description")
 
-  const account = useAccount()
+  const walletClient = useAbstractWalletClient()
   const chain = chains.find((c) => c.id === chainId)
   const publicClient = usePublicClient({ chainId: chainId })
 
@@ -425,9 +426,8 @@ export function ShowTask({
             )}
             {state !== undefined &&
               state !== TaskState.Closed &&
-              account.address &&
-              manager &&
-              account.address === manager && (
+              walletClient?.account?.address &&
+              walletClient.account.address === manager && (
                 <TabsTrigger value="manage">Manage</TabsTrigger>
               )}
           </TabsList>
@@ -448,7 +448,11 @@ export function ShowTask({
                   <ul>
                     {links.map?.((link, i) => (
                       <li key={i}>
-                        <Link href={link.url} target="_blank" className="hover:text-[#0354EC]">
+                        <Link
+                          href={link.url}
+                          target="_blank"
+                          className="hover:text-[#0354EC]"
+                        >
                           {link.name ? `${link.name}: ` : ""}
                           {link.url}
                         </Link>
@@ -465,15 +469,24 @@ export function ShowTask({
                   : "Unknown"}
               </span>
               <Link href={manager ? `/profile/${manager}` : undefined}>
-                Manager: <span className="break-words hover:text-[#0354EC]">{managerTitle ?? "Unknown"}</span>
+                Manager:{" "}
+                <span className="break-words hover:text-[#0354EC]">
+                  {managerTitle ?? "Unknown"}
+                </span>
               </Link>
               <Link
                 href={disputeManager ? `/profile/${disputeManager}` : undefined}
               >
-                Dispute Manager: <span className="break-words hover:text-[#0354EC]">{disputeManagerTitle ?? "Unknown"}</span>
+                Dispute Manager:{" "}
+                <span className="break-words hover:text-[#0354EC]">
+                  {disputeManagerTitle ?? "Unknown"}
+                </span>
               </Link>
               <Link href={creator ? `/profile/${creator}` : undefined}>
-                Creator: <span className="break-words hover:text-[#0354EC]">{creatorTitle ?? "Unknown"}</span>
+                Creator:{" "}
+                <span className="break-words hover:text-[#0354EC]">
+                  {creatorTitle ?? "Unknown"}
+                </span>
               </Link>
               <span>
                 State: {state !== undefined ? TaskState[state] : "Unknown"}
@@ -486,7 +499,10 @@ export function ShowTask({
                 }
                 target="_blank"
               >
-                Escrow: <span className="break-words hover:text-[#0354EC]">{escrow ?? "Unknown"}</span>
+                Escrow:{" "}
+                <span className="break-words hover:text-[#0354EC]">
+                  {escrow ?? "Unknown"}
+                </span>
               </Link>
               <Separator />
               {nativeBudget !== BigInt(0) && (

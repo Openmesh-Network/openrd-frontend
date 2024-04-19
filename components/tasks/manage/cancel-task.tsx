@@ -6,15 +6,11 @@ import { addToIpfs } from "@/openrd-indexer/utils/ipfs"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { BaseError, ContractFunctionRevertedError, decodeEventLog } from "viem"
-import {
-  useChainId,
-  usePublicClient,
-  useSwitchChain,
-  useWalletClient,
-} from "wagmi"
+import { useChainId, usePublicClient, useSwitchChain } from "wagmi"
 import { z } from "zod"
 
 import { chains } from "@/config/wagmi-config"
+import { useAbstractWalletClient } from "@/hooks/useAbstractWalletClient"
 import { Button, buttonVariants } from "@/components/ui/button"
 import {
   Dialog,
@@ -54,7 +50,7 @@ export function CancelTask({
 }) {
   const connectedChainId = useChainId()
   const { switchChainAsync } = useSwitchChain()
-  const { data: walletClient } = useWalletClient()
+  const walletClient = useAbstractWalletClient()
   const publicClient = usePublicClient()
   const { toast } = useToast()
 
@@ -121,7 +117,7 @@ export function CancelTask({
         description: "Please sign the transaction in your wallet...",
       }).dismiss
 
-      if (!publicClient || !walletClient) {
+      if (!publicClient || !walletClient?.account) {
         dismiss()
         toast({
           title: "Cancel task failed",
@@ -132,7 +128,7 @@ export function CancelTask({
       }
       const transactionRequest = await publicClient
         .simulateContract({
-          account: walletClient.account.address,
+          account: walletClient.account,
           abi: TasksContract.abi,
           address: TasksContract.address,
           functionName: "cancelTask",

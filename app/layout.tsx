@@ -1,14 +1,12 @@
 import "@/styles/globals.css"
 
 import { Metadata, Viewport } from "next"
-import { headers } from "next/headers"
-import { cookieToInitialState } from "wagmi"
 
 import { siteConfig } from "@/config/site"
-import { config } from "@/config/wagmi-config"
 import { fontSans } from "@/lib/fonts"
 import { cn } from "@/lib/utils"
 import { Toaster } from "@/components/ui/toaster"
+import { SettingsProvider } from "@/components/context/settings"
 import { SiteHeader } from "@/components/site-header"
 import { TailwindIndicator } from "@/components/tailwind-indicator"
 import { ThemeProvider } from "@/components/theme-provider"
@@ -39,7 +37,6 @@ interface RootLayoutProps {
 }
 
 export default function RootLayout({ children }: RootLayoutProps) {
-  const initialState = cookieToInitialState(config, headers().get("cookie"))
   return (
     <>
       <html lang="en" suppressHydrationWarning>
@@ -51,14 +48,16 @@ export default function RootLayout({ children }: RootLayoutProps) {
           )}
         >
           <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
-            <Web3Provider initialState={initialState}>
-              <div className="relative flex min-h-screen flex-col">
-                <SiteHeader />
-                <div className="flex-1">{children}</div>
-              </div>
-              <Toaster />
-              <TailwindIndicator />
-            </Web3Provider>
+            <SettingsProvider>
+              <Web3Provider>
+                <div className="relative flex min-h-screen flex-col">
+                  <SiteHeader />
+                  <div className="flex-1">{children}</div>
+                </div>
+                <Toaster />
+                <TailwindIndicator />
+              </Web3Provider>
+            </SettingsProvider>
           </ThemeProvider>
         </body>
       </html>

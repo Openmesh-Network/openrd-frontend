@@ -7,8 +7,8 @@ import {
   Task,
   TaskState,
 } from "@/openrd-indexer/types/tasks"
-import { useAccount } from "wagmi"
 
+import { useAbstractWalletClient } from "@/hooks/useAbstractWalletClient"
 import { useMetadata } from "@/hooks/useMetadata"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -50,7 +50,7 @@ export function ShowSubmission({
   task?: Task
   refresh: () => Promise<void>
 }) {
-  const account = useAccount()
+  const walletClient = useAbstractWalletClient()
 
   const directMetadata = useMetadata<ShowSubmissionMetadata | undefined>({
     url: submission.metadata,
@@ -110,7 +110,8 @@ export function ShowSubmission({
         {!firstRender &&
           task?.state === TaskState.Taken &&
           submission.judgement === SubmissionJudgement.None &&
-          account.address === task?.manager && (
+          walletClient?.account?.address &&
+          walletClient.account.address === task?.manager && (
             <SubmissionReviewForm
               chainId={chainId}
               taskId={taskId}

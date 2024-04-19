@@ -3,9 +3,10 @@
 import React, { useEffect, useState } from "react"
 import { ExclamationTriangleIcon } from "@radix-ui/react-icons"
 import { Address, erc20Abi, formatUnits, maxUint256, parseAbiItem } from "viem"
-import { usePublicClient, useWalletClient } from "wagmi"
+import { usePublicClient } from "wagmi"
 
 import { chains } from "@/config/wagmi-config"
+import { useAbstractWalletClient } from "@/hooks/useAbstractWalletClient"
 import { Alert, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { ToastAction } from "@/components/ui/toast"
@@ -26,7 +27,7 @@ export function ERC20AllowanceCheck({
   spender,
   account,
 }: ERC20AllowanceCheck) {
-  const { data: walletClient } = useWalletClient({ chainId: chainId })
+  const walletClient = useAbstractWalletClient({ chainId: chainId })
   const publicClient = usePublicClient({ chainId: chainId })
 
   const enabled =
@@ -93,7 +94,7 @@ export function ERC20AllowanceCheck({
         })
         return
       }
-      if (!walletClient) {
+      if (!walletClient?.account) {
         toast({
           title: "ERC20 allowance failed",
           description: "WalletClient is undefined.",
@@ -114,7 +115,7 @@ export function ERC20AllowanceCheck({
           address: token,
           functionName: "approve",
           args: [spender, to],
-          account: account,
+          account: account ?? walletClient.account,
           chain: chains.find((c) => c.id === chainId),
         })
         .catch((err) => {

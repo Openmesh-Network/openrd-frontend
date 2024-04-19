@@ -13,13 +13,13 @@ import {
   ContractFunctionRevertedError,
   decodeEventLog,
   isAddress,
-  zeroAddress,
 } from "viem"
-import { useAccount, useChainId, usePublicClient, useWalletClient } from "wagmi"
+import { useChainId, usePublicClient } from "wagmi"
 import { z } from "zod"
 
 import { chains } from "@/config/wagmi-config"
 import { validAddress, validAddressOrEmpty } from "@/lib/regex"
+import { useAbstractWalletClient } from "@/hooks/useAbstractWalletClient"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import { ErrorWrapper } from "@/components/ui/error-wrapper"
@@ -97,24 +97,23 @@ const formSchema = z.object({
 })
 
 export function TaskCreationForm() {
-  const account = useAccount()
   const chainId = useChainId()
-  const { data: walletClient } = useWalletClient()
+  const walletClient = useAbstractWalletClient()
   const publicClient = usePublicClient()
   const { toast } = useToast()
   const { push } = useRouter()
 
   const [managerOptions, setManagerOptions] = useState<SelectableAddresses>({})
   useEffect(() => {
-    if (!account.address) {
+    if (!walletClient?.account?.address) {
       setManagerOptions({})
       return
     }
 
     setManagerOptions({
-      [account.address]: { name: "Myself" },
+      [walletClient.account.address]: { name: "Myself" },
     })
-  }, [account.address])
+  }, [walletClient?.account?.address])
   const disputeManagerOptions: SelectableAddresses = {
     "0x6a956DaD77262E80a11dFE3277737Ac6d9469759": {
       name: "Openmesh Dispute Department",
@@ -127,14 +126,14 @@ export function TaskCreationForm() {
   const [tokens, setTokens] = useState<SelectableAddresses>({})
   useEffect(() => {
     const getTokens = async () => {
-      if (!account.address) {
+      if (!walletClient?.account?.address) {
         setTokens({})
         return
       }
 
       const request: TokensRequest = {
         chainId: chainId,
-        address: account.address,
+        address: walletClient.account.address,
       }
       const tokensResponse = await axios.post(
         "/api/tokens/",
@@ -166,13 +165,13 @@ export function TaskCreationForm() {
     }
 
     getTokens().catch(console.error)
-  }, [account.address, chainId])
+  }, [walletClient?.account?.address, chainId])
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       deadline: new Date(),
-      manager: account.address ?? "",
+      manager: walletClient?.account?.address ?? "",
       disputeManger: Object.keys(disputeManagerOptions)[0],
       nativeBudget: BigInt(0),
       budget: [],
@@ -250,7 +249,7 @@ export function TaskCreationForm() {
         description: "Please sign the transaction in your wallet...",
       }).dismiss
 
-      if (!publicClient || !walletClient) {
+      if (!publicClient || !walletClient?.account) {
         dismiss()
         toast({
           title: "Task creation failed",
@@ -261,7 +260,7 @@ export function TaskCreationForm() {
       }
       const transactionRequest = await publicClient
         .simulateContract({
-          account: walletClient.account.address,
+          account: walletClient.account,
           abi: TasksContract.abi,
           address: TasksContract.address,
           functionName: "createTask",
@@ -403,7 +402,9 @@ export function TaskCreationForm() {
       }
 
       setTimeout(() => {
-        push(`/tasks/${walletClient.chain.id}:${taskId}`)
+        if (walletClient.chain) {
+          push(`/tasks/${walletClient.chain.id}:${taskId}`)
+        }
       }, 2000)
 
       dismiss()
@@ -411,16 +412,6 @@ export function TaskCreationForm() {
         title: "Success!",
         description: "The task has been created.",
         variant: "success",
-        // action: (
-        //   <ToastAction
-        //     altText="View task"
-        //     onClick={() => {
-        //       push(`/tasks/${walletClient.chain.id}:${taskId}`)
-        //     }}
-        //   >
-        //     View task
-        //   </ToastAction>
-        // ),
       }).dismiss
     }
 
@@ -775,7 +766,7 @@ export function TaskCreationForm() {
                     field.onChange(change)
                     form.trigger("nativeBudget")
                   }}
-                  account={account.address}
+                  account={walletClient?.account?.address}
                 />
               </FormControl>
               <FormDescription>
@@ -820,7 +811,7 @@ export function TaskCreationForm() {
                         updateBudget(i, { ...budgetItem, amount: change })
                         form.trigger("budget")
                       }}
-                      account={account.address}
+                      account={walletClient?.account?.address}
                     />
                     <Button
                       onClick={() => removeBudget(i)}
@@ -837,7 +828,7 @@ export function TaskCreationForm() {
                         : undefined
                     }
                     amount={budgetItem.amount}
-                    account={account.address}
+                    account={walletClient?.account?.address}
                   />
                 </ErrorWrapper>
               ))}

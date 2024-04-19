@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react"
 import { TasksContract } from "@/openrd-indexer/contracts/Tasks"
 import { Task } from "@/openrd-indexer/types/tasks"
-import { addToIpfs } from "@/openrd-indexer/utils/ipfs"
 import { zodResolver } from "@hookform/resolvers/zod"
 import axios from "axios"
 import { useFieldArray, useForm } from "react-hook-form"
@@ -13,18 +12,14 @@ import {
   ContractFunctionRevertedError,
   decodeEventLog,
   isAddress,
+  parseEther,
 } from "viem"
-import {
-  useAccount,
-  useChainId,
-  usePublicClient,
-  useSwitchChain,
-  useWalletClient,
-} from "wagmi"
+import { useChainId, usePublicClient, useSwitchChain } from "wagmi"
 import { z } from "zod"
 
 import { chains } from "@/config/wagmi-config"
 import { validAddress } from "@/lib/regex"
+import { useAbstractWalletClient } from "@/hooks/useAbstractWalletClient"
 import { Button } from "@/components/ui/button"
 import { ErrorWrapper } from "@/components/ui/error-wrapper"
 import {
@@ -46,11 +41,11 @@ import {
 } from "@/components/web3/address-picker"
 import { ERC20BalanceInput } from "@/components/web3/erc20-balance-input"
 import { NativeBalanceInput } from "@/components/web3/native-balance-input"
+import { AddToIpfsRequest, AddToIpfsResponse } from "@/app/api/addToIpfs/route"
 import {
   TokenMetadataRequest,
   TokenMetadataResponse,
 } from "@/app/api/tokenMetadata/route"
-import { AddToIpfsRequest, AddToIpfsResponse } from "@/app/api/addToIpfs/route"
 
 const formSchema = z.object({
   // Onchain fields
@@ -85,25 +80,24 @@ export function ApplicationCreationForm({
   task: Task
   refresh: () => Promise<void>
 }) {
-  const account = useAccount()
   const connectedChainId = useChainId()
   const { switchChainAsync } = useSwitchChain()
-  const { data: walletClient } = useWalletClient()
+  const walletClient = useAbstractWalletClient()
   const publicClient = usePublicClient()
   const { toast } = useToast()
 
   const [selectableAddresses, setSelectableAddresses] =
     useState<SelectableAddresses>({})
   useEffect(() => {
-    if (!account.address) {
+    if (!walletClient?.account?.address) {
       setSelectableAddresses({})
       return
     }
 
     setSelectableAddresses({
-      [account.address]: { name: "Yourself" },
+      [walletClient.account.address]: { name: "Yourself" },
     })
-  }, [account.address])
+  }, [walletClient?.account?.address])
 
   const [budgetTokens, setBudgetTokens] = useState<SelectableAddresses>({})
   useEffect(() => {
@@ -256,7 +250,7 @@ export function ApplicationCreationForm({
           },
           [] as { nextToken: boolean; to: Address; amount: bigint }[]
         )
-      if (!publicClient || !walletClient) {
+      if (!publicClient || !walletClient?.account) {
         dismiss()
         toast({
           title: "Application creation failed",
@@ -267,7 +261,7 @@ export function ApplicationCreationForm({
       }
       const transactionRequest = await publicClient
         .simulateContract({
-          account: walletClient.account.address,
+          account: walletClient.account,
           abi: TasksContract.abi,
           address: TasksContract.address,
           functionName: "applyForTask",
@@ -527,7 +521,7 @@ export function ApplicationCreationForm({
                           })
                           form.trigger("nativeReward")
                         }}
-                        account={account.address}
+                        account={walletClient?.account?.address}
                       />
                       <Button
                         onClick={() => removeNativeReward(i)}
@@ -600,7 +594,7 @@ export function ApplicationCreationForm({
                           updateReward(i, { ...rewardItem, amount: change })
                           form.trigger("reward")
                         }}
-                        account={account.address}
+                        account={walletClient?.account?.address}
                         showAvailable={false}
                       />
                       <Button

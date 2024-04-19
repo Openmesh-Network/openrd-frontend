@@ -1,9 +1,9 @@
 "use client"
 
 import * as React from "react"
-import { useAccount } from "wagmi"
 
 import { userEvents } from "@/lib/indexer"
+import { useAbstractWalletClient } from "@/hooks/useAbstractWalletClient"
 import { buttonVariants } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -15,22 +15,22 @@ import { Icons } from "./icons"
 import { ShowEvent } from "./tasks/show/show-event"
 
 export function NotificationsToggle() {
-  const account = useAccount()
+  const walletClient = useAbstractWalletClient()
   const [events, setEvents] = React.useState<number[]>([])
 
   const getEvents = async () => {
-    if (!account.address) {
+    if (!walletClient?.account?.address) {
       setEvents([])
       return
     }
 
-    const newEvents = await userEvents(account.address)
+    const newEvents = await userEvents(walletClient.account.address)
     setEvents(newEvents)
   }
 
   React.useEffect(() => {
     getEvents().catch(console.error)
-  }, [account.address])
+  }, [walletClient?.account?.address])
 
   return (
     <DropdownMenu onOpenChange={() => getEvents().catch(console.error)}>

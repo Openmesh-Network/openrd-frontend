@@ -2,21 +2,16 @@
 
 import { useEffect, useState } from "react"
 import { TasksContract } from "@/openrd-indexer/contracts/Tasks"
-import { Task, TaskState } from "@/openrd-indexer/types/tasks"
-import { addToIpfs } from "@/openrd-indexer/utils/ipfs"
+import { Task } from "@/openrd-indexer/types/tasks"
 import { zodResolver } from "@hookform/resolvers/zod"
+import axios from "axios"
 import { useForm } from "react-hook-form"
 import { BaseError, ContractFunctionRevertedError, decodeEventLog } from "viem"
-import {
-  useAccount,
-  useChainId,
-  usePublicClient,
-  useSwitchChain,
-  useWalletClient,
-} from "wagmi"
+import { useChainId, usePublicClient, useSwitchChain } from "wagmi"
 import { z } from "zod"
 
 import { chains } from "@/config/wagmi-config"
+import { useAbstractWalletClient } from "@/hooks/useAbstractWalletClient"
 import { Alert } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import {
@@ -32,7 +27,6 @@ import { RichTextArea } from "@/components/ui/rich-textarea"
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from "@/components/ui/use-toast"
 import { AddToIpfsRequest, AddToIpfsResponse } from "@/app/api/addToIpfs/route"
-import axios from "axios"
 
 const formSchema = z.object({
   explanation: z.string(),
@@ -49,10 +43,9 @@ export function SubmissionCreationForm({
   task: Task
   refresh: () => Promise<void>
 }) {
-  const account = useAccount()
   const connectedChainId = useChainId()
   const { switchChainAsync } = useSwitchChain()
-  const { data: walletClient } = useWalletClient()
+  const walletClient = useAbstractWalletClient()
   const publicClient = usePublicClient()
   const { toast } = useToast()
 
@@ -125,7 +118,7 @@ export function SubmissionCreationForm({
         description: "Please sign the transaction in your wallet...",
       }).dismiss
 
-      if (!publicClient || !walletClient) {
+      if (!publicClient || !walletClient?.account) {
         dismiss()
         toast({
           title: "Submission creation failed",
@@ -136,7 +129,7 @@ export function SubmissionCreationForm({
       }
       const transactionRequest = await publicClient
         .simulateContract({
-          account: walletClient.account.address,
+          account: walletClient.account,
           abi: TasksContract.abi,
           address: TasksContract.address,
           functionName: "createSubmission",
@@ -276,8 +269,9 @@ export function SubmissionCreationForm({
 
   if (
     firstRender ||
-    !account.address ||
-    account.address !== task.applications[task.executorApplication]?.applicant
+    !walletClient?.account?.address ||
+    walletClient.account.address !==
+      task.applications[task.executorApplication]?.applicant
   ) {
     // Not the executor
     return <Alert>Only the executor can create submissions.</Alert>

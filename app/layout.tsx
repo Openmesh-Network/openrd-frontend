@@ -9,6 +9,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { ContextProvider } from "@/components/context/context-provider"
 import { SiteHeader } from "@/components/site-header"
 import { TailwindIndicator } from "@/components/tailwind-indicator"
+import { RememberConnectedChain } from "@/components/web3/remember-connected-chain"
 
 export const metadata: Metadata = {
   title: {
@@ -52,6 +53,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
             </div>
             <Toaster />
             <TailwindIndicator />
+            <RememberConnectedChain />
           </ContextProvider>
         </body>
       </html>

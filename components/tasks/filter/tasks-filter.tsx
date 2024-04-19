@@ -1,8 +1,7 @@
 "use client"
 
-import Image from 'next/image'
-
-import { useEffect, useState, ChangeEvent } from "react"
+import { ChangeEvent, useEffect, useState } from "react"
+import Image from "next/image"
 import { Filter, ObjectFilter } from "@/openrd-indexer/api/filter"
 import { FilterTasksReturn } from "@/openrd-indexer/api/return-types"
 import { parseBigInt } from "@/openrd-indexer/utils/parseBigInt"
@@ -21,6 +20,7 @@ import {
 import { Button } from "@/components/ui/button"
 import { ErrorWrapper } from "@/components/ui/error-wrapper"
 import { Form, FormControl, FormItem, FormMessage } from "@/components/ui/form"
+import { useSelectableChains } from "@/components/context/selectable-chains"
 
 import {
   FilterControl,
@@ -135,22 +135,13 @@ export const formSchema = z.object({
     .array(),
 })
 
-// Temporarly also show testnets
-const mainnets = chains /*.filter((c) => !c.testnet)*/
-  .map((c) => c.id)
-
-export const defaultFilter = [
-  { property: FilterProperty.ChainId, value: { oneOf: mainnets.join(",") } },
-]
-
 export function TasksFilter({
   onFilterApplied,
 }: {
   onFilterApplied: (filtered: FilterTasksReturn) => void
 }) {
-
-  const [tasksSearchBar, setTasksSearchBar] = useState('')
-
+  const [tasksSearchBar, setTasksSearchBar] = useState("")
+  const selectableChains = useSelectableChains()
 
   const handleSearchBarInput = (event: ChangeEvent<HTMLInputElement>) => {
     const input = event.target
@@ -162,12 +153,17 @@ export function TasksFilter({
 
     setTasksSearchBar(value)
 
-    if (value === '') {
+    if (value === "") {
       onSubmit(form.getValues()).catch(console.error)
     }
   }
 
-
+  const defaultFilter = [
+    {
+      property: FilterProperty.ChainId,
+      value: { oneOf: selectableChains.join(",") },
+    },
+  ]
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -197,31 +193,29 @@ export function TasksFilter({
 
     getFilteredTasks().catch(console.error)
   }
-  
+
   async function searchBarFilter(value: string) {
     const getFilteredTasks = async () => {
-      const filteredTasks = await filterTasks(
-      {
-        "cachedMetadata": {
-          "oneOf": [
+      const filteredTasks = await filterTasks({
+        cachedMetadata: {
+          oneOf: [
             {
-              "objectFilter": {
-                "title": {
-                  "includes": value
-                }
-              }
+              objectFilter: {
+                title: {
+                  includes: value,
+                },
+              },
             },
             {
-              "objectFilter": {
-                "description": {
-                  "includes": value
-                }
-              }
+              objectFilter: {
+                description: {
+                  includes: value,
+                },
+              },
             },
-          ]
-        }
-    }
-      )
+          ],
+        },
+      })
       onFilterApplied(filteredTasks)
     }
 
@@ -250,7 +244,7 @@ export function TasksFilter({
           type="text"
           onInput={handleSearchBarInput}
           onKeyPress={(e) => {
-            if (e.key === 'Enter') {
+            if (e.key === "Enter") {
               searchBarFilter(tasksSearchBar)
             }
           }}
@@ -265,36 +259,38 @@ export function TasksFilter({
               <FormItem>
                 <FormControl>
                   <div>
-                    <div className='grid gap-y-[10px]'>
-                    {filter.map((filterItem, i) => (
-                      <ErrorWrapper
-                        key={i}
-                        error={form.formState.errors.filter?.at?.(i)}
-                      >
-                        <div className="flex w-full gap-x-1 ">
-                          <FilterControl
-                            values={{
-                              property: filterItem.property,
-                              value: filterItem.value,
-                            }}
-                            onChange={(change) => {
-                              updateFilter(i, change)
-                              form.trigger("filter")
-                            }}
-                          />
-                          <Button
-                          className='my-auto ml-[5px] h-fit p-[2px]'
-                            onClick={() => removeFilter(i)}
-                            variant="destructive"
-                          >
-                            <Image
-                              height={20}
-                              width={20}
-                              src={`/images/utils/x.svg`} alt={''}          />
-                          </Button>
-                        </div>
-                      </ErrorWrapper>
-                    ))}
+                    <div className="grid gap-y-[10px]">
+                      {filter.map((filterItem, i) => (
+                        <ErrorWrapper
+                          key={i}
+                          error={form.formState.errors.filter?.at?.(i)}
+                        >
+                          <div className="flex w-full gap-x-1 ">
+                            <FilterControl
+                              values={{
+                                property: filterItem.property,
+                                value: filterItem.value,
+                              }}
+                              onChange={(change) => {
+                                updateFilter(i, change)
+                                form.trigger("filter")
+                              }}
+                            />
+                            <Button
+                              className="my-auto ml-[5px] h-fit p-[2px]"
+                              onClick={() => removeFilter(i)}
+                              variant="destructive"
+                            >
+                              <Image
+                                height={20}
+                                width={20}
+                                src={`/images/utils/x.svg`}
+                                alt={""}
+                              />
+                            </Button>
+                          </div>
+                        </ErrorWrapper>
+                      ))}
                     </div>
                     <Button
                       className="mt-[20px] h-fit px-[8px] py-[5px]"

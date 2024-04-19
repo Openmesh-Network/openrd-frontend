@@ -2,16 +2,25 @@
 
 import { useState } from "react"
 import { Account } from "viem"
-import { useConnect, useDisconnect } from "wagmi"
+import { useChainId, useConnect, useDisconnect, useSwitchChain } from "wagmi"
 
+import { chains } from "@/config/wagmi-config"
+import { useAddressTitle } from "@/hooks/useAddressTitle"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 import { useSetSettings, useSettings } from "@/components/context/settings"
 
+import { useSelectableChains } from "../context/selectable-chains"
+import { Combobox } from "../ui/combobox"
+
 export function ConnectButton({}: {}) {
   const { connect, connectors } = useConnect()
+  const connectedChain = useChainId()
+  const { switchChain } = useSwitchChain()
   const walletClient = useAbstractWalletClient()
+  const addressTitle = useAddressTitle(walletClient?.account?.address)
+  const selectableChains = useSelectableChains()
 
   const [open, setOpen] = useState<boolean>(false)
 
@@ -25,9 +34,20 @@ export function ConnectButton({}: {}) {
 
   return (
     <>
-      <Button onClick={() => setOpen(true)}>
-        {walletClient.account.address}
-      </Button>
+      <div className="flex gap-x-2">
+        <Combobox
+          options={chains.map((chain) => {
+            return {
+              label: chain.name,
+              value: chain.id,
+              hidden: !selectableChains.includes(chain.id),
+            }
+          })}
+          value={connectedChain}
+          onChange={(chainId) => switchChain({ chainId: chainId as number })}
+        />
+        <Button onClick={() => setOpen(true)}>{addressTitle}</Button>
+      </div>
       {open && (
         <AccountModal
           account={walletClient.account}
@@ -104,6 +124,30 @@ function AccountModal({
                   <p className="text-sm text-muted-foreground">
                     ERC-4337 will be used.
                   </p>
+                </div>
+              </div>
+              <br />
+              <div className="items-top flex space-x-2">
+                <Checkbox
+                  id="showTestnet"
+                  checked={settings.showTestnet}
+                  onCheckedChange={(checked) =>
+                    setSettings({
+                      ...settings,
+                      showTestnet:
+                        checked === "indeterminate"
+                          ? settings.showTestnet
+                          : checked,
+                    })
+                  }
+                />
+                <div className="grid gap-1.5 leading-none">
+                  <label
+                    htmlFor="showTestnet"
+                    className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Show testnet
+                  </label>
                 </div>
               </div>
               <br />

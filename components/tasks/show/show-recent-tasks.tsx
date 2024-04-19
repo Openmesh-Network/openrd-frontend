@@ -6,74 +6,69 @@ import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 
 import { ShowTaskSummary } from "./show-task-summary"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { useFieldArray, useForm } from "react-hook-form"
-import { z } from "zod"
-import { defaultFilter, formSchema } from "../filter/tasks-filter"
 
 export interface TaskIndentifier {
   chainId: number
   taskId: bigint
 }
 interface TaskIncremented extends TaskIndentifier {
-  deadline: number;
-  budget: number;
+  deadline: number
+  budget: number
 }
 
 export function ShowRecentTasks({ taskList }: { taskList: TaskIndentifier[] }) {
   const [showTaskCount, setShowTaskCount] = useState<number>(10)
-  const [metadataTasks, setMetadataTasks] = useState<TaskIncremented[]>([]);
-  const [orderedTasksFinal, setOrderedTasksFinal] = useState<TaskIndentifier[]>(taskList);
-  const [orderTasksByDeadlineAsc, setOrderTasksByDeadlineAsc] = useState<boolean>(false);
-  const [orderTasksByBudgetAsc, setOrderTasksByBudgetAsc] = useState<boolean>(false);
+  const [metadataTasks, setMetadataTasks] = useState<TaskIncremented[]>([])
+  const [orderedTasksFinal, setOrderedTasksFinal] =
+    useState<TaskIndentifier[]>(taskList)
+  const [orderTasksByDeadlineAsc, setOrderTasksByDeadlineAsc] =
+    useState<boolean>(false)
+  const [orderTasksByBudgetAsc, setOrderTasksByBudgetAsc] =
+    useState<boolean>(false)
 
   const handleTaskInfo = (taskInfo: TaskIncremented) => {
     setMetadataTasks((currentTasks) => {
-      const index = currentTasks.findIndex(t => t.taskId === taskInfo.taskId);
+      const index = currentTasks.findIndex((t) => t.taskId === taskInfo.taskId)
       if (index >= 0) {
-        currentTasks[index] = taskInfo;
+        currentTasks[index] = taskInfo
       } else {
-        currentTasks.push(taskInfo);
+        currentTasks.push(taskInfo)
       }
-      return [...currentTasks];
-    });
-  };
-
+      return [...currentTasks]
+    })
+  }
 
   function handleOrderTaskByDeadline() {
     const sortedTasks = [...metadataTasks].sort((a, b) => {
-      return orderTasksByDeadlineAsc ? a.deadline - b.deadline : b.deadline - a.deadline;
-    });
-    
+      return orderTasksByDeadlineAsc
+        ? a.deadline - b.deadline
+        : b.deadline - a.deadline
+    })
+
     setOrderedTasksFinal(sortedTasks)
-    setOrderTasksByDeadlineAsc(!orderTasksByDeadlineAsc);
+    setOrderTasksByDeadlineAsc(!orderTasksByDeadlineAsc)
     setOrderTasksByBudgetAsc(false)
   }
 
   function handleOrderTaskByBudget() {
     const sortedTasks = [...metadataTasks].sort((a, b) => {
-      return orderTasksByBudgetAsc ? a.budget - b.budget : b.budget - a.budget;
-    });
-    
+      return orderTasksByBudgetAsc ? a.budget - b.budget : b.budget - a.budget
+    })
+
     setOrderedTasksFinal(sortedTasks)
-    setOrderTasksByBudgetAsc(!orderTasksByBudgetAsc);
+    setOrderTasksByBudgetAsc(!orderTasksByBudgetAsc)
     setOrderTasksByDeadlineAsc(false)
   }
 
   useEffect(() => {
-    setOrderedTasksFinal(taskList);
-  }, [taskList]);
-
+    setOrderedTasksFinal(taskList)
+  }, [taskList])
 
   return (
     <div>
       <div className="flex  overflow-x-auto rounded-[10px] border-[0.7px] bg-transparent px-[25px] py-[10px] text-[16px] font-medium">
         <div className="w-[45%]">
-          <p
-            onClick={() => {
-            }}
-            className=""
-          >
+          <p onClick={() => {}} className="">
             Project
           </p>
         </div>
@@ -82,7 +77,7 @@ export function ShowRecentTasks({ taskList }: { taskList: TaskIndentifier[] }) {
           <svg
             width="11"
             onClick={handleOrderTaskByBudget}
-            className={`w-[10px] cursor-pointer dark:hidden lg:w-[14px] ${orderTasksByBudgetAsc && 'rotate-180'}`}
+            className={`w-[10px] cursor-pointer dark:hidden lg:w-[14px] ${orderTasksByBudgetAsc && "rotate-180"}`}
             height="7"
             viewBox="0 0 11 7"
             fill="none"
@@ -106,7 +101,7 @@ export function ShowRecentTasks({ taskList }: { taskList: TaskIndentifier[] }) {
           <svg
             width="11"
             onClick={handleOrderTaskByBudget}
-            className={`hidden w-[10px] cursor-pointer dark:flex lg:w-[14px] ${orderTasksByBudgetAsc && 'rotate-180'}`}
+            className={`hidden w-[10px] cursor-pointer dark:flex lg:w-[14px] ${orderTasksByBudgetAsc && "rotate-180"}`}
             height="7"
             viewBox="0 0 11 7"
             fill="none"
@@ -133,7 +128,7 @@ export function ShowRecentTasks({ taskList }: { taskList: TaskIndentifier[] }) {
           <svg
             width="11"
             onClick={handleOrderTaskByDeadline}
-            className={`w-[10px] cursor-pointer dark:hidden lg:w-[14px] ${orderTasksByDeadlineAsc && 'rotate-180'}`}
+            className={`w-[10px] cursor-pointer dark:hidden lg:w-[14px] ${orderTasksByDeadlineAsc && "rotate-180"}`}
             height="7"
             viewBox="0 0 11 7"
             fill="none"
@@ -157,7 +152,7 @@ export function ShowRecentTasks({ taskList }: { taskList: TaskIndentifier[] }) {
           <svg
             width="11"
             onClick={handleOrderTaskByDeadline}
-            className={`hidden w-[10px] cursor-pointer dark:flex lg:w-[14px] ${orderTasksByDeadlineAsc && 'rotate-180'}`}
+            className={`hidden w-[10px] cursor-pointer dark:flex lg:w-[14px] ${orderTasksByDeadlineAsc && "rotate-180"}`}
             height="7"
             viewBox="0 0 11 7"
             fill="none"
@@ -181,10 +176,15 @@ export function ShowRecentTasks({ taskList }: { taskList: TaskIndentifier[] }) {
         </div>
       </div>
       {orderedTasksFinal.slice(0, showTaskCount).map((task, i) => (
-        <ShowTaskSummary key={`${task.taskId}-${i}`} {...task} index={i} onTaskInfo={(value) => {
-          console.log(value)
-          handleTaskInfo(value)
-        }} />
+        <ShowTaskSummary
+          key={`${task.taskId}-${i}`}
+          {...task}
+          index={i}
+          onTaskInfo={(value) => {
+            console.log(value)
+            handleTaskInfo(value)
+          }}
+        />
       ))}
       {showTaskCount < taskList.length && (
         <Button

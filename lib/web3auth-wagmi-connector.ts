@@ -53,10 +53,6 @@ export function Web3AuthConnector(parameters: Web3AuthConnectorParams) {
     id: "web3auth",
     name: "Web3Auth",
     type: "Web3Auth",
-    async setup() {
-      const provider = await this.getProvider()
-      if (provider) provider.on("connect", this.onConnect?.bind(this) as any)
-    },
     async connect({ chainId } = {}) {
       try {
         config.emitter.emit("message", {
@@ -204,7 +200,6 @@ export function Web3AuthConnector(parameters: Web3AuthConnectorParams) {
 
       const provider = await this.getProvider()
       if (provider) {
-        provider.removeListener("connect", this.onConnect?.bind(this) as any)
         provider.on("accountsChanged", this.onAccountsChanged.bind(this) as any)
         provider.on("chainChanged", this.onChainChanged as any)
         provider.on("disconnect", this.onDisconnect.bind(this) as any)

@@ -5,7 +5,6 @@ import { CaretSortIcon, CheckIcon } from "@radix-ui/react-icons"
 
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
-import { FormControl } from "@/components/ui/form"
 import {
   Popover,
   PopoverContent,
@@ -15,6 +14,7 @@ import {
 export interface ComboboxOption<T> {
   label: string
   value: T
+  hidden?: boolean
 }
 
 export interface ComboboxProps<T>
@@ -40,37 +40,41 @@ const Combobox = React.forwardRef(
       >
         <Popover>
           <PopoverTrigger asChild>
-            <FormControl>
-              <Button
-                variant="outline"
-                role="combobox"
-                className={cn("justify-between")}
-              >
-                <span>
-                  {options.find((o) => o.value === value)?.label ??
-                    "UNKNOWN VALUE"}
-                </span>
-                <CaretSortIcon className="ml-2 size-4 shrink-0 opacity-50" />
-              </Button>
-            </FormControl>
+            <Button
+              variant="outline"
+              role="combobox"
+              className={cn("justify-between")}
+            >
+              <span>
+                {options.find((o) => o.value === value)?.label ??
+                  "UNKNOWN VALUE"}
+              </span>
+              <CaretSortIcon className="ml-2 size-4 shrink-0 opacity-50" />
+            </Button>
           </PopoverTrigger>
           <PopoverContent className="w-[450px] p-0">
-            {options.map((option, i) => (
-              <Button
-                key={i}
-                onClick={() => onChange(option.value)}
-                variant="outline"
-                className="w-full"
-              >
-                <span>{option.label}</span>
-                <CheckIcon
-                  className={cn(
-                    "ml-auto size-4",
-                    option.value === value ? "opacity-100" : "opacity-0"
-                  )}
-                />
-              </Button>
-            ))}
+            {options.map((option, i) => {
+              if (option.hidden) {
+                return <></>
+              }
+
+              return (
+                <Button
+                  key={i}
+                  onClick={() => onChange(option.value)}
+                  variant="outline"
+                  className="w-full"
+                >
+                  <span>{option.label}</span>
+                  <CheckIcon
+                    className={cn(
+                      "ml-auto size-4",
+                      option.value === value ? "opacity-100" : "opacity-0"
+                    )}
+                  />
+                </Button>
+              )
+            })}
           </PopoverContent>
         </Popover>
       </div>

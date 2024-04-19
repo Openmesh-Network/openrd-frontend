@@ -77,7 +77,7 @@ export function ShowRecentTasks({ taskList }: { taskList: TaskIndentifier[] }) {
             Project
           </p>
         </div>
-        <div className="flex w-[20%] items-center">
+        <div className="hidden w-[20%] items-center md:flex">
           <p className="pr-[10px]">Budget</p>
           <svg
             width="11"
@@ -128,7 +128,7 @@ export function ShowRecentTasks({ taskList }: { taskList: TaskIndentifier[] }) {
             />
           </svg>
         </div>
-        <div className="flex w-[20%] items-center">
+        <div className="hidden w-[20%] items-center md:flex">
           <p className="pr-[10px]">Ends</p>
           <svg
             width="11"

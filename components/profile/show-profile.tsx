@@ -4,7 +4,6 @@ import { useEffect, useState } from "react"
 import { TaskRole, User } from "@/openrd-indexer/types/user"
 import { parseBigInt } from "@/openrd-indexer/utils/parseBigInt"
 import { Address } from "viem"
-import { useAccount } from "wagmi"
 
 import { chains } from "@/config/wagmi-config"
 import { getUser } from "@/lib/indexer"
@@ -15,6 +14,7 @@ import { buttonVariants } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Link } from "@/components/ui/link"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
+import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 import { SanitizeHTML } from "@/components/sanitize-html"
 import { ShowTaskSummary } from "@/components/tasks/show/show-task-summary"
 
@@ -24,7 +24,7 @@ export interface ProfileMetadata {
 }
 
 export function ShowProfile({ address }: { address: Address }) {
-  const account = useAccount()
+  const walletClient = useAbstractWalletClient()
   const [user, setUser] = useState<User | undefined>(undefined)
   const [forceTab, setForceTab] = useState<string | undefined>(undefined)
   const userENS = useENS({ address: address })
@@ -56,11 +56,12 @@ export function ShowProfile({ address }: { address: Address }) {
         <h1 className="text-3xl font-extrabold leading-tight tracking-tighter md:text-4xl">
           {title}
         </h1>
-        {account.address && account.address == address && (
-          <Link href="/profile/edit" className={buttonVariants({})}>
-            Edit profile
-          </Link>
-        )}
+        {walletClient?.account?.address &&
+          walletClient.account.address == address && (
+            <Link href="/profile/edit" className={buttonVariants({})}>
+              Edit profile
+            </Link>
+          )}
       </div>
       <div className="flex gap-x-10">
         {chains.map((chain) => (

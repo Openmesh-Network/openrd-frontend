@@ -128,22 +128,22 @@ export function ShowTaskSummary({
 
   return (
     <Card
-      className={`flex w-full justify-between gap-x-[10px] border-x-0 border-b-2 border-t-0 py-[20px] !shadow-none ${index !== 0 && "rounded-none"} ${index === 0 && "rounded-b-none"}`}
+      className={`w-full justify-between gap-x-[10px] border-x-0 border-b-2 border-t-0 py-[20px] !shadow-none md:flex ${index !== 0 && "rounded-none"} ${index === 0 && "rounded-b-none"}`}
     >
-      <div className="flex w-full px-[25px]">
-        <div className="w-[60%] lg:w-[55%] xl:w-[50%]">
-          <CardHeader className="!pb-0">
+      <div className="w-full px-2 md:flex md:px-[25px]">
+        <div className="!px-0 md:w-[60%] lg:w-[55%] xl:w-[50%]">
+          <CardHeader className="!px-0 !pb-0">
             <Link className="" href={`/tasks/${chainId}:${taskId}`}>
               <div className="cursor-pointer text-lg font-bold">
-                {title ?? <Skeleton className="h-6 w-[250px] bg-white" />}
+                {title ?? <Skeleton className="bg-white md:h-6 md:w-[250px]" />}
               </div>
             </Link>
-            <div className="max-h-[100px] overflow-hidden">
+            <div className="overflow-hidden md:max-h-[100px]">
               <SanitizeHTML html={description} />
             </div>
           </CardHeader>
-          <CardContent className="">
-            <div className="space-x-1">
+          <CardContent className="!px-0">
+            <div className="space-x-1 space-y-2">
               <Badge variant="outline">
                 Chain: {chain?.name ?? chainId.toString()}
               </Badge>
@@ -156,12 +156,12 @@ export function ShowTaskSummary({
             </div>
           </CardContent>
         </div>
-        <div className="w-[22%] pt-8">${usdValue}</div>
-        <div className="w-[16%] pt-8 lg:w-[13%] xl:w-[10%]">
-          {daysUntil(String(deadline))}
+        <div className="text- text-sm md:w-[22%] md:pt-8 md:text-base"><span className="md:hidden">Budget: </span>${usdValue}</div>
+        <div className="text-sm md:w-[16%] md:pt-8 md:text-base lg:w-[13%] xl:w-[10%]">
+        <span className="md:hidden">Deadline: </span>{daysUntil(String(deadline))}
         </div>
       </div>
-      <CardFooter className="my-auto mr-4 w-fit cursor-pointer whitespace-nowrap rounded-md border-[0.5px] border-[#0354EC] bg-transparent !py-[2px]  px-[10px] text-[15px] text-[#0354EC] hover:bg-[#0354EC] hover:text-white">
+      <CardFooter className="mx-7 my-auto !mt-4 cursor-pointer justify-center whitespace-nowrap rounded-md border-[0.5px] border-[#0354EC] bg-transparent !py-[2px] px-[10px] text-[15px] text-[#0354EC] hover:bg-[#0354EC]  hover:text-white md:mx-0 md:!mt-0 md:mr-4 md:w-fit">
         <Link href={`/tasks/${chainId}:${taskId}`}>View task</Link>
       </CardFooter>
     </Card>

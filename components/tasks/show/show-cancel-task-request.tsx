@@ -9,13 +9,7 @@ import {
   TaskState,
 } from "@/openrd-indexer/types/tasks"
 import { BaseError, ContractFunctionRevertedError, decodeEventLog } from "viem"
-import {
-  useAccount,
-  useChainId,
-  usePublicClient,
-  useSwitchChain,
-  useWalletClient,
-} from "wagmi"
+import { useChainId, usePublicClient, useSwitchChain } from "wagmi"
 
 import { chains } from "@/config/wagmi-config"
 import { useMetadata } from "@/hooks/useMetadata"
@@ -31,6 +25,7 @@ import {
 import { Separator } from "@/components/ui/separator"
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from "@/components/ui/use-toast"
+import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 import { SanitizeHTML } from "@/components/sanitize-html"
 
 export interface ShowRequestMetadata {
@@ -54,10 +49,9 @@ export function ShowCancelTaskRequest({
   task?: Task
   refresh: () => Promise<void>
 }) {
-  const account = useAccount()
   const connectedChainId = useChainId()
   const { switchChainAsync } = useSwitchChain()
-  const { data: walletClient } = useWalletClient()
+  const walletClient = useAbstractWalletClient()
   const publicClient = usePublicClient()
   const { toast } = useToast()
 
@@ -103,7 +97,7 @@ export function ShowCancelTaskRequest({
         description: "Please sign the transaction in your wallet...",
       })
 
-      if (!publicClient || !walletClient) {
+      if (!publicClient || !walletClient?.account) {
         dismiss()
         toast({
           title: "Request approve failed",
@@ -114,7 +108,7 @@ export function ShowCancelTaskRequest({
       }
       const transactionRequest = await publicClient
         .simulateContract({
-          account: walletClient.account.address,
+          account: walletClient.account,
           abi: TasksContract.abi,
           address: TasksContract.address,
           functionName: "acceptRequest",
@@ -282,7 +276,7 @@ export function ShowCancelTaskRequest({
         description: "Please sign the transaction in your wallet...",
       })
 
-      if (!publicClient || !walletClient) {
+      if (!publicClient || !walletClient?.account) {
         dismiss()
         toast({
           title: "Request execute failed",
@@ -293,7 +287,7 @@ export function ShowCancelTaskRequest({
       }
       const transactionRequest = await publicClient
         .simulateContract({
-          account: walletClient.account.address,
+          account: walletClient.account,
           abi: TasksContract.abi,
           address: TasksContract.address,
           functionName: "executeRequest",
@@ -467,8 +461,8 @@ export function ShowCancelTaskRequest({
               Execute
             </Button>
           ) : (
-            account.address &&
-            account.address === executorApplication?.applicant && (
+            walletClient?.account?.address &&
+            walletClient.account.address === executorApplication?.applicant && (
               <Button
                 disabled={approvingRequest}
                 onClick={() => approveRequest().catch(console.error)}

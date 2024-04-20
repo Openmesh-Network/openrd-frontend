@@ -156,13 +156,21 @@ export function ShowTaskSummary({
             </div>
           </CardContent>
         </div>
-        <div className="text- text-sm md:w-[22%] md:pt-8 md:text-base"><span className="md:hidden">Budget: </span>${usdValue}</div>
+        <div className="text- text-sm md:w-[22%] md:pt-8 md:text-base">
+          <span className="md:hidden">Budget: </span>${usdValue}
+        </div>
         <div className="text-sm md:w-[16%] md:pt-8 md:text-base lg:w-[13%] xl:w-[10%]">
-        <span className="md:hidden">Deadline: </span>{daysUntil(String(deadline))}
+          <span className="md:hidden">Deadline: </span>
+          {daysUntil(String(deadline))}
         </div>
       </div>
-      <CardFooter className="mx-7 my-auto !mt-4 cursor-pointer justify-center whitespace-nowrap rounded-md border-[0.5px] border-[#0354EC] bg-transparent !py-[2px] px-[10px] text-[15px] text-[#0354EC] hover:bg-[#0354EC]  hover:text-white md:mx-0 md:!mt-0 md:mr-4 md:w-fit">
-        <Link href={`/tasks/${chainId}:${taskId}`}>View task</Link>
+      <CardFooter>
+        <Link
+          className="mx-7 my-auto !mt-4 cursor-pointer justify-center whitespace-nowrap rounded-md border-[0.5px] border-[#0354EC] bg-transparent !py-[2px] px-[10px] text-[15px] text-[#0354EC] hover:bg-[#0354EC]  hover:text-white md:mx-0 md:!mt-0 md:mr-4 md:w-fit"
+          href={`/tasks/${chainId}:${taskId}`}
+        >
+          View task
+        </Link>
       </CardFooter>
     </Card>
   )

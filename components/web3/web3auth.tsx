@@ -1,11 +1,8 @@
 import { WEB3AUTH_NETWORK } from "@web3auth/base"
-import { CoinbaseAdapter } from "@web3auth/coinbase-adapter"
 import { EthereumPrivateKeyProvider } from "@web3auth/ethereum-provider"
-import { MetamaskAdapter } from "@web3auth/metamask-adapter"
 import { Web3Auth } from "@web3auth/modal"
-import { WalletConnectV2Adapter } from "@web3auth/wallet-connect-v2-adapter"
 
-import { appName, chains, metadata, projectId } from "@/config/wagmi-config"
+import { appName, chains } from "@/config/wagmi-config"
 import {
   getChainConfig,
   Web3AuthConnector,
@@ -37,23 +34,6 @@ function getWeb3Auth(): Web3Auth {
     storageKey: "local",
     enableLogging: true,
   })
-
-  const adapters = [
-    new WalletConnectV2Adapter({
-      adapterSettings: {
-        walletConnectInitOptions: {
-          projectId,
-          metadata,
-        },
-      },
-    }),
-    new MetamaskAdapter(),
-    new CoinbaseAdapter(),
-  ]
-
-  for (let i = 0; i < adapters.length; i++) {
-    web3AuthInstance.configureAdapter(adapters[i])
-  }
 
   web3AuthInstance.initModal().catch(console.error)
 

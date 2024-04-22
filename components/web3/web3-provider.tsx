@@ -2,10 +2,12 @@
 
 import React, { ReactNode } from "react"
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
+import { coinbaseWallet, injected, walletConnect } from "@wagmi/connectors"
+import { createWeb3Modal } from "@web3modal/wagmi/react"
 import { arbitrumSepolia, mainnet, polygon, sepolia } from "viem/chains"
 import { createConfig, http, WagmiProvider } from "wagmi"
 
-import { chains } from "@/config/wagmi-config"
+import { chains, metadata, projectId } from "@/config/wagmi-config"
 
 import Web3AuthConnectorInstance from "./web3auth"
 
@@ -21,7 +23,20 @@ const config = createConfig({
     [sepolia.id]: http(),
     [arbitrumSepolia.id]: http(),
   },
-  connectors: [Web3AuthConnectorInstance() as any],
+  connectors: [
+    walletConnect({ projectId, metadata, showQrModal: false }),
+    injected({ shimDisconnect: true }),
+    coinbaseWallet({
+      appName: metadata.name,
+      appLogoUrl: metadata.icons[0],
+    }),
+    Web3AuthConnectorInstance() as any,
+  ],
+})
+
+createWeb3Modal({
+  wagmiConfig: config,
+  projectId,
 })
 
 export function Web3Provider({ children }: { children: ReactNode }) {

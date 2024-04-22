@@ -72,7 +72,7 @@ function ConnecterModal({ dismiss }: { dismiss: () => void }) {
       <div className="grid grid-cols-1 place-items-center gap-y-5">
         <Button
           onClick={() => {
-            const connector = connectors.find((c) => c.name === "Web3Auth")
+            const connector = connectors.find((c) => c.id === "web3auth")
             if (!connector) {
               console.error("Web3Auth connector not found")
               return

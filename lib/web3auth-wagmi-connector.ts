@@ -51,7 +51,7 @@ export function Web3AuthConnector(parameters: Web3AuthConnectorParams) {
 
   return createConnector<Provider>((config) => ({
     id: "web3auth",
-    name: "Web3Auth",
+    name: "Social Login",
     type: "Web3Auth",
     async connect({ chainId } = {}) {
       try {

@@ -37,6 +37,10 @@ const config = createConfig({
 createWeb3Modal({
   wagmiConfig: config,
   projectId,
+  connectorImages: {
+    web3auth:
+      "https://lh3.googleusercontent.com/COxitqgJr1sJnIDe8-jiKhxDx1FrYbtRHKJ9z_hELisAlapwE9LUPh6fcXIfb5vwpbMl4xl9H9TRFPc5NOO8Sb3VSgIBrfRYvW6cUA",
+  },
 })
 
 export function Web3Provider({ children }: { children: ReactNode }) {

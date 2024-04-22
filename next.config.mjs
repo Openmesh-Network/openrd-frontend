@@ -21,7 +21,7 @@ const nextConfig = {
     ],
   },
   webpack: (webpackConfig, { webpack }) => {
-    // For wallet connect
+    // For web3modal
     webpackConfig.externals.push("pino-pretty", "lokijs", "encoding")
 
     // Workaround until next fixed es6 imports (with .js extension)

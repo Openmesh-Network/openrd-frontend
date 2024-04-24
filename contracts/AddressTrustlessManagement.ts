@@ -1,5 +1,5 @@
 export const AddressTrustlessManagementContract = {
-  address: "0xDE87dC6C365dD751e650AAe2f2f6A7a599aed58E",
+  address: "0xE1b45a7FB3643e14e297f915789e24CE7C3Fd19F",
   abi: [
     {
       type: "function",

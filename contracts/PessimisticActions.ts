@@ -1,5 +1,5 @@
 export const PessimisticActionsContract = {
-  address: "0x366D84094b553B2A7d64C3B57cB649323a394C04",
+  address: "0x023A0104c45bb4A3f09BeD1214F4e585e88541E5",
   abi: [
     {
       type: "function",

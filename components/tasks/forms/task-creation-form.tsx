@@ -115,7 +115,7 @@ export function TaskCreationForm() {
     })
   }, [walletClient?.account?.address])
   const disputeManagerOptions: SelectableAddresses = {
-    "0x6a956DaD77262E80a11dFE3277737Ac6d9469759": {
+    "0x7aC61b993B4aa460EDf7BC4266Ed4BBCa20bF2Db": {
       name: "Openmesh Dispute Department",
     },
   }

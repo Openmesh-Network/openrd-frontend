@@ -17,7 +17,7 @@ export default function Web3AuthConnectorInstance() {
 
 function getWeb3Auth(): Web3Auth {
   const clientId =
-    "BN9fUSi9sm0PSaT1opW5MF_a4PuaeYqoYO4XHgNu2GIkEpivpwnUWT1tFI_pYZUyQ4t7LMug8FXdwcXPFtcM5Lk"
+    "BMHAMqIuGsNQs7cmzGu4yvsVbyLwT480PuO-Fz-coWA0qbmXtNg-7Wmbv0SVDKfdvE6mmyfC5npRIGHSYvDvWdE"
 
   const privateKeyProvider = new EthereumPrivateKeyProvider({
     config: { chainConfig: getChainConfig(chains[0]) },

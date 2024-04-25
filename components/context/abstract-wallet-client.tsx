@@ -13,7 +13,7 @@ import {
 } from "permissionless"
 import { EntryPoint } from "permissionless/types"
 import { Account, Chain, createPublicClient, http, WalletClient } from "viem"
-import { arbitrumSepolia, sepolia } from "viem/chains"
+import { arbitrumSepolia, mainnet, polygon, sepolia } from "viem/chains"
 import { useWalletClient } from "wagmi"
 
 import { chains } from "@/config/wagmi-config"
@@ -22,18 +22,31 @@ import { useSettings } from "@/components/context/settings"
 const chainSettings: {
   [chainId: number]: {
     BUNDLER_RPC: string
-    PAYMASTER_RPC: string
+    PAYMASTER_RPC?: string
     ENTRY_POINT: EntryPoint
   }
 } = {
+  [mainnet.id]: {
+    BUNDLER_RPC:
+      "https://rpc.zerodev.app/api/v2/bundler/62fda705-23e5-4939-857f-2459ea4343e7",
+    // Gas fees are not sponsored
+    ENTRY_POINT: ENTRYPOINT_ADDRESS_V07,
+  },
+  [polygon.id]: {
+    BUNDLER_RPC:
+      "https://rpc.zerodev.app/api/v2/bundler/377dbd56-c0b9-4988-9463-3cf08d8fd564",
+    PAYMASTER_RPC:
+      "https://rpc.zerodev.app/api/v2/paymaster/377dbd56-c0b9-4988-9463-3cf08d8fd564",
+    ENTRY_POINT: ENTRYPOINT_ADDRESS_V07,
+  },
   [sepolia.id]: {
-    BUNDLER_RPC: `https://rpc.zerodev.app/api/v2/bundler/f93016ab-859c-4458-bb75-cd0fa56ca469`,
-    PAYMASTER_RPC: `https://rpc.zerodev.app/api/v2/paymaster/f93016ab-859c-4458-bb75-cd0fa56ca469`,
+    BUNDLER_RPC: `https://rpc.zerodev.app/api/v2/bundler/8722ba0e-bd7a-432b-9410-136e01c41774`,
+    PAYMASTER_RPC: `https://rpc.zerodev.app/api/v2/paymaster/8722ba0e-bd7a-432b-9410-136e01c41774`,
     ENTRY_POINT: ENTRYPOINT_ADDRESS_V07,
   },
   [arbitrumSepolia.id]: {
-    BUNDLER_RPC: `https://rpc.zerodev.app/api/v2/bundler/d07724af-3688-4ea0-90a1-e4d6e0b6e451`,
-    PAYMASTER_RPC: `https://rpc.zerodev.app/api/v2/paymaster/d07724af-3688-4ea0-90a1-e4d6e0b6e451`,
+    BUNDLER_RPC: `https://rpc.zerodev.app/api/v2/bundler/7bd2daf9-729f-49ea-9eae-c73b99bf84ca`,
+    PAYMASTER_RPC: `https://rpc.zerodev.app/api/v2/paymaster/7bd2daf9-729f-49ea-9eae-c73b99bf84ca`,
     ENTRY_POINT: ENTRYPOINT_ADDRESS_V07,
   },
 }
@@ -98,19 +111,21 @@ export function AbstractWalletClientProvider({
       chain,
       entryPoint: settings.ENTRY_POINT,
       bundlerTransport: http(settings.BUNDLER_RPC),
-      middleware: {
-        sponsorUserOperation: async ({ userOperation }) => {
-          const zerodevPaymaster = createZeroDevPaymasterClient({
-            chain,
-            entryPoint: settings.ENTRY_POINT,
-            transport: http(settings.PAYMASTER_RPC),
-          })
-          return zerodevPaymaster.sponsorUserOperation({
-            userOperation,
-            entryPoint: settings.ENTRY_POINT,
-          })
-        },
-      },
+      middleware: !settings.PAYMASTER_RPC
+        ? undefined
+        : {
+            sponsorUserOperation: async ({ userOperation }) => {
+              const zerodevPaymaster = createZeroDevPaymasterClient({
+                chain,
+                entryPoint: settings.ENTRY_POINT,
+                transport: http(settings.PAYMASTER_RPC),
+              })
+              return zerodevPaymaster.sponsorUserOperation({
+                userOperation,
+                entryPoint: settings.ENTRY_POINT,
+              })
+            },
+          },
     })
 
     setCache({ ...cache, [id]: kernelClient })

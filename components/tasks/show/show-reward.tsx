@@ -21,7 +21,7 @@ export function ShowReward({
   reward: ShowReward[]
 }) {
   const total = reward.reduce((acc, value) => {
-    return acc + value.amount
+    return acc + (value.partialAmount ?? value.amount)
   }, BigInt(0))
 
   return (
@@ -30,29 +30,26 @@ export function ShowReward({
         <span>
           {formatUnits(total, decimals)} {name}
         </span>
-        {
-          name === 'MATIC' && (
+        {name === "MATIC" && (
           <img
             alt="matic"
             src="/images/task/polygon-matic-logo.svg"
             className="w-[15px]"
           ></img>
-          )
-        }
-        {
-          name === 'ETHER' && (
+        )}
+        {name === "ETHER" && (
           <img
             alt="matic"
             src="/images/task/ethereum-eth-logo.svg"
             className="w-[12px]"
           ></img>
-          )
-        }
+        )}
       </div>
       {total !== BigInt(0) && (
         <ul className="list-disc pl-4">
           {reward.map((r, i) => (
             <li key={i}>
+              {formatUnits(r.partialAmount ?? r.amount, decimals)}/
               {formatUnits(r.amount, decimals)} {ticker} to {r.to}
             </li>
           ))}

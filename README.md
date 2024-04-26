@@ -1,22 +1,12 @@
-# next-template
+## OpenR&D frontend
 
-A Next.js 13 template for building apps with Radix UI and Tailwind CSS.
+https://openrd.openmesh.network/
 
-## Usage
+Website interface to interact with the OpenR&D smart contracts.  
 
-```bash
-npx create-next-app -e https://github.com/shadcn/next-template
+## Commands
 ```
-
-## Features
-
-- Next.js 13 App Directory
-- Radix UI Primitives
-- Tailwind CSS
-- Icons from [Lucide](https://lucide.dev)
-- Dark mode with `next-themes`
-- Tailwind CSS class sorting, merging and linting.
-
-## License
-
-Licensed under the [MIT license](https://github.com/shadcn/ui/blob/main/LICENSE.md).
+npm run dev
+npm run build
+npm run start
+```

@@ -30,7 +30,7 @@ function getWeb3Auth(): Web3Auth {
       appName,
       mode: "dark",
     },
-    web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_DEVNET,
+    web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_MAINNET,
     storageKey: "local",
     enableLogging: true,
   })

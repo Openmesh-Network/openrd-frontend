@@ -20,7 +20,7 @@ const config = createConfig({
   transports: {
     [mainnet.id]: http(),
     [polygon.id]: http(),
-    [sepolia.id]: http(),
+    [sepolia.id]: http("https://rpc.ankr.com/eth_sepolia"),
     [arbitrumSepolia.id]: http(),
   },
   connectors: [

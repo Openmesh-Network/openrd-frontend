@@ -1,16 +1,8 @@
 "use client"
 
-import { Dispute, Reward, Task, TaskState } from "@/openrd-indexer/types/tasks"
+import { Dispute, Task } from "@/openrd-indexer/types/tasks"
 
-import { Button } from "@/components/ui/button"
-import {
-  Card,
-  CardContent,
-  CardFooter,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card"
-import { Link } from "@/components/ui/link"
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 
 import { ShowERC20Reward } from "./show-erc20-reward"
 import { ShowNativeReward } from "./show-native-reward"

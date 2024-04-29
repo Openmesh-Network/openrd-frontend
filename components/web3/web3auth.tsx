@@ -26,10 +26,6 @@ function getWeb3Auth(): Web3Auth {
   const web3AuthInstance = new Web3Auth({
     clientId,
     privateKeyProvider,
-    uiConfig: {
-      appName,
-      mode: "dark",
-    },
     web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_MAINNET,
     storageKey: "local",
     enableLogging: true,

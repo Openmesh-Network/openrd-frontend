@@ -23,7 +23,8 @@ export const siteConfig = {
     // },
   ],
   links: {
-    guide: "https://discord.gg/6QDSHqbBvP", // Should be replaced when the guide is made
+    guide:
+      "https://open-mesh.gitbook.io/l3a-dao-documentation/getting-started-create-tasks/create-a-task/connect-wallet",
     docs: "https://open-mesh.gitbook.io/l3a-dao-documentation/about/openr-and-d-101",
     forum: "https://circle.openmesh.network/",
   },

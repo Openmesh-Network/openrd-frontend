@@ -1,16 +1,142 @@
+'use client'
 import Link from "next/link"
-import { TaskState } from "@/openrd-indexer/types/tasks"
-
+import { useEffect, useState } from 'react'
 import { siteConfig } from "@/config/site"
 import { buttonVariants } from "@/components/ui/button"
 import { ShowRecentEvents } from "@/components/tasks/show/show-recent-events"
 import { TaskCounter } from "@/components/tasks/show/task-counter"
 import { TotalBudgetValue } from "@/components/tasks/show/total-budget-value"
 import { UniqueInteractors } from "@/components/tasks/show/unique-interactors"
+import Sidebar from "@/components/ui/sidebar/Sidebar"
+import { getTotalUsers, filterTasks } from "@/lib/indexer"
+import { TaskState } from '@/openrd-indexer/types/tasks'
+import { FilterProperty } from "@/components/tasks/filter/filter-control"
+import ReducedSidebar from "@/components/ui/reducedSidebar/ReducedSidebar"
+import { getTotalUsdValue } from "@/lib/indexer"
 
 export default function IndexPage() {
+  const [isSidebarExpanded, setSidebarExpanded] = useState(false)
+  const [budgetValue, setBudgetValue] = useState<number>(0)
+  const [uniqueInteractors, setUniqueInteractors] = useState<
+  number
+    >(0)
+  const [openTasks, setOpenTasks] = useState<
+    number
+      >(0)
+  const [takenTasks, setTakenTasks] = useState<
+    number
+    >(0)
+  const [tasksClosed, setClosedTasks] = useState<
+    number
+    >(0)
+
+  useEffect(() => {
+
+    const getBudgetValue = async () => {
+      const totalUsd = await getTotalUsdValue()
+      setBudgetValue(totalUsd.totalUsdValue)
+    }
+
+    const getUniqueInteractos = async () => {
+        const users = await getTotalUsers()
+        setUniqueInteractors(users.totalUsers)
+    }
+
+    const getCounterOpen = async () => {
+        const filteredTasks = await filterTasks({
+          [FilterProperty.State]: { equal: TaskState.Open },
+        })
+        setOpenTasks(filteredTasks.length)
+      }
+
+    const getCounterTaken = async () => {
+        const filteredTasks = await filterTasks({
+          [FilterProperty.State]: { equal: TaskState.Taken },
+        })
+        setTakenTasks(filteredTasks.length)
+      }
+
+    const getCounterClosed = async () => {
+    const filteredTasks = await filterTasks({
+        [FilterProperty.State]: { equal: TaskState.Closed },
+    })
+    setClosedTasks(filteredTasks.length)
+    }
+  
+    getCounterClosed().catch(console.error)
+    getCounterTaken().catch(console.error)
+    getCounterOpen().catch(console.error)
+    getUniqueInteractos().catch(console.error)
+    getBudgetValue().catch(console.error)
+    }, [])
+
   return (
-    <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
+    <div className="flex">
+      <div className="md:hidden">
+      <div
+        className={`opacity-${
+          isSidebarExpanded ? '100 block h-full' : '0 hidden'
+        } h-full transition-opacity duration-300`}
+      >
+        <Sidebar
+          onClickBurger={() => setSidebarExpanded(!isSidebarExpanded)}
+          budget={budgetValue}
+          openProjectsNumber={openTasks}
+          activeProjectsNumber={takenTasks}
+          completedProjectsNumber={tasksClosed}
+          uniqueInteractors={uniqueInteractors}
+        />
+      </div>
+      <div
+        className={`opacity-${
+          isSidebarExpanded ? '0 hidden' : '100 block'
+        } h-full transition-opacity duration-300`}
+      >
+        <ReducedSidebar
+          onClickBurger={() => setSidebarExpanded(!isSidebarExpanded)}
+          budget={budgetValue}
+          openProjectsNumber={openTasks}
+          activeProjectsNumber={takenTasks}
+          completedProjectsNumber={tasksClosed}
+          uniqueInteractors={uniqueInteractors}
+        />
+      </div>
+    </div>
+    <div
+      onMouseEnter={() => setSidebarExpanded(true)}
+      onMouseLeave={() => setSidebarExpanded(false)}
+      className="hidden md:block"
+    >
+      <div
+        className={`opacity-${
+          isSidebarExpanded ? '100 block h-full' : '0 hidden'
+        } h-full transition-opacity duration-300`}
+      >
+        <Sidebar
+          onClickBurger={() => console.log('')}
+          budget={budgetValue}
+          openProjectsNumber={openTasks}
+          activeProjectsNumber={takenTasks}
+          completedProjectsNumber={tasksClosed}
+          uniqueInteractors={uniqueInteractors}
+        />
+      </div>
+      <div
+        className={`opacity-${
+          isSidebarExpanded ? '0 hidden' : '100 block'
+        } h-full transition-opacity duration-300`}
+      >
+        <ReducedSidebar
+          onClickBurger={() => console.log('')}
+          budget={budgetValue}
+          openProjectsNumber={openTasks}
+          activeProjectsNumber={takenTasks}
+          completedProjectsNumber={tasksClosed}
+          uniqueInteractors={uniqueInteractors}
+        />
+      </div>
+    </div>
+      <section className="container grid items-center gap-6 pb-8 pt-6 md:py-10">
       <div className="grid gap-[20px] md:flex md:justify-between">
         <div className="grid gap-6">
           <div className="flex max-w-[980px] flex-col items-start gap-2">
@@ -60,5 +186,6 @@ export default function IndexPage() {
       </div>
       <ShowRecentEvents />
     </section>
+    </div>
   )
 }

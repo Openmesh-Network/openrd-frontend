@@ -17,13 +17,20 @@ export function TotalBudgetValue() {
     getBudgetValue().catch(console.error)
   }, [])
 
+  const formatNumber = (number: number) => {
+    return number.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    });
+  }
+
   return (
     <div>
       {budgetValue !== undefined ? (
         <div>
           <div className="flex gap-x-[5px] text-xl font-bold">
             <div>
-              ${budgetValue} 
+              ${formatNumber(budgetValue)}
             </div>
             <img
               src={`/images/utils/usdc.svg`}

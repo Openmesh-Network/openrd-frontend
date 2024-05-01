@@ -2,7 +2,8 @@
 
 import { useState } from "react"
 import { TasksContract } from "@/openrd-indexer/contracts/Tasks"
-import { addToIpfs } from "@/openrd-indexer/utils/ipfs"
+import { AddToIpfsRequest, AddToIpfsResponse } from "@/app/api/addToIpfs/route"
+import axios from "axios"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useFieldArray, useForm } from "react-hook-form"
 import { BaseError, ContractFunctionRevertedError, decodeEventLog } from "viem"
@@ -119,10 +120,16 @@ export function EditMetadata({
         resources: values.resources,
         links: values.links,
       }
-      const cid = await addToIpfs(JSON.stringify(metadata)).catch((err) => {
-        console.error(err)
-        return undefined
-      })
+      const addToIpfsRequest: AddToIpfsRequest = {
+        json: JSON.stringify(metadata),
+      }
+      const cid = await axios
+        .post("/api/addToIpfs", addToIpfsRequest)
+        .then((response) => (response.data as AddToIpfsResponse).cid)
+        .catch((err) => {
+          console.error(err)
+          return undefined
+        })
       if (!cid) {
         dismiss()
         toast({

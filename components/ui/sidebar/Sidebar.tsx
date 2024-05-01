@@ -1,10 +1,6 @@
 'use client'
 /* eslint-disable no-unused-vars */
-import { UniqueInteractors } from '@/components/tasks/show/unique-interactors'
 import { useContext, useState, useEffect } from 'react'
-import { getTotalUsers, filterTasks } from "@/lib/indexer"
-import { TaskState } from '@/openrd-indexer/types/tasks'
-import { FilterProperty } from "@/components/tasks/filter/filter-control"
 
 interface ModalProps {
   onClickBurger(): void
@@ -16,7 +12,7 @@ interface ModalProps {
 }
 
 /* eslint-disable react/no-unescaped-entities */
-const Sidebar = ({onClickBurger, budget, openProjectsNumber, activeProjectsNumber, completedProjectsNumber, uniqueInteractors}: ModalProps) => {
+export const Sidebar = ({onClickBurger, budget, openProjectsNumber, activeProjectsNumber, completedProjectsNumber, uniqueInteractors}: ModalProps) => {
   const [presetId, setPresetId] = useState(0)
   const [isOpen, setIsOpen] = useState<boolean>(true)
   const [greenDotOpacity, setGreenDotOpacity] = useState(0)
@@ -268,5 +264,3 @@ const Sidebar = ({onClickBurger, budget, openProjectsNumber, activeProjectsNumbe
     </>
   )
 }
-
-export default Sidebar

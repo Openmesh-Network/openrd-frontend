@@ -7,11 +7,11 @@ import { ShowRecentEvents } from "@/components/tasks/show/show-recent-events"
 import { TaskCounter } from "@/components/tasks/show/task-counter"
 import { TotalBudgetValue } from "@/components/tasks/show/total-budget-value"
 import { UniqueInteractors } from "@/components/tasks/show/unique-interactors"
-import Sidebar from "@/components/ui/sidebar/Sidebar"
+import { Sidebar } from "@/components/ui/sidebar/Sidebar"
 import { getTotalUsers, filterTasks } from "@/lib/indexer"
 import { TaskState } from '@/openrd-indexer/types/tasks'
 import { FilterProperty } from "@/components/tasks/filter/filter-control"
-import ReducedSidebar from "@/components/ui/reducedSidebar/ReducedSidebar"
+import { ReducedSidebar } from "@/components/ui/reducedSidebar/ReducedSidebar"
 import { getTotalUsdValue } from "@/lib/indexer"
 
 export default function IndexPage() {
@@ -31,7 +31,6 @@ export default function IndexPage() {
     >(0)
 
   useEffect(() => {
-
     const getBudgetValue = async () => {
       const totalUsd = await getTotalUsdValue()
       setBudgetValue(totalUsd.totalUsdValue)

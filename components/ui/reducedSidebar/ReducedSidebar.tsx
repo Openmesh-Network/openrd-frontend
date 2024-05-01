@@ -1,3 +1,4 @@
+'use client'
 /* eslint-disable no-unused-vars */
 import { useContext, useState } from 'react'
 
@@ -11,7 +12,7 @@ interface ModalProps {
 }
 
 /* eslint-disable react/no-unescaped-entities */
-const ReducedSidebar = ({onClickBurger, budget, openProjectsNumber, activeProjectsNumber, completedProjectsNumber, uniqueInteractors}: ModalProps) => {
+export const ReducedSidebar = ({onClickBurger, budget, openProjectsNumber, activeProjectsNumber, completedProjectsNumber, uniqueInteractors}: ModalProps) => {
   const [isOpen, setIsOpen] = useState<boolean>(true)
   const [selectionSubBar, setSelectionSubBar] = useState<string>('')
   const categoriesOptions = [
@@ -222,5 +223,3 @@ const ReducedSidebar = ({onClickBurger, budget, openProjectsNumber, activeProjec
     </>
   )
 }
-
-export default ReducedSidebar

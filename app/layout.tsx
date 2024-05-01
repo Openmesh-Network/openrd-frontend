@@ -1,6 +1,7 @@
 import "@/styles/globals.css"
 
 import { Metadata, Viewport } from "next"
+import { Suspense } from "react";
 
 import { siteConfig } from "@/config/site"
 import { fontSans } from "@/lib/fonts"

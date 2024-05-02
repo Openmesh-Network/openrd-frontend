@@ -5,8 +5,9 @@ import { createContext, useContext, useState } from "react"
 import { chains } from "@/config/wagmi-config"
 
 export type SelectableChainsContextData = number[]
-const defaultSelectableChainsContextData: SelectableChainsContextData =
-  chains.map((c) => c.id)
+const defaultSelectableChainsContextData: SelectableChainsContextData = chains
+  .filter((c) => !c.testnet)
+  .map((c) => c.id)
 const SelectableChainsContext = createContext<SelectableChainsContextData>(
   defaultSelectableChainsContextData
 )

@@ -20,10 +20,11 @@ import {
   statusToString,
   timestampToDateFormatted,
 } from "@/lib/general-functions"
-import { getDisputes, getTask, getUser } from "@/lib/indexer"
+import { getDisputes, getTask } from "@/lib/indexer"
 import { objectKeysInt } from "@/lib/object-keys"
 import { useAddressTitle } from "@/hooks/useAddressTitle"
 import { useMetadata } from "@/hooks/useMetadata"
+import { usePrice } from "@/hooks/usePrice"
 import {
   Accordion,
   AccordionContent,
@@ -90,6 +91,10 @@ export function ShowTask({
   const [indexerTask, setIndexerTask] = useState<IndexedTask | undefined>(
     undefined
   )
+  const directPrice = usePrice({
+    chainId: chainId,
+    task: blockchainTask ?? indexerTask,
+  })
 
   const applyRef = useRef<HTMLDivElement>(null)
 
@@ -210,7 +215,7 @@ export function ShowTask({
     blockchainTask?.submissions ?? indexerTask?.submissions ?? {}
   const cancelTaskRequests =
     blockchainTask?.cancelTaskRequests ?? indexerTask?.cancelTaskRequests ?? {}
-  const usdValue = indexerTask?.usdValue ?? 0
+  const usdValue = directPrice ?? indexerTask?.usdValue ?? 0
 
   const managerTitle = useAddressTitle(manager)
   const disputeManagerTitle = useAddressTitle(disputeManager)

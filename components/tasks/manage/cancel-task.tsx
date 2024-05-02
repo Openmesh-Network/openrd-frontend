@@ -2,8 +2,8 @@
 
 import { useState } from "react"
 import { TasksContract } from "@/openrd-indexer/contracts/Tasks"
-import { addToIpfs } from "@/openrd-indexer/utils/ipfs"
 import { zodResolver } from "@hookform/resolvers/zod"
+import axios from "axios"
 import { useForm } from "react-hook-form"
 import { BaseError, ContractFunctionRevertedError, decodeEventLog } from "viem"
 import { useChainId, usePublicClient, useSwitchChain } from "wagmi"
@@ -32,6 +32,7 @@ import { RichTextArea } from "@/components/ui/rich-textarea"
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from "@/components/ui/use-toast"
 import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
+import { AddToIpfsRequest, AddToIpfsResponse } from "@/app/api/addToIpfs/route"
 
 const formSchema = z.object({
   reason: z.string(),
@@ -96,10 +97,16 @@ export function CancelTask({
       const metadata = {
         reason: values.reason,
       }
-      const cid = await addToIpfs(JSON.stringify(metadata)).catch((err) => {
-        console.error(err)
-        return undefined
-      })
+      const addToIpfsRequest: AddToIpfsRequest = {
+        json: JSON.stringify(metadata),
+      }
+      const cid = await axios
+        .post("/api/addToIpfs", addToIpfsRequest)
+        .then((response) => (response.data as AddToIpfsResponse).cid)
+        .catch((err) => {
+          console.error(err)
+          return undefined
+        })
       if (!cid) {
         dismiss()
         toast({

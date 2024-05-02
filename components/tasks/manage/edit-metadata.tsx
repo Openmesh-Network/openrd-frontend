@@ -2,9 +2,8 @@
 
 import { useState } from "react"
 import { TasksContract } from "@/openrd-indexer/contracts/Tasks"
-import { AddToIpfsRequest, AddToIpfsResponse } from "@/app/api/addToIpfs/route"
-import axios from "axios"
 import { zodResolver } from "@hookform/resolvers/zod"
+import axios from "axios"
 import { useFieldArray, useForm } from "react-hook-form"
 import { BaseError, ContractFunctionRevertedError, decodeEventLog } from "viem"
 import { useChainId, usePublicClient, useSwitchChain } from "wagmi"
@@ -27,6 +26,7 @@ import { RichTextArea } from "@/components/ui/rich-textarea"
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from "@/components/ui/use-toast"
 import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
+import { AddToIpfsRequest, AddToIpfsResponse } from "@/app/api/addToIpfs/route"
 
 import { ShowTaskMetadata } from "../show/show-task"
 

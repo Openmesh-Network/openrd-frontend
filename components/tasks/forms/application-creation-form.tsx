@@ -587,7 +587,9 @@ export function ApplicationCreationForm({
                       />
                       <ERC20BalanceInput
                         token={
-                          isAddress(rewardItem.to) ? rewardItem.to : undefined
+                          isAddress(rewardItem.token)
+                            ? rewardItem.token
+                            : undefined
                         }
                         value={rewardItem.amount}
                         onChange={(change) => {

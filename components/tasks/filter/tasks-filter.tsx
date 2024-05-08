@@ -9,7 +9,6 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useFieldArray, useForm } from "react-hook-form"
 import { z } from "zod"
 
-import { chains } from "@/config/wagmi-config"
 import { filterTasks } from "@/lib/indexer"
 import {
   Accordion,
@@ -162,6 +161,10 @@ export function TasksFilter({
     {
       property: FilterProperty.ChainId,
       value: { oneOf: selectableChains.join(",") },
+    },
+    {
+      property: FilterProperty.State,
+      value: { equal: "0" },
     },
   ]
   const form = useForm<z.infer<typeof formSchema>>({

@@ -34,7 +34,7 @@ const nextConfig = {
         if (
           resource.request === "./ipfs.js" ||
           resource.request === "./chain-cache.js" ||
-          resource.request === "../event-watchers/userHelpers.js"
+          resource.request === "./normalize-address.js"
         ) {
           resource.request = resource.request.replace(".js", "")
         }

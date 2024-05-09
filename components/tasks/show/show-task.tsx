@@ -560,6 +560,12 @@ export function ShowTask({
                     // Then all accepted applications
                     const application1 = applications[applicationId1]
                     const application2 = applications[applicationId2]
+                    if (!application2) {
+                      return -1
+                    }
+                    if (!application1) {
+                      return 1
+                    }
                     if (application1.accepted && !application2.accepted) {
                       return -1
                     }

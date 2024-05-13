@@ -20,10 +20,6 @@ import {
 import { Link } from "@/components/ui/link"
 import { Skeleton } from "@/components/ui/skeleton"
 
-interface UserInfo {
-  title?: string
-}
-
 export function ShowEvent({
   eventIndex,
   hideDescription,

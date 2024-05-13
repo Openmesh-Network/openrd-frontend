@@ -20,7 +20,7 @@ import {
   statusToString,
   timestampToDateFormatted,
 } from "@/lib/general-functions"
-import { getDisputes, getTask } from "@/lib/indexer"
+import { getDisputes, getEvent, getTask } from "@/lib/indexer"
 import { objectKeysInt } from "@/lib/object-keys"
 import { useAddressTitle } from "@/hooks/useAddressTitle"
 import { useMetadata } from "@/hooks/useMetadata"
@@ -135,7 +135,6 @@ export function ShowTask({
     }
     setBlockchainTask(task)
   }
-
   useEffect(() => {
     getBlockchainTask().catch((err) => {
       console.error(err)
@@ -147,7 +146,6 @@ export function ShowTask({
     const task = await getTask(chainId, taskId)
     setIndexerTask(task)
   }
-
   useEffect(() => {
     getIndexerTask().catch((err) => {
       console.error(err)
@@ -155,9 +153,19 @@ export function ShowTask({
     })
   }, [chainId, taskId])
 
+  const [disputes, setDisputes] = useState<DisputesReturn>([])
+  const getIndexerDisputes = async () => {
+    const newDisputes = await getDisputes(chainId, taskId)
+    setDisputes(newDisputes)
+  }
+  useEffect(() => {
+    getIndexerDisputes().catch(console.error)
+  }, [chainId, taskId])
+
   const refresh = async () => {
     getBlockchainTask().catch(console.error)
     getIndexerTask().catch(console.error)
+    getIndexerDisputes().catch(console.error)
   }
 
   useEffect(() => {
@@ -171,15 +179,6 @@ export function ShowTask({
       console.log("Equality check finished")
     }
   }, [blockchainTask, indexerTask])
-
-  const [disputes, setDisputes] = useState<DisputesReturn>([])
-  const getIndexerDisputes = async () => {
-    const newDisputes = await getDisputes(chainId, taskId)
-    setDisputes(newDisputes)
-  }
-  useEffect(() => {
-    getIndexerDisputes().catch(console.error)
-  }, [chainId, taskId])
 
   const indexedMetadata = indexerTask?.cachedMetadata
     ? (JSON.parse(indexerTask?.cachedMetadata) as ShowTaskMetadata)
@@ -222,6 +221,30 @@ export function ShowTask({
   const creatorTitle = useAddressTitle(creator)
 
   const events = indexerTask?.events ?? []
+  const [budgetLink, setBudgetLink] = useState<string | undefined>(undefined)
+  useEffect(() => {
+    const getBudgetLink = async () => {
+      if (!chain) {
+        setBudgetLink(undefined)
+        return
+      }
+      const eventIndex = events.at(0)
+      if (eventIndex === undefined) {
+        setBudgetLink(undefined)
+        return
+      }
+      const taskCreationEvent = await getEvent(eventIndex)
+      if (taskCreationEvent.type !== "TaskCreated") {
+        setBudgetLink(undefined)
+        return
+      }
+      setBudgetLink(
+        `${chain.blockExplorers.default.url}/tx/${taskCreationEvent.transactionHash}`
+      )
+    }
+
+    getBudgetLink().catch(console.error)
+  }, [chain, events])
 
   return (
     <div>
@@ -255,7 +278,11 @@ export function ShowTask({
                 </div>
               </div>
             )}
-            <div className="mb-[5px] flex text-[12px] font-medium text-grey dark:text-light lg:text-[16px]">
+            <Link
+              href={budgetLink}
+              target="_blank"
+              className="mb-[5px] flex text-[12px] font-medium text-grey dark:text-light lg:text-[16px]"
+            >
               <div className="mr-[22px] flex">
                 <svg
                   className="mr-[10px] size-[22px]"
@@ -267,10 +294,10 @@ export function ShowTask({
                 </svg>
                 <p className="mr-[3px] flex items-center">Available funds:</p>{" "}
                 <span className="flex items-center text-[12px] font-bold text-[#000] dark:text-[#fff] lg:text-[16px]">
-                  ${usdValue}
+                  ${usdValue.toFixed(2)}
                 </span>
               </div>
-            </div>
+            </Link>
             <div className="mb-[5px] text-[12px] font-medium text-grey dark:text-light md:flex lg:text-[16px]">
               <div className="mr-[50px] flex">
                 <svg

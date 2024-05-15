@@ -2,9 +2,13 @@ import { ObjectFilter } from "@/openrd-indexer/api/filter"
 import {
   DisputesReturn,
   EventReturn,
+  FilterRFPsReturn,
   FilterTasksReturn,
+  RFPEventReturn,
+  RFPReturn,
   TaskReturn,
   TotalEventsReturn,
+  TotalRFPEventsReturn,
   TotalUsdValueReturn,
   TotalUsersReturn,
   UserEventsReturn,
@@ -50,8 +54,6 @@ export async function getUser(address: Address): Promise<UserReturn> {
 export async function filterTasks(
   filter: ObjectFilter
 ): Promise<FilterTasksReturn> {
-  console.log('the filter received')
-  console.log(filter)
   const res = await axios.post(
     `${backendBaseUrl}/filterTasks/`,
     JSON.parse(JSON.stringify(filter, replacer))
@@ -104,6 +106,40 @@ export async function getDisputes(
   const res = await axios.get(
     `${backendBaseUrl}/disputes/${chainId.toString()}/${taskId.toString()}`
   )
+  checkError(res)
+  return JSON.parse(JSON.stringify(res.data), reviver)
+}
+
+export async function getRFP(
+  chainId: number,
+  rfpId: bigint
+): Promise<RFPReturn> {
+  const res = await axios.get(
+    `${backendBaseUrl}/rfp/${chainId.toString()}/${rfpId.toString()}`
+  )
+  checkError(res)
+  return JSON.parse(JSON.stringify(res.data), reviver)
+}
+
+export async function getRFPEvent(eventIndex: number): Promise<RFPEventReturn> {
+  const res = await axios.get(`${backendBaseUrl}/rfpEvent/${eventIndex}`)
+  checkError(res)
+  return JSON.parse(JSON.stringify(res.data), reviver)
+}
+
+export async function filterRFPs(
+  filter: ObjectFilter
+): Promise<FilterRFPsReturn> {
+  const res = await axios.post(
+    `${backendBaseUrl}/filterRFPs/`,
+    JSON.parse(JSON.stringify(filter, replacer))
+  )
+  checkError(res)
+  return JSON.parse(JSON.stringify(res.data), reviver)
+}
+
+export async function getTotalRFPEvents(): Promise<TotalRFPEventsReturn> {
+  const res = await axios.get(`${backendBaseUrl}/totalRFPEvents`)
   checkError(res)
   return JSON.parse(JSON.stringify(res.data), reviver)
 }

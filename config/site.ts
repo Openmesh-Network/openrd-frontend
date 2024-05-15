@@ -13,14 +13,10 @@ export const siteConfig = {
       title: "Tasks",
       href: "/tasks/",
     },
-    // {
-    //   title: "Organizations",
-    //   href: "/organizations/",
-    // },
-    // {
-    //   title: "Request for Proposals",
-    //   href: "/rfps/",
-    // },
+    {
+      title: "RFPs",
+      href: "/rfps/",
+    },
   ],
   links: {
     guide:

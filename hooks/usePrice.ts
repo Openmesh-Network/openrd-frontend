@@ -1,16 +1,27 @@
 import { useEffect, useState } from "react"
-import { Task } from "@/openrd-indexer/types/tasks"
+import { ERC20Transfer, Task } from "@/openrd-indexer/types/tasks"
 import { publicClients } from "@/openrd-indexer/utils/chain-cache"
 import { getPrice } from "@/openrd-indexer/utils/get-token-price"
 import { createPublicClient, http } from "viem"
 
 import { chains } from "@/config/wagmi-config"
 
-export function usePrice({ chainId, task }: { chainId: number; task?: Task }) {
+export interface Budget {
+  nativeBudget: bigint
+  budget: ERC20Transfer[]
+}
+
+export function usePrice({
+  chainId,
+  budget,
+}: {
+  chainId: number
+  budget?: Budget
+}) {
   const [price, setPrice] = useState<number | undefined>(undefined)
   useEffect(() => {
     const fetchPrice = async () => {
-      if (!task) {
+      if (!budget) {
         setPrice(undefined)
         return
       }
@@ -28,11 +39,11 @@ export function usePrice({ chainId, task }: { chainId: number; task?: Task }) {
           transport: http(),
         })
       }
-      const newPrice = await getPrice(chain, task.nativeBudget, task.budget)
+      const newPrice = await getPrice(chain, budget.nativeBudget, budget.budget)
       setPrice(newPrice)
     }
 
     fetchPrice().catch(console.error)
-  }, [chainId, task])
+  }, [chainId, budget])
   return price
 }

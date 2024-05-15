@@ -5,30 +5,30 @@ import { useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 
-import { ShowTaskSummary } from "./show-task-summary"
+import { ShowRFPSummary } from "./show-rfp-summary"
 
-export interface TaskIdentifier {
+export interface RFPIdentifier {
   chainId: number
-  taskId: bigint
+  rfpId: bigint
 }
-interface TaskIncremented extends TaskIdentifier {
+interface RFPIncremented extends RFPIdentifier {
   deadline: number
   budget: number
 }
 
-export function ShowRecentTasks({ taskList }: { taskList: TaskIdentifier[] }) {
-  const [showTaskCount, setShowTaskCount] = useState<number>(10)
-  const [metadataTasks, setMetadataTasks] = useState<TaskIncremented[]>([])
-  const [orderedTasksFinal, setOrderedTasksFinal] =
-    useState<TaskIdentifier[]>(taskList)
-  const [orderTasksByDeadlineAsc, setOrderTasksByDeadlineAsc] =
+export function ShowRecentRFPss({ rfpList }: { rfpList: RFPIdentifier[] }) {
+  const [showRFPCount, setShowRFPCount] = useState<number>(10)
+  const [metadataRFPs, setMetadataRFPs] = useState<RFPIncremented[]>([])
+  const [orderedRFPsFinal, setOrderedRFPsFinal] =
+    useState<RFPIdentifier[]>(rfpList)
+  const [orderRFPsByDeadlineAsc, setOrderRFPsByDeadlineAsc] =
     useState<boolean>(false)
-  const [orderTasksByBudgetAsc, setOrderTasksByBudgetAsc] =
+  const [orderRFPsByBudgetAsc, setOrderRFPsByBudgetAsc] =
     useState<boolean>(false)
 
-  const handleTaskInfo = (taskInfo: TaskIncremented) => {
-    setMetadataTasks((currentTasks) => {
-      const index = currentTasks.findIndex((t) => t.taskId === taskInfo.taskId)
+  const handleRFPInfo = (taskInfo: RFPIncremented) => {
+    setMetadataRFPs((currentTasks) => {
+      const index = currentTasks.findIndex((t) => t.rfpId === taskInfo.rfpId)
       if (index >= 0) {
         currentTasks[index] = taskInfo
       } else {
@@ -38,31 +38,31 @@ export function ShowRecentTasks({ taskList }: { taskList: TaskIdentifier[] }) {
     })
   }
 
-  function handleOrderTaskByDeadline() {
-    const sortedTasks = [...metadataTasks].sort((a, b) => {
-      return orderTasksByDeadlineAsc
+  function handleOrderRFPByDeadline() {
+    const sortedTasks = [...metadataRFPs].sort((a, b) => {
+      return orderRFPsByDeadlineAsc
         ? a.deadline - b.deadline
         : b.deadline - a.deadline
     })
 
-    setOrderedTasksFinal(sortedTasks)
-    setOrderTasksByDeadlineAsc(!orderTasksByDeadlineAsc)
-    setOrderTasksByBudgetAsc(false)
+    setOrderedRFPsFinal(sortedTasks)
+    setOrderRFPsByDeadlineAsc(!orderRFPsByDeadlineAsc)
+    setOrderRFPsByBudgetAsc(false)
   }
 
-  function handleOrderTaskByBudget() {
-    const sortedTasks = [...metadataTasks].sort((a, b) => {
-      return orderTasksByBudgetAsc ? a.budget - b.budget : b.budget - a.budget
+  function handleOrderRFPByBudget() {
+    const sortedTasks = [...metadataRFPs].sort((a, b) => {
+      return orderRFPsByBudgetAsc ? a.budget - b.budget : b.budget - a.budget
     })
 
-    setOrderedTasksFinal(sortedTasks)
-    setOrderTasksByBudgetAsc(!orderTasksByBudgetAsc)
-    setOrderTasksByDeadlineAsc(false)
+    setOrderedRFPsFinal(sortedTasks)
+    setOrderRFPsByBudgetAsc(!orderRFPsByBudgetAsc)
+    setOrderRFPsByDeadlineAsc(false)
   }
 
   useEffect(() => {
-    setOrderedTasksFinal(taskList)
-  }, [taskList])
+    setOrderedRFPsFinal(rfpList)
+  }, [rfpList])
 
   return (
     <div>
@@ -76,8 +76,8 @@ export function ShowRecentTasks({ taskList }: { taskList: TaskIdentifier[] }) {
           <p className="pr-[10px]">Budget</p>
           <svg
             width="11"
-            onClick={handleOrderTaskByBudget}
-            className={`w-[10px] cursor-pointer dark:hidden lg:w-[14px] ${orderTasksByBudgetAsc && "rotate-180"}`}
+            onClick={handleOrderRFPByBudget}
+            className={`w-[10px] cursor-pointer dark:hidden lg:w-[14px] ${orderRFPsByBudgetAsc && "rotate-180"}`}
             height="7"
             viewBox="0 0 11 7"
             fill="none"
@@ -100,8 +100,8 @@ export function ShowRecentTasks({ taskList }: { taskList: TaskIdentifier[] }) {
           </svg>
           <svg
             width="11"
-            onClick={handleOrderTaskByBudget}
-            className={`hidden w-[10px] cursor-pointer dark:flex lg:w-[14px] ${orderTasksByBudgetAsc && "rotate-180"}`}
+            onClick={handleOrderRFPByBudget}
+            className={`hidden w-[10px] cursor-pointer dark:flex lg:w-[14px] ${orderRFPsByBudgetAsc && "rotate-180"}`}
             height="7"
             viewBox="0 0 11 7"
             fill="none"
@@ -127,8 +127,8 @@ export function ShowRecentTasks({ taskList }: { taskList: TaskIdentifier[] }) {
           <p className="pr-[10px]">Ends</p>
           <svg
             width="11"
-            onClick={handleOrderTaskByDeadline}
-            className={`w-[10px] cursor-pointer dark:hidden lg:w-[14px] ${orderTasksByDeadlineAsc && "rotate-180"}`}
+            onClick={handleOrderRFPByDeadline}
+            className={`w-[10px] cursor-pointer dark:hidden lg:w-[14px] ${orderRFPsByDeadlineAsc && "rotate-180"}`}
             height="7"
             viewBox="0 0 11 7"
             fill="none"
@@ -151,8 +151,8 @@ export function ShowRecentTasks({ taskList }: { taskList: TaskIdentifier[] }) {
           </svg>
           <svg
             width="11"
-            onClick={handleOrderTaskByDeadline}
-            className={`hidden w-[10px] cursor-pointer dark:flex lg:w-[14px] ${orderTasksByDeadlineAsc && "rotate-180"}`}
+            onClick={handleOrderRFPByDeadline}
+            className={`hidden w-[10px] cursor-pointer dark:flex lg:w-[14px] ${orderRFPsByDeadlineAsc && "rotate-180"}`}
             height="7"
             viewBox="0 0 11 7"
             fill="none"
@@ -175,20 +175,20 @@ export function ShowRecentTasks({ taskList }: { taskList: TaskIdentifier[] }) {
           </svg>
         </div>
       </div>
-      {orderedTasksFinal.slice(0, showTaskCount).map((task, i) => (
-        <ShowTaskSummary
-          key={`${task.taskId}-${i}`}
+      {orderedRFPsFinal.slice(0, showRFPCount).map((task, i) => (
+        <ShowRFPSummary
+          key={i}
           {...task}
           index={i}
-          onTaskInfo={(value) => {
-            handleTaskInfo(value)
+          onRFPInfo={(value) => {
+            handleRFPInfo(value)
           }}
         />
       ))}
-      {showTaskCount < taskList.length && (
+      {showRFPCount < rfpList.length && (
         <Button
           onClick={() => {
-            setShowTaskCount(showTaskCount + 10)
+            setShowRFPCount(showRFPCount + 10)
           }}
         >
           Show more

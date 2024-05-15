@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { ERC20Transfer, Reward } from "@/openrd-indexer/types/tasks"
-import { erc20Abi } from "viem"
+import { Reward } from "@/openrd-indexer/types/tasks"
+import { Address, erc20Abi } from "viem"
 import { usePublicClient } from "wagmi"
 
 import { ShowReward } from "./show-reward"
@@ -17,7 +17,7 @@ export function ShowERC20Reward({
   reward,
 }: {
   chainId: number
-  budget: ERC20Transfer
+  budget: { tokenContract: Address }
   reward: ShowERC20Reward[]
 }) {
   const publicClient = usePublicClient({ chainId: chainId })

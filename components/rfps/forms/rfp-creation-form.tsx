@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
-import { TasksContract } from "@/openrd-indexer/contracts/Tasks"
+import { RFPsContract } from "@/openrd-indexer/contracts/RFPs"
 import { zodResolver } from "@hookform/resolvers/zod"
 import axios from "axios"
 import { useFieldArray, useForm } from "react-hook-form"
@@ -50,6 +50,9 @@ const formSchema = z.object({
   // Onchain fields
   deadline: z.date().min(new Date(), "Deadline must be in the future."),
   manager: z.string().regex(validAddress, "Manager must be a valid address."),
+  taskManager: z
+    .string()
+    .regex(validAddress, "Task manager must be a valid address."),
   disputeManger: z
     .string()
     .regex(validAddress, "Dispute manager must be a valid address."),
@@ -64,18 +67,6 @@ const formSchema = z.object({
       amount: z.coerce.bigint().min(BigInt(0), "Amount cannot be negative."),
     })
     .array(),
-  preapprove: z
-    .object({
-      applicant: z
-        .string()
-        .regex(validAddress, "Applicant must be a valid address."),
-    })
-    .array(),
-  draft: z
-    .string()
-    .regex(validAddressOrEmpty, "Draft DAO must be a valid address."),
-
-  // Additional draft fields
 
   // Metadata fields
   title: z.string().min(1, "Title cannot be empty."),
@@ -84,10 +75,12 @@ const formSchema = z.object({
       tag: z.string().min(1, "Tag cannot be empty."),
     })
     .array(),
-  projectSize: z.coerce.number().min(0, "Project size cannot be negative."),
-  teamSize: z.coerce.number().min(0, "Team size cannot be negative."),
+  maxProjectFunding: z.string(),
+  maxAwardedProjects: z.coerce
+    .number()
+    .min(0, "Max awarded projects cannot be negative."),
   description: z.string().min(1, "Description cannot be empty."),
-  resources: z.string(),
+  projectRequirements: z.string(),
   links: z
     .object({
       name: z.string().min(1, "Name cannot be empty."),
@@ -96,7 +89,7 @@ const formSchema = z.object({
     .array(),
 })
 
-export function TaskCreationForm() {
+export function RFPCreationForm() {
   const chainId = useChainId()
   const walletClient = useAbstractWalletClient()
   const publicClient = usePublicClient()
@@ -118,9 +111,6 @@ export function TaskCreationForm() {
     "0x7aC61b993B4aa460EDf7BC4266Ed4BBCa20bF2Db": {
       name: "Openmesh Dispute Department",
     },
-  }
-  const draftOptions: SelectableAddresses = {
-    ["" as Address]: { name: "Coming Soon!" },
   }
 
   const [tokens, setTokens] = useState<SelectableAddresses>({})
@@ -172,28 +162,18 @@ export function TaskCreationForm() {
     defaultValues: {
       deadline: new Date(),
       manager: walletClient?.account?.address ?? "",
+      taskManager: walletClient?.account?.address ?? "",
       disputeManger: Object.keys(disputeManagerOptions)[0],
       nativeBudget: BigInt(0),
       budget: [],
-      preapprove: [],
-      draft: "",
 
       title: "",
       tags: [],
-      projectSize: 0,
-      teamSize: 0,
+      maxProjectFunding: "",
+      maxAwardedProjects: 0,
       description: "",
-      resources: "",
-      links: [
-        {
-          name: "GitHub",
-          url: "",
-        },
-        {
-          name: "Calendly",
-          url: "",
-        },
-      ],
+      projectRequirements: "",
+      links: [],
     },
   })
 
@@ -209,17 +189,17 @@ export function TaskCreationForm() {
     const submit = async () => {
       setSubmitting(true)
       let { dismiss } = toast({
-        title: "Creating task",
+        title: "Creating RFP",
         description: "Uploading metadata to IPFS...",
       })
 
       const metadata = {
         title: values.title,
         tags: values.tags,
-        projectSize: values.projectSize,
-        teamSize: values.teamSize,
+        maxProjectFunding: values.maxProjectFunding,
+        maxAwardedProjects: values.maxAwardedProjects,
         description: values.description,
-        resources: values.resources,
+        projectRequirements: values.projectRequirements,
         links: values.links,
       }
       const addToIpfsRequest: AddToIpfsRequest = {
@@ -235,13 +215,13 @@ export function TaskCreationForm() {
       if (!cid) {
         dismiss()
         toast({
-          title: "Task creation failed",
+          title: "RFP creation failed",
           description: "Could not upload metadata to IPFS.",
           variant: "destructive",
         })
         return
       }
-      console.log(`Sucessfully uploaded task metadata to ipfs: ${cid}`)
+      console.log(`Sucessfully uploaded RFP metadata to ipfs: ${cid}`)
 
       dismiss()
       dismiss = toast({
@@ -261,41 +241,21 @@ export function TaskCreationForm() {
       const transactionRequest = await publicClient
         .simulateContract({
           account: walletClient.account,
-          abi: TasksContract.abi,
-          address: TasksContract.address,
-          functionName: "createTask",
+          abi: RFPsContract.abi,
+          address: RFPsContract.address,
+          functionName: "createRFP",
           args: [
             `ipfs://${cid}`,
             BigInt(Math.round(values.deadline.getTime() / 1000)),
-            values.manager as Address,
-            values.disputeManger as Address,
             values.budget.map((b) => {
               return {
                 ...b,
                 tokenContract: b.tokenContract as Address,
               }
             }),
-            values.preapprove.map((p) => {
-              return {
-                applicant: p.applicant as Address,
-                nativeReward:
-                  values.nativeBudget !== BigInt(0)
-                    ? [
-                        {
-                          to: p.applicant as Address,
-                          amount: values.nativeBudget,
-                        },
-                      ]
-                    : [],
-                reward: values.budget.map((b) => {
-                  return {
-                    nextToken: true,
-                    to: p.applicant as Address,
-                    amount: b.amount,
-                  }
-                }),
-              }
-            }),
+            values.taskManager as Address,
+            values.disputeManger as Address,
+            values.manager as Address,
           ],
           value: values.nativeBudget,
         })
@@ -316,7 +276,7 @@ export function TaskCreationForm() {
       if (typeof transactionRequest === "string") {
         dismiss()
         toast({
-          title: "Task creation failed",
+          title: "RFP creation failed",
           description: transactionRequest,
           variant: "destructive",
         })
@@ -331,7 +291,7 @@ export function TaskCreationForm() {
       if (!transactionHash) {
         dismiss()
         toast({
-          title: "Task creation failed",
+          title: "RFP creation failed",
           description: "Transaction rejected.",
           variant: "destructive",
         })
@@ -341,7 +301,7 @@ export function TaskCreationForm() {
       dismiss()
       dismiss = toast({
         duration: 120_000, // 2 minutes
-        title: "Task transaction submitted",
+        title: "RFP transaction submitted",
         description: "Waiting until confirmed on the blockchain...",
         action: (
           <ToastAction
@@ -368,34 +328,34 @@ export function TaskCreationForm() {
       })
       dismiss()
       dismiss = toast({
-        title: "Task transaction confirmed!",
+        title: "RFP transaction confirmed!",
         description: "Parsing transaction logs...",
       }).dismiss
 
-      let taskId: bigint | undefined
+      let rfpId: bigint | undefined
       receipt.logs.forEach((log) => {
         try {
           if (
-            log.address.toLowerCase() !== TasksContract.address.toLowerCase()
+            log.address.toLowerCase() !== RFPsContract.address.toLowerCase()
           ) {
             // Only interested in logs originating from the tasks contract
             return
           }
 
-          const taskCreatedEvent = decodeEventLog({
-            abi: TasksContract.abi,
-            eventName: "TaskCreated",
+          const rfpCreatedEvent = decodeEventLog({
+            abi: RFPsContract.abi,
+            eventName: "RFPCreated",
             topics: log.topics,
             data: log.data,
           })
-          taskId = taskCreatedEvent.args.taskId
+          rfpId = rfpCreatedEvent.args.rfpId
         } catch {}
       })
-      if (taskId === undefined) {
+      if (rfpId === undefined) {
         dismiss()
         toast({
-          title: "Error retrieving task id",
-          description: "The task creation possibly failed.",
+          title: "Error retrieving RFP id",
+          description: "The RFP creation possibly failed.",
           variant: "destructive",
         })
         return
@@ -403,14 +363,14 @@ export function TaskCreationForm() {
 
       setTimeout(() => {
         if (walletClient.chain) {
-          push(`/tasks/${walletClient.chain.id}:${taskId}`)
+          push(`/RFPs/${walletClient.chain.id}:${rfpId}`)
         }
       }, 2000)
 
       dismiss()
       dismiss = toast({
         title: "Success!",
-        description: "The task has been created.",
+        description: "The RFP has been created.",
         variant: "success",
       }).dismiss
     }
@@ -446,16 +406,6 @@ export function TaskCreationForm() {
     update: updateBudget,
   } = useFieldArray({
     name: "budget",
-    control: form.control,
-  })
-
-  const {
-    fields: preapprove,
-    append: appendPreapprove,
-    remove: removePreapprove,
-    update: updatePreapprove,
-  } = useFieldArray({
-    name: "preapprove",
     control: form.control,
   })
 
@@ -512,30 +462,28 @@ export function TaskCreationForm() {
           </FormControl>
           <FormDescription>
             Tags help applicants find the task based on their interests and
-            skill set.
+            skillset.
           </FormDescription>
           <FormMessage />
         </FormItem>
         <FormField
           control={form.control}
-          name="projectSize"
+          name="maxProjectFunding"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Project Duration</FormLabel>
+              <FormLabel>Max Project Funding</FormLabel>
               <FormControl>
                 <Input
-                  type="number"
-                  min={0}
                   {...field}
                   onChange={(change) => {
                     field.onChange(change)
-                    form.trigger("projectSize")
+                    form.trigger("maxProjectFunding")
                   }}
                 />
               </FormControl>
               <FormDescription>
-                An estimate of how many (combined) hours are required to
-                complete the task.
+                The maximum funding you are planning to allocate to a single
+                project. This is not enforced.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -543,10 +491,10 @@ export function TaskCreationForm() {
         />
         <FormField
           control={form.control}
-          name="teamSize"
+          name="maxAwardedProjects"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Team Size</FormLabel>
+              <FormLabel>Max awarded projects</FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -554,12 +502,13 @@ export function TaskCreationForm() {
                   {...field}
                   onChange={(change) => {
                     field.onChange(change)
-                    form.trigger("teamSize")
+                    form.trigger("maxAwardedProjects")
                   }}
                 />
               </FormControl>
               <FormDescription>
-                Recommended team size for completing the task.
+                The maximum amount of projects your are planning to fund with
+                this RFP. This is not enforced.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -581,12 +530,8 @@ export function TaskCreationForm() {
                 />
               </FormControl>
               <FormDescription>
-                Full description with all details needed to understand and
-                complete the task. This is important to be on the same line as
-                your applicants, ambiguity could cause them to complete the task
-                as described, but different from your expectation and
-                interpretation. This description will also be leading in case of
-                a dispute.
+                Full description with all details about the RFP. What is the
+                goal and what will the process look like.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -594,22 +539,23 @@ export function TaskCreationForm() {
         />
         <FormField
           control={form.control}
-          name="resources"
+          name="projectRequirements"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Resources</FormLabel>
+              <FormLabel>Project Requirements</FormLabel>
               <FormControl>
                 <RichTextArea
                   {...field}
                   onChange={(change) => {
                     field.onChange(change)
-                    form.trigger("resources")
+                    form.trigger("projectRequirements")
                   }}
                 />
               </FormControl>
               <FormDescription>
-                Additional section to help your applicants find information
-                relevant to the task.
+                Additional section to clearly outline the requirements the
+                project needs to fulfil to be considered to be funded by this
+                RFP.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -667,7 +613,7 @@ export function TaskCreationForm() {
             </div>
           </FormControl>
           <FormDescription>
-            Links to the project github or how to contact the proposer. Email
+            Links to the relevant websites or how to contact the proposer. Email
             addresses should be formatted as mailto:info@example.com
           </FormDescription>
           <FormMessage />
@@ -690,9 +636,8 @@ export function TaskCreationForm() {
                 />
               </FormControl>
               <FormDescription>
-                In case the task is not completed before this date, you will be
-                able to refund the funds. The applicant can however apply for a
-                partial reward. You are able to extend the deadline later.
+                Application deadline for projects. After this date no new
+                projects can apply. This cannot be changed after creation.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -717,9 +662,36 @@ export function TaskCreationForm() {
                 />
               </FormControl>
               <FormDescription>
-                This entity will handle the management side of the task.
-                Normally this will be you, but you can transfer this power to
-                another entity if you wish.
+                This entity will handle the management side of the RFP. Normally
+                this will be you, but you can transfer this power to another
+                entity if you wish.
+              </FormDescription>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        <FormField
+          control={form.control}
+          name="taskManager"
+          render={({ field }) => (
+            <FormItem className="flex flex-col">
+              <FormLabel>Task Manager</FormLabel>
+              <FormControl>
+                <AddressPicker
+                  addressName="taskManager"
+                  selectableAddresses={managerOptions}
+                  {...field}
+                  onChange={(change) => {
+                    field.onChange(change)
+                    form.trigger("manager")
+                  }}
+                  customAllowed={true}
+                />
+              </FormControl>
+              <FormDescription>
+                This entity will handle the management side of the funded
+                project task. Normally this will be you, but you can transfer
+                this power to another entity if you wish.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -744,10 +716,10 @@ export function TaskCreationForm() {
                 />
               </FormControl>
               <FormDescription>
-                This entity will decide if the task should be (partially)
-                rewarded in case the applicant and manager cannot reach an
-                agreement. It is recommended to have a trustworthy unbiased
-                entity.
+                This entity will decide if the funded project task should be
+                (partially) rewarded in case the applicant and manager cannot
+                reach an agreement. It is recommended to have a trustworthy
+                unbiased entity.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -771,7 +743,7 @@ export function TaskCreationForm() {
               </FormControl>
               <FormDescription>
                 The amount of native currency that is available as budget for
-                this task (ETH on Ethereum, MATIC on Polygon).
+                this RFP (ETH on Ethereum, MATIC on Polygon).
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -821,7 +793,7 @@ export function TaskCreationForm() {
                     </Button>
                   </div>
                   <ERC20AllowanceCheck
-                    spender={TasksContract.address}
+                    spender={RFPsContract.address}
                     token={
                       isAddress(budgetItem.tokenContract)
                         ? budgetItem.tokenContract
@@ -843,87 +815,12 @@ export function TaskCreationForm() {
           </FormControl>
           <FormDescription>
             The amount of ERC20 currency that is available as budget for this
-            task. This can be any token, such as USDT, USDC, or WETH.
+            RFP. This can be any token, such as USDT, USDC, or WETH.
           </FormDescription>
           <FormMessage />
         </FormItem>
-        <FormItem>
-          <FormLabel>Preapproved applicants</FormLabel>
-          <FormControl>
-            <div>
-              {preapprove.map((preapproveItem, i) => (
-                <ErrorWrapper
-                  key={i}
-                  error={form.formState.errors.preapprove?.at?.(i)}
-                >
-                  <div className="flex gap-x-1 w-full">
-                    <AddressPicker
-                      addressName="Applicant"
-                      value={preapproveItem.applicant}
-                      onChange={(change) => {
-                        updatePreapprove(i, {
-                          ...preapproveItem,
-                          applicant: change ?? "",
-                        })
-                        form.trigger("preapprove")
-                      }}
-                      customAllowed={true}
-                    />
-                    <Button
-                      onClick={() => removePreapprove(i)}
-                      variant="destructive"
-                    >
-                      X
-                    </Button>
-                  </div>
-                </ErrorWrapper>
-              ))}
-              <Button onClick={() => appendPreapprove({ applicant: "" })}>
-                Add preapproved applicant
-              </Button>
-            </div>
-          </FormControl>
-          <FormDescription>
-            If you already have someone willing to take on the task (which you
-            are okay with taking it on), you can add them here. This skips the
-            steps where they need to create an application and you need to
-            accept it. If they are preapproved they will be able to take the
-            task right away (with a reward equal to the budget). Until they take
-            the task, others will be able to apply and are able to take the task
-            if you accept their application.
-          </FormDescription>
-          <FormMessage />
-        </FormItem>
-        <FormField
-          control={form.control}
-          name="draft"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Propose to DAO</FormLabel>
-              <FormControl>
-                <AddressPicker
-                  addressName="DAO"
-                  selectableAddresses={draftOptions}
-                  {...field}
-                  onChange={(change) => {
-                    field.onChange(change)
-                    form.trigger("draft")
-                  }}
-                />
-              </FormControl>
-              <FormDescription>
-                Instead of funding this task yourself, you are able to propose
-                it to any DAO that opted into this feature. This includes all
-                Openmesh departments. The task will only be created if the DAO
-                approves it. The budget for the task will be paid from the DAO
-                treasury.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
         <Button type="submit" disabled={submitting}>
-          Create task
+          Create RFP
         </Button>
       </form>
     </Form>

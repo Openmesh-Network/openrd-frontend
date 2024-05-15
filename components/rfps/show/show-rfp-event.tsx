@@ -2,13 +2,13 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { TaskEvent } from "@/openrd-indexer/types/task-events"
+import { RFPEvent } from "@/openrd-indexer/types/rfp-events"
 import { Block, isAddress, Transaction } from "viem"
 import { usePublicClient } from "wagmi"
 
 import { chains } from "@/config/wagmi-config"
 import { formatAddress } from "@/lib/general-functions"
-import { getEvent } from "@/lib/indexer"
+import { getRFPEvent } from "@/lib/indexer"
 import { useAddressTitle } from "@/hooks/useAddressTitle"
 import {
   Card,
@@ -20,18 +20,18 @@ import {
 import { Link } from "@/components/ui/link"
 import { Skeleton } from "@/components/ui/skeleton"
 
-export function ShowEvent({
+export function ShowRFPEvent({
   eventIndex,
   hideDescription,
-  viewTask,
+  viewRFP,
   index,
 }: {
   eventIndex: number
   hideDescription?: boolean
-  viewTask?: boolean
+  viewRFP?: boolean
   index: number
 }) {
-  const [event, setEvent] = useState<TaskEvent | undefined>(undefined)
+  const [event, setEvent] = useState<RFPEvent | undefined>(undefined)
   const [transaction, setTransaction] = useState<Transaction | undefined>(
     undefined
   )
@@ -42,7 +42,7 @@ export function ShowEvent({
 
   useEffect(() => {
     const getEventInfo = async () => {
-      const eventInfo = await getEvent(eventIndex)
+      const eventInfo = await getRFPEvent(eventIndex)
       setEvent(eventInfo)
     }
 
@@ -114,12 +114,12 @@ export function ShowEvent({
         </div>
       </CardHeader>
       <CardFooter className="mb-2 grid items-center gap-y-2 pb-0 text-center text-sm md:mb-0 md:mr-[80px] md:gap-y-0 md:text-base">
-        {viewTask && (
+        {viewRFP && (
           <Link
             className="flex cursor-pointer items-center justify-center rounded-md border-[0.5px] border-[#87868645] !py-[5px] px-[8px] text-center hover:bg-[#a5a5a511] dark:hover:bg-[#4747472b]"
-            href={getTaskLinkFromEvent(event)}
+            href={getRFPLinkFromEvent(event)}
           >
-            View task
+            View RFP
           </Link>
         )}
         <Link
@@ -138,22 +138,10 @@ export function ShowEvent({
   )
 }
 
-function getTaskLinkFromEvent(event?: TaskEvent): string | undefined {
+function getRFPLinkFromEvent(event?: RFPEvent): string | undefined {
   if (!event) {
     return undefined
   }
 
-  let taskId: bigint
-  if (event.type === "TaskDraftCreated") {
-    return undefined
-  } else if (event.type === "DisputeCreated") {
-    if (!event.dispute) {
-      return undefined
-    }
-    taskId = event.dispute.taskId
-  } else {
-    taskId = event.taskId
-  }
-
-  return `/tasks/${event.chainId}:${taskId}`
+  return `/rfps/${event.chainId}:${event.rfpId}`
 }

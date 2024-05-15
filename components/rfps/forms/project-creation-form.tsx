@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
-import { useRouter } from "next/navigation"
-import { TasksContract } from "@/openrd-indexer/contracts/Tasks"
+import { RFPsContract } from "@/openrd-indexer/contracts/RFPs"
+import { RFP } from "@/openrd-indexer/types/rfp"
 import { zodResolver } from "@hookform/resolvers/zod"
 import axios from "axios"
 import { useFieldArray, useForm } from "react-hook-form"
@@ -14,11 +14,11 @@ import {
   decodeEventLog,
   isAddress,
 } from "viem"
-import { useChainId, usePublicClient } from "wagmi"
+import { useChainId, usePublicClient, useSwitchChain } from "wagmi"
 import { z } from "zod"
 
 import { chains } from "@/config/wagmi-config"
-import { validAddress, validAddressOrEmpty } from "@/lib/regex"
+import { validAddress } from "@/lib/regex"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import { ErrorWrapper } from "@/components/ui/error-wrapper"
@@ -40,42 +40,30 @@ import {
   AddressPicker,
   SelectableAddresses,
 } from "@/components/web3/address-picker"
-import { ERC20AllowanceCheck } from "@/components/web3/erc20-allowance-check"
 import { ERC20BalanceInput } from "@/components/web3/erc20-balance-input"
 import { NativeBalanceInput } from "@/components/web3/native-balance-input"
 import { AddToIpfsRequest, AddToIpfsResponse } from "@/app/api/addToIpfs/route"
-import { TokensRequest, TokensResponse } from "@/app/api/tokens/route"
+import {
+  TokenMetadataRequest,
+  TokenMetadataResponse,
+} from "@/app/api/tokenMetadata/route"
 
 const formSchema = z.object({
   // Onchain fields
   deadline: z.date().min(new Date(), "Deadline must be in the future."),
-  manager: z.string().regex(validAddress, "Manager must be a valid address."),
-  disputeManger: z
-    .string()
-    .regex(validAddress, "Dispute manager must be a valid address."),
-  nativeBudget: z.coerce
-    .bigint()
-    .min(BigInt(0), "Native budget cannot be negative."),
-  budget: z
+  nativeReward: z
     .object({
-      tokenContract: z
-        .string()
-        .regex(validAddress, "ERC20 contract must be a valid address."),
+      to: z.string().regex(validAddress, "To must be a valid address."),
       amount: z.coerce.bigint().min(BigInt(0), "Amount cannot be negative."),
     })
     .array(),
-  preapprove: z
+  reward: z
     .object({
-      applicant: z
-        .string()
-        .regex(validAddress, "Applicant must be a valid address."),
+      to: z.string().regex(validAddress, "To must be a valid address."),
+      token: z.string().regex(validAddress, "Token must be a valid address."),
+      amount: z.coerce.bigint().min(BigInt(0), "Amount cannot be negative."),
     })
     .array(),
-  draft: z
-    .string()
-    .regex(validAddressOrEmpty, "Draft DAO must be a valid address."),
-
-  // Additional draft fields
 
   // Metadata fields
   title: z.string().min(1, "Title cannot be empty."),
@@ -96,53 +84,51 @@ const formSchema = z.object({
     .array(),
 })
 
-export function TaskCreationForm() {
-  const chainId = useChainId()
+export function ProjectCreationForm({
+  chainId,
+  rfpId,
+  rfp,
+  refresh,
+}: {
+  chainId: number
+  rfpId: bigint
+  rfp: RFP
+  refresh: () => Promise<void>
+}) {
+  const connectedChainId = useChainId()
+  const { switchChainAsync } = useSwitchChain()
   const walletClient = useAbstractWalletClient()
   const publicClient = usePublicClient()
   const { toast } = useToast()
-  const { push } = useRouter()
 
-  const [managerOptions, setManagerOptions] = useState<SelectableAddresses>({})
+  const [selectableAddresses, setSelectableAddresses] =
+    useState<SelectableAddresses>({})
   useEffect(() => {
     if (!walletClient?.account?.address) {
-      setManagerOptions({})
+      setSelectableAddresses({})
       return
     }
 
-    setManagerOptions({
-      [walletClient.account.address]: { name: "Myself" },
+    setSelectableAddresses({
+      [walletClient.account.address]: { name: "Yourself" },
     })
   }, [walletClient?.account?.address])
-  const disputeManagerOptions: SelectableAddresses = {
-    "0x7aC61b993B4aa460EDf7BC4266Ed4BBCa20bF2Db": {
-      name: "Openmesh Dispute Department",
-    },
-  }
-  const draftOptions: SelectableAddresses = {
-    ["" as Address]: { name: "Coming Soon!" },
-  }
 
-  const [tokens, setTokens] = useState<SelectableAddresses>({})
+  const [budgetTokens, setBudgetTokens] = useState<SelectableAddresses>({})
   useEffect(() => {
-    const getTokens = async () => {
-      if (!walletClient?.account?.address) {
-        setTokens({})
-        return
-      }
-
-      const request: TokensRequest = {
+    const getBudgetTokens = async () => {
+      const request: TokenMetadataRequest = {
         chainId: chainId,
-        address: walletClient.account.address,
+        addresses: rfp.budget.map((b) => b.tokenContract),
       }
       const tokensResponse = await axios.post(
-        "/api/tokens/",
+        "/api/tokenMetadata/",
         JSON.stringify(request)
       )
 
       if (tokensResponse.status === 200) {
-        const data = tokensResponse.data as TokensResponse
-        setTokens(
+        const data = tokensResponse.data as TokenMetadataResponse
+        setBudgetTokens(
           data.tokens.reduce((acc, token) => {
             let name: string = token.contractAddress
             if (token.name) {
@@ -160,23 +146,21 @@ export function TaskCreationForm() {
           }, {} as SelectableAddresses)
         )
       } else {
-        console.warn(`Token fetch failed: ${JSON.stringify(tokensResponse)}`)
+        console.warn(
+          `Token metadata fetch failed: ${JSON.stringify(tokensResponse)}`
+        )
       }
     }
 
-    getTokens().catch(console.error)
-  }, [walletClient?.account?.address, chainId])
+    getBudgetTokens().catch(console.error)
+  }, [chainId, rfp.budget])
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       deadline: new Date(),
-      manager: walletClient?.account?.address ?? "",
-      disputeManger: Object.keys(disputeManagerOptions)[0],
-      nativeBudget: BigInt(0),
-      budget: [],
-      preapprove: [],
-      draft: "",
+      nativeReward: [],
+      reward: [],
 
       title: "",
       tags: [],
@@ -184,32 +168,39 @@ export function TaskCreationForm() {
       teamSize: 0,
       description: "",
       resources: "",
-      links: [
-        {
-          name: "GitHub",
-          url: "",
-        },
-        {
-          name: "Calendly",
-          url: "",
-        },
-      ],
+      links: [],
     },
   })
 
   const [submitting, setSubmitting] = useState<boolean>(false)
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (connectedChainId !== chainId) {
+      const switchChainResult = await switchChainAsync?.({
+        chainId: chainId,
+      }).catch((err) => {
+        console.error(err)
+      })
+      if (!switchChainResult || switchChainResult.id !== chainId) {
+        toast({
+          title: "Wrong chain",
+          description: `Please switch to ${chains.find((c) => c.id === chainId)?.name ?? chainId}.`,
+          variant: "destructive",
+        })
+        return
+      }
+    }
     if (submitting) {
       toast({
         title: "Please wait",
         description: "The past submission is still running.",
+        variant: "destructive",
       })
       return
     }
     const submit = async () => {
       setSubmitting(true)
       let { dismiss } = toast({
-        title: "Creating task",
+        title: "Creating project",
         description: "Uploading metadata to IPFS...",
       })
 
@@ -235,13 +226,13 @@ export function TaskCreationForm() {
       if (!cid) {
         dismiss()
         toast({
-          title: "Task creation failed",
+          title: "Project creation failed",
           description: "Could not upload metadata to IPFS.",
           variant: "destructive",
         })
         return
       }
-      console.log(`Sucessfully uploaded task metadata to ipfs: ${cid}`)
+      console.log(`Sucessfully uploaded project metadata to ipfs: ${cid}`)
 
       dismiss()
       dismiss = toast({
@@ -249,10 +240,44 @@ export function TaskCreationForm() {
         description: "Please sign the transaction in your wallet...",
       }).dismiss
 
+      const nativeReward = values.nativeReward.map((r) => {
+        return {
+          ...r,
+          to: r.to as Address,
+        }
+      })
+      const reward = rfp.budget
+        .map((b) =>
+          values.reward.filter((r) => r.token === b.tokenContract.toLowerCase())
+        )
+        .reduce(
+          (acc, value) => {
+            if (value.length === 0) {
+              // Push record to skip this token
+              acc.push({
+                nextToken: true,
+                to: "0x519ce4C129a981B2CBB4C3990B1391dA24E8EbF3",
+                amount: BigInt(0),
+              })
+            } else {
+              acc.push(
+                ...value.map((v, i) => {
+                  return {
+                    nextToken: i === value.length - 1,
+                    to: v.to as Address,
+                    amount: v.amount,
+                  }
+                })
+              )
+            }
+            return acc
+          },
+          [] as { nextToken: boolean; to: Address; amount: bigint }[]
+        )
       if (!publicClient || !walletClient?.account) {
         dismiss()
         toast({
-          title: "Task creation failed",
+          title: "Project creation failed",
           description: `${publicClient ? "Wallet" : "Public"}Client is undefined.`,
           variant: "destructive",
         })
@@ -261,43 +286,17 @@ export function TaskCreationForm() {
       const transactionRequest = await publicClient
         .simulateContract({
           account: walletClient.account,
-          abi: TasksContract.abi,
-          address: TasksContract.address,
-          functionName: "createTask",
+          abi: RFPsContract.abi,
+          address: RFPsContract.address,
+          functionName: "submitProject",
           args: [
+            rfpId,
             `ipfs://${cid}`,
             BigInt(Math.round(values.deadline.getTime() / 1000)),
-            values.manager as Address,
-            values.disputeManger as Address,
-            values.budget.map((b) => {
-              return {
-                ...b,
-                tokenContract: b.tokenContract as Address,
-              }
-            }),
-            values.preapprove.map((p) => {
-              return {
-                applicant: p.applicant as Address,
-                nativeReward:
-                  values.nativeBudget !== BigInt(0)
-                    ? [
-                        {
-                          to: p.applicant as Address,
-                          amount: values.nativeBudget,
-                        },
-                      ]
-                    : [],
-                reward: values.budget.map((b) => {
-                  return {
-                    nextToken: true,
-                    to: p.applicant as Address,
-                    amount: b.amount,
-                  }
-                }),
-              }
-            }),
+            nativeReward,
+            reward,
           ],
-          value: values.nativeBudget,
+          chain: chains.find((c) => c.id == chainId),
         })
         .catch((err) => {
           console.error(err)
@@ -316,7 +315,7 @@ export function TaskCreationForm() {
       if (typeof transactionRequest === "string") {
         dismiss()
         toast({
-          title: "Task creation failed",
+          title: "Project creation failed",
           description: transactionRequest,
           variant: "destructive",
         })
@@ -331,7 +330,7 @@ export function TaskCreationForm() {
       if (!transactionHash) {
         dismiss()
         toast({
-          title: "Task creation failed",
+          title: "Project creation failed",
           description: "Transaction rejected.",
           variant: "destructive",
         })
@@ -341,7 +340,7 @@ export function TaskCreationForm() {
       dismiss()
       dismiss = toast({
         duration: 120_000, // 2 minutes
-        title: "Task transaction submitted",
+        title: "Project transaction submitted",
         description: "Waiting until confirmed on the blockchain...",
         action: (
           <ToastAction
@@ -368,57 +367,62 @@ export function TaskCreationForm() {
       })
       dismiss()
       dismiss = toast({
-        title: "Task transaction confirmed!",
+        title: "Project transaction confirmed!",
         description: "Parsing transaction logs...",
       }).dismiss
 
-      let taskId: bigint | undefined
+      let projectId: number | undefined
       receipt.logs.forEach((log) => {
         try {
           if (
-            log.address.toLowerCase() !== TasksContract.address.toLowerCase()
+            log.address.toLowerCase() !== RFPsContract.address.toLowerCase()
           ) {
-            // Only interested in logs originating from the tasks contract
+            // Only interested in logs originating from the rfps contract
             return
           }
 
-          const taskCreatedEvent = decodeEventLog({
-            abi: TasksContract.abi,
-            eventName: "TaskCreated",
+          const projectCreatedEvent = decodeEventLog({
+            abi: RFPsContract.abi,
+            eventName: "ProjectSubmitted",
             topics: log.topics,
             data: log.data,
           })
-          taskId = taskCreatedEvent.args.taskId
+          if (projectCreatedEvent.args.rfpId === rfpId) {
+            projectId = projectCreatedEvent.args.projectId
+          }
         } catch {}
       })
-      if (taskId === undefined) {
+      if (projectId === undefined) {
         dismiss()
         toast({
-          title: "Error retrieving task id",
-          description: "The task creation possibly failed.",
+          title: "Error retrieving project id",
+          description: "The project creation possibly failed.",
           variant: "destructive",
         })
         return
       }
 
-      setTimeout(() => {
-        if (walletClient.chain) {
-          push(`/tasks/${walletClient.chain.id}:${taskId}`)
-        }
-      }, 2000)
-
       dismiss()
       dismiss = toast({
         title: "Success!",
-        description: "The task has been created.",
+        description: "The project has been created.",
         variant: "success",
+        action: (
+          <ToastAction
+            altText="Refresh"
+            onClick={() => {
+              refresh()
+            }}
+          >
+            Refresh
+          </ToastAction>
+        ),
       }).dismiss
     }
 
     await submit().catch(console.error)
     setSubmitting(false)
   }
-
   const {
     fields: tags,
     append: appendTag,
@@ -440,22 +444,22 @@ export function TaskCreationForm() {
   })
 
   const {
-    fields: budget,
-    append: appendBudget,
-    remove: removeBudget,
-    update: updateBudget,
+    fields: nativeReward,
+    append: appendNativeReward,
+    remove: removeNativeReward,
+    update: updateNativeReward,
   } = useFieldArray({
-    name: "budget",
+    name: "nativeReward",
     control: form.control,
   })
 
   const {
-    fields: preapprove,
-    append: appendPreapprove,
-    remove: removePreapprove,
-    update: updatePreapprove,
+    fields: reward,
+    append: appendReward,
+    remove: removeReward,
+    update: updateReward,
   } = useFieldArray({
-    name: "preapprove",
+    name: "reward",
     control: form.control,
   })
 
@@ -698,232 +702,145 @@ export function TaskCreationForm() {
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="manager"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Manager</FormLabel>
-              <FormControl>
-                <AddressPicker
-                  addressName="manager"
-                  selectableAddresses={managerOptions}
-                  {...field}
-                  onChange={(change) => {
-                    field.onChange(change)
-                    form.trigger("manager")
-                  }}
-                  customAllowed={true}
-                />
-              </FormControl>
-              <FormDescription>
-                This entity will handle the management side of the task.
-                Normally this will be you, but you can transfer this power to
-                another entity if you wish.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="disputeManger"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Dispute Manager</FormLabel>
-              <FormControl>
-                <AddressPicker
-                  addressName="dispute manager"
-                  selectableAddresses={disputeManagerOptions}
-                  {...field}
-                  onChange={(change) => {
-                    field.onChange(change)
-                    form.trigger("disputeManger")
-                  }}
-                  customAllowed={true}
-                />
-              </FormControl>
-              <FormDescription>
-                This entity will decide if the task should be (partially)
-                rewarded in case the applicant and manager cannot reach an
-                agreement. It is recommended to have a trustworthy unbiased
-                entity.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="nativeBudget"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Native Budget</FormLabel>
-              <FormControl>
-                <NativeBalanceInput
-                  {...field}
-                  onChange={(change) => {
-                    field.onChange(change)
-                    form.trigger("nativeBudget")
-                  }}
-                  account={walletClient?.account?.address}
-                />
-              </FormControl>
-              <FormDescription>
-                The amount of native currency that is available as budget for
-                this task (ETH on Ethereum, MATIC on Polygon).
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+
         <FormItem>
-          <FormLabel>ERC20 Budget</FormLabel>
+          <FormLabel>Native Rewards</FormLabel>
           <FormControl>
             <div>
-              {budget.map((budgetItem, i) => (
+              {nativeReward.map((nativeRewardItem, i) => (
                 <ErrorWrapper
                   key={i}
-                  error={form.formState.errors.budget?.at?.(i)}
+                  error={form.formState.errors.nativeReward?.at?.(i)}
                 >
                   <div className="flex gap-x-1 w-full">
                     <AddressPicker
-                      addressName="ERC20 token"
-                      selectableAddresses={tokens}
-                      value={budgetItem.tokenContract}
+                      addressName="receiver"
+                      selectableAddresses={selectableAddresses}
+                      value={nativeRewardItem.to}
                       onChange={(change) => {
-                        updateBudget(i, {
-                          ...budgetItem,
-                          tokenContract: change ?? "",
+                        updateNativeReward(i, {
+                          ...nativeRewardItem,
+                          to: change ?? "",
                         })
-                        form.trigger("budget")
+                        form.trigger("nativeReward")
                       }}
                       customAllowed={true}
                     />
-                    <ERC20BalanceInput
-                      token={
-                        isAddress(budgetItem.tokenContract)
-                          ? budgetItem.tokenContract
-                          : undefined
-                      }
-                      value={budgetItem.amount}
+                    <NativeBalanceInput
+                      value={nativeRewardItem.amount}
                       onChange={(change) => {
-                        updateBudget(i, { ...budgetItem, amount: change })
-                        form.trigger("budget")
+                        updateNativeReward(i, {
+                          ...nativeRewardItem,
+                          amount: change,
+                        })
+                        form.trigger("nativeReward")
                       }}
                       account={walletClient?.account?.address}
                     />
                     <Button
-                      onClick={() => removeBudget(i)}
+                      onClick={() => removeNativeReward(i)}
                       variant="destructive"
                     >
                       X
                     </Button>
                   </div>
-                  <ERC20AllowanceCheck
-                    spender={TasksContract.address}
-                    token={
-                      isAddress(budgetItem.tokenContract)
-                        ? budgetItem.tokenContract
-                        : undefined
-                    }
-                    amount={budgetItem.amount}
-                    account={walletClient?.account?.address}
-                  />
                 </ErrorWrapper>
               ))}
               <Button
                 onClick={() =>
-                  appendBudget({ tokenContract: "", amount: BigInt(0) })
+                  appendNativeReward({ to: "", amount: BigInt(0) })
                 }
               >
-                Add ERC20 token
+                Add native reward
               </Button>
             </div>
           </FormControl>
           <FormDescription>
-            The amount of ERC20 currency that is available as budget for this
-            task. This can be any token, such as USDT, USDC, or WETH.
+            The amount of ERC20 currency that your require for completing this
+            rfp. This is limited to the ERC20 tokens set as budget, but can
+            exceed the current budget amount.
           </FormDescription>
           <FormMessage />
         </FormItem>
-        <FormItem>
-          <FormLabel>Preapproved applicants</FormLabel>
-          <FormControl>
-            <div>
-              {preapprove.map((preapproveItem, i) => (
-                <ErrorWrapper
-                  key={i}
-                  error={form.formState.errors.preapprove?.at?.(i)}
+
+        {rfp.budget.length !== 0 && (
+          <FormItem>
+            <FormLabel>ERC20 Rewards</FormLabel>
+            <FormControl>
+              <div>
+                {reward.map((rewardItem, i) => (
+                  <ErrorWrapper
+                    key={i}
+                    error={form.formState.errors.reward?.at?.(i)}
+                  >
+                    <div className="flex gap-x-1 w-full">
+                      <AddressPicker
+                        addressName="receiver"
+                        selectableAddresses={selectableAddresses}
+                        value={rewardItem.to}
+                        onChange={(change) => {
+                          updateReward(i, {
+                            ...rewardItem,
+                            to: change ?? "",
+                          })
+                          form.trigger("reward")
+                        }}
+                        customAllowed={true}
+                      />
+                      <AddressPicker
+                        addressName="ERC20 token"
+                        selectableAddresses={budgetTokens}
+                        value={rewardItem.token}
+                        onChange={(change) => {
+                          updateReward(i, {
+                            ...rewardItem,
+                            token: change ?? "",
+                          })
+                          form.trigger("reward")
+                        }}
+                      />
+                      <ERC20BalanceInput
+                        token={
+                          isAddress(rewardItem.token)
+                            ? rewardItem.token
+                            : undefined
+                        }
+                        value={rewardItem.amount}
+                        onChange={(change) => {
+                          updateReward(i, { ...rewardItem, amount: change })
+                          form.trigger("reward")
+                        }}
+                        account={walletClient?.account?.address}
+                        showAvailable={false}
+                      />
+                      <Button
+                        onClick={() => removeReward(i)}
+                        variant="destructive"
+                      >
+                        X
+                      </Button>
+                    </div>
+                  </ErrorWrapper>
+                ))}
+                <Button
+                  onClick={() =>
+                    appendReward({ to: "", token: "", amount: BigInt(0) })
+                  }
                 >
-                  <div className="flex gap-x-1 w-full">
-                    <AddressPicker
-                      addressName="Applicant"
-                      value={preapproveItem.applicant}
-                      onChange={(change) => {
-                        updatePreapprove(i, {
-                          ...preapproveItem,
-                          applicant: change ?? "",
-                        })
-                        form.trigger("preapprove")
-                      }}
-                      customAllowed={true}
-                    />
-                    <Button
-                      onClick={() => removePreapprove(i)}
-                      variant="destructive"
-                    >
-                      X
-                    </Button>
-                  </div>
-                </ErrorWrapper>
-              ))}
-              <Button onClick={() => appendPreapprove({ applicant: "" })}>
-                Add preapproved applicant
-              </Button>
-            </div>
-          </FormControl>
-          <FormDescription>
-            If you already have someone willing to take on the task (which you
-            are okay with taking it on), you can add them here. This skips the
-            steps where they need to create an application and you need to
-            accept it. If they are preapproved they will be able to take the
-            task right away (with a reward equal to the budget). Until they take
-            the task, others will be able to apply and are able to take the task
-            if you accept their application.
-          </FormDescription>
-          <FormMessage />
-        </FormItem>
-        <FormField
-          control={form.control}
-          name="draft"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Propose to DAO</FormLabel>
-              <FormControl>
-                <AddressPicker
-                  addressName="DAO"
-                  selectableAddresses={draftOptions}
-                  {...field}
-                  onChange={(change) => {
-                    field.onChange(change)
-                    form.trigger("draft")
-                  }}
-                />
-              </FormControl>
-              <FormDescription>
-                Instead of funding this task yourself, you are able to propose
-                it to any DAO that opted into this feature. This includes all
-                Openmesh departments. The task will only be created if the DAO
-                approves it. The budget for the task will be paid from the DAO
-                treasury.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+                  Add ERC20 reward
+                </Button>
+              </div>
+            </FormControl>
+            <FormDescription>
+              The amount of ERC20 currency that your require for completing this
+              rfp. This is limited to the ERC20 tokens set as budget, but can
+              exceed the current budget amount.
+            </FormDescription>
+            <FormMessage />
+          </FormItem>
+        )}
         <Button type="submit" disabled={submitting}>
-          Create task
+          Create project
         </Button>
       </form>
     </Form>

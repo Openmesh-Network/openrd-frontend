@@ -366,7 +366,7 @@ export function ApplicationCreationForm({
         dismiss()
         toast({
           title: "Error retrieving application id",
-          description: "The task creation possibly failed.",
+          description: "The application creation possibly failed.",
           variant: "destructive",
         })
         return

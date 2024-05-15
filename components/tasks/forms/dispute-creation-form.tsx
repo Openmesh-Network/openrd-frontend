@@ -4,8 +4,8 @@ import { useEffect, useState } from "react"
 import { AddressTrustlessManagementContract } from "@/contracts/AddressTrustlessManagement"
 import { DAOContract } from "@/contracts/DAOContract"
 import { PessimisticActionsContract } from "@/contracts/PessimisticActions"
+import { TaskDisputesContract } from "@/openrd-indexer/contracts/TaskDisputes"
 import { TasksContract } from "@/openrd-indexer/contracts/Tasks"
-import { TasksDisputesContract } from "@/openrd-indexer/contracts/TasksDisputes"
 import { Task } from "@/openrd-indexer/types/tasks"
 import { zodResolver } from "@hookform/resolvers/zod"
 import axios from "axios"
@@ -93,8 +93,8 @@ export function DipsuteCreationForm({
       }
 
       const daoDisputeCost = await publicClient.readContract({
-        abi: TasksDisputesContract.abi,
-        address: TasksDisputesContract.address,
+        abi: TaskDisputesContract.abi,
+        address: TaskDisputesContract.address,
         functionName: "getCost",
         args: [task.disputeManager],
       })
@@ -190,7 +190,7 @@ export function DipsuteCreationForm({
       // Assumes default dispute installation
       const managementInfo = {
         manager: AddressTrustlessManagementContract.address,
-        role: BigInt(TasksDisputesContract.address),
+        role: BigInt(TaskDisputesContract.address),
         trustlessActions: PessimisticActionsContract.address,
       }
       const trustlessActionsInfo = {
@@ -212,12 +212,12 @@ export function DipsuteCreationForm({
         .simulateContract({
           account: walletClient.account,
           abi: [
-            ...TasksDisputesContract.abi,
+            ...TaskDisputesContract.abi,
             ...errorsOfAbi(AddressTrustlessManagementContract.abi),
             ...errorsOfAbi(PessimisticActionsContract.abi),
             ...errorsOfAbi(DAOContract.abi),
           ],
-          address: TasksDisputesContract.address,
+          address: TaskDisputesContract.address,
           functionName: "createDispute",
           args: [
             task.disputeManager,

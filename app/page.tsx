@@ -105,7 +105,7 @@ export default function IndexPage() {
           } h-full transition-opacity duration-300`}
         >
           <Sidebar
-            onClickBurger={() => console.log("")}
+            onClickBurger={() => {}}
             budget={budgetValue}
             openProjectsNumber={openTasks}
             activeProjectsNumber={takenTasks}
@@ -119,7 +119,7 @@ export default function IndexPage() {
           } h-full transition-opacity duration-300`}
         >
           <ReducedSidebar
-            onClickBurger={() => console.log("")}
+            onClickBurger={() => {}}
             budget={budgetValue}
             openProjectsNumber={openTasks}
             activeProjectsNumber={takenTasks}

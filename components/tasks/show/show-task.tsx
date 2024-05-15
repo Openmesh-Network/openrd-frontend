@@ -93,7 +93,7 @@ export function ShowTask({
   )
   const directPrice = usePrice({
     chainId: chainId,
-    task: blockchainTask ?? indexerTask,
+    budget: blockchainTask ?? indexerTask,
   })
 
   const applyRef = useRef<HTMLDivElement>(null)
@@ -220,7 +220,7 @@ export function ShowTask({
   const disputeManagerTitle = useAddressTitle(disputeManager)
   const creatorTitle = useAddressTitle(creator)
 
-  const events = indexerTask?.events ?? []
+  const events = (indexerTask?.events ?? []).sort()
   const [budgetLink, setBudgetLink] = useState<string | undefined>(undefined)
   useEffect(() => {
     const getBudgetLink = async () => {
@@ -228,19 +228,21 @@ export function ShowTask({
         setBudgetLink(undefined)
         return
       }
-      const eventIndex = events.at(0)
-      if (eventIndex === undefined) {
-        setBudgetLink(undefined)
-        return
+
+      let newBudgetLink: string | undefined
+      for (let i = 0; i < events.length; i++) {
+        const eventIndex = events.at(i)
+        if (eventIndex === undefined) {
+          continue
+        }
+        const taskCreationEvent = await getEvent(eventIndex)
+        if (taskCreationEvent.type !== "TaskCreated") {
+          continue
+        }
+        newBudgetLink = `${chain.blockExplorers.default.url}/tx/${taskCreationEvent.transactionHash}`
+        break
       }
-      const taskCreationEvent = await getEvent(eventIndex)
-      if (taskCreationEvent.type !== "TaskCreated") {
-        setBudgetLink(undefined)
-        return
-      }
-      setBudgetLink(
-        `${chain.blockExplorers.default.url}/tx/${taskCreationEvent.transactionHash}`
-      )
+      setBudgetLink(newBudgetLink)
     }
 
     getBudgetLink().catch(console.error)

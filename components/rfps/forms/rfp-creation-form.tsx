@@ -428,7 +428,7 @@ export function RFPCreationForm() {
                 />
               </FormControl>
               <FormDescription>
-                High level description what your task is about.
+                High level description what your RFP is about.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -461,8 +461,8 @@ export function RFPCreationForm() {
             </div>
           </FormControl>
           <FormDescription>
-            Tags help applicants find the task based on their interests and
-            skillset.
+            Tags help applicants find the RFP based on their interests and skill
+            set.
           </FormDescription>
           <FormMessage />
         </FormItem>
@@ -494,7 +494,7 @@ export function RFPCreationForm() {
           name="maxAwardedProjects"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Max awarded projects</FormLabel>
+              <FormLabel>Max Awarded projects</FormLabel>
               <FormControl>
                 <Input
                   type="number"
@@ -637,7 +637,8 @@ export function RFPCreationForm() {
               </FormControl>
               <FormDescription>
                 Application deadline for projects. After this date no new
-                projects can apply. This cannot be changed after creation.
+                projects can apply, this is enforced. This cannot be changed
+                after creation.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -690,7 +691,7 @@ export function RFPCreationForm() {
               </FormControl>
               <FormDescription>
                 This entity will handle the management side of the funded
-                project task. Normally this will be you, but you can transfer
+                project tasks. Normally this will be you, but you can transfer
                 this power to another entity if you wish.
               </FormDescription>
               <FormMessage />
@@ -716,7 +717,7 @@ export function RFPCreationForm() {
                 />
               </FormControl>
               <FormDescription>
-                This entity will decide if the funded project task should be
+                This entity will decide if the funded project RFP should be
                 (partially) rewarded in case the applicant and manager cannot
                 reach an agreement. It is recommended to have a trustworthy
                 unbiased entity.

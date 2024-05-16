@@ -552,7 +552,8 @@ export function ShowTask({
                   {formatUnits(
                     nativeBudget,
                     chain?.nativeCurrency.decimals ?? 18
-                  )}
+                  )}{" "}
+                  {chain?.nativeCurrency.symbol}
                 </Link>
               )}
               {budget.length !== 0 && (

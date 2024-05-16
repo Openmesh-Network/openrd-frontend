@@ -542,9 +542,8 @@ export function ApplicationCreationForm({
               </div>
             </FormControl>
             <FormDescription>
-              The amount of ERC20 currency that your require for completing this
-              task. This is limited to the ERC20 tokens set as budget, but can
-              exceed the current budget amount.
+              The amount of native currency that your require for completing
+              this task. This can exceed the current budget amount.
             </FormDescription>
             <FormMessage />
           </FormItem>

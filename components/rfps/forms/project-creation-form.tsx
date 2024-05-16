@@ -482,7 +482,7 @@ export function ProjectCreationForm({
                 />
               </FormControl>
               <FormDescription>
-                High level description what your task is about.
+                High level description what your project is about.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -514,10 +514,7 @@ export function ProjectCreationForm({
               <Button onClick={() => appendTag({ tag: "" })}>Add tag</Button>
             </div>
           </FormControl>
-          <FormDescription>
-            Tags help applicants find the task based on their interests and
-            skill set.
-          </FormDescription>
+          <FormDescription>Tags help people find the project.</FormDescription>
           <FormMessage />
         </FormItem>
         <FormField
@@ -539,7 +536,7 @@ export function ProjectCreationForm({
               </FormControl>
               <FormDescription>
                 An estimate of how many (combined) hours are required to
-                complete the task.
+                complete the project.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -563,7 +560,7 @@ export function ProjectCreationForm({
                 />
               </FormControl>
               <FormDescription>
-                Recommended team size for completing the task.
+                Expected team size for completing the project.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -586,11 +583,11 @@ export function ProjectCreationForm({
               </FormControl>
               <FormDescription>
                 Full description with all details needed to understand and
-                complete the task. This is important to be on the same line as
-                your applicants, ambiguity could cause them to complete the task
-                as described, but different from your expectation and
-                interpretation. This description will also be leading in case of
-                a dispute.
+                complete the project. This is important to be on the same line
+                as your manager, ambiguity could cause you to complete the
+                project as you envisioned it, but different from the expectation
+                and interpretation of the task manager. This description will
+                also be leading in case of a dispute.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -612,8 +609,8 @@ export function ProjectCreationForm({
                 />
               </FormControl>
               <FormDescription>
-                Additional section to help your applicants find information
-                relevant to the task.
+                Additional section to help people find information relevant to
+                the project.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -694,9 +691,11 @@ export function ProjectCreationForm({
                 />
               </FormControl>
               <FormDescription>
-                In case the task is not completed before this date, you will be
-                able to refund the funds. The applicant can however apply for a
-                partial reward. You are able to extend the deadline later.
+                In case the project is not completed before this date, the task
+                manager will be able to refund the funds. The executor could
+                apply for a partial reward before this date if it seems like
+                they will not manage to complete it in time. The deadline can be
+                extended by the task manager at any point.
               </FormDescription>
               <FormMessage />
             </FormItem>
@@ -756,9 +755,8 @@ export function ProjectCreationForm({
             </div>
           </FormControl>
           <FormDescription>
-            The amount of ERC20 currency that your require for completing this
-            rfp. This is limited to the ERC20 tokens set as budget, but can
-            exceed the current budget amount.
+            The amount of native currency that your require for completing this
+            project. This can exceed the current budget amount.
           </FormDescription>
           <FormMessage />
         </FormItem>
@@ -833,8 +831,8 @@ export function ProjectCreationForm({
             </FormControl>
             <FormDescription>
               The amount of ERC20 currency that your require for completing this
-              rfp. This is limited to the ERC20 tokens set as budget, but can
-              exceed the current budget amount.
+              project. This is limited to the ERC20 tokens set as budget, but
+              can exceed the current budget amount.
             </FormDescription>
             <FormMessage />
           </FormItem>

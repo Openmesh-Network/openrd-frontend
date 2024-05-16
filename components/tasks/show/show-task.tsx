@@ -220,7 +220,8 @@ export function ShowTask({
   const disputeManagerTitle = useAddressTitle(disputeManager)
   const creatorTitle = useAddressTitle(creator)
 
-  const events = (indexerTask?.events ?? []).sort()
+  const events = (indexerTask?.events ?? []).sort((a, b) => a - b)
+
   const [budgetLink, setBudgetLink] = useState<string | undefined>(undefined)
   useEffect(() => {
     const getBudgetLink = async () => {

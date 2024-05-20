@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useRouter } from "next/navigation"
 import { useWeb3Modal } from "@web3modal/wagmi/react"
 import { Account } from "viem"
 import { useChainId, useConnect, useDisconnect, useSwitchChain } from "wagmi"
@@ -68,7 +69,7 @@ function ConnecterModal({ dismiss }: { dismiss: () => void }) {
   const { open } = useWeb3Modal()
 
   return (
-    <Modal dismiss={dismiss}>
+    <Modal title="Log in" dismiss={dismiss}>
       <div className="grid grid-cols-1 place-items-center gap-y-5">
         <Button
           onClick={() => {
@@ -98,9 +99,10 @@ function AccountModal({
   const { disconnect } = useDisconnect()
   const settings = useSettings()
   const setSettings = useSetSettings()
+  const { push } = useRouter()
 
   return (
-    <Modal dismiss={dismiss}>
+    <Modal title="Settings" dismiss={dismiss}>
       <p className="text-sm">Address: {account.address}</p>
       <br />
       <div className="items-top flex space-x-2">
@@ -126,7 +128,9 @@ function AccountModal({
           </label>
 
           <p className="text-sm text-muted-foreground">
-            ERC-4337 will be used.
+            Allows you to use OpenR&D without needing gas. This will use a smart
+            contract to handle all transaction for you, hence this contract will
+            need and gain all assets. Disable this to use your wallet directly.
           </p>
         </div>
       </div>
@@ -150,26 +154,43 @@ function AccountModal({
           >
             Show testnet
           </label>
+
+          <p className="text-sm text-muted-foreground">
+            Allows you to pick testnet chains in the dropdown. These chains have
+            no assets of monetary value and are solely meant for testing.
+          </p>
         </div>
       </div>
       <br />
-      <Button
-        onClick={() => {
-          disconnect()
-          dismiss()
-        }}
-        variant="destructive"
-      >
-        Disconnect
-      </Button>
+      <div className="grid grid-cols-1 gap-2">
+        <Button
+          onClick={() => {
+            push("/withdraw")
+            dismiss()
+          }}
+        >
+          Withdraw assets
+        </Button>
+        <Button
+          onClick={() => {
+            disconnect()
+            dismiss()
+          }}
+          variant="destructive"
+        >
+          Disconnect
+        </Button>
+      </div>
     </Modal>
   )
 }
 
 function Modal({
+  title,
   dismiss,
   children,
 }: {
+  title: string
   dismiss: () => void
   children: React.ReactNode
 }) {
@@ -190,7 +211,7 @@ function Modal({
             {/*header*/}
             <div className="flex items-start justify-between p-3 rounded-t">
               <h3 className={`text-lg pr-4 font-semibold text-primary`}>
-                Log in
+                {title}
               </h3>
               <button
                 className={`bg-transparent opacity-1 float-right text-3xl rounded-lg`}

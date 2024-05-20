@@ -16,8 +16,8 @@ export function useAddressTitle(address?: Address) {
         return
       }
 
-      const user = await getUser(address)
-      setTitle(user.metadata ? JSON.parse(user.metadata)?.title : undefined)
+      const user = await getUser(address).catch(() => undefined)
+      setTitle(user?.metadata ? JSON.parse(user.metadata)?.title : undefined)
     }
 
     getTitle().catch(console.error)

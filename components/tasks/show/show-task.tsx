@@ -580,12 +580,14 @@ export function ShowTask({
               <div className="space-y-1">
                 {objectKeysInt(applications)
                   .sort((applicationId1, applicationId2) => {
-                    // Executor application first
-                    if (executorApplication === applicationId1) {
-                      return -1
-                    }
-                    if (executorApplication === applicationId2) {
-                      return 1
+                    if (state === TaskState.Taken) {
+                      // Executor application first
+                      if (executorApplication === applicationId1) {
+                        return -1
+                      }
+                      if (executorApplication === applicationId2) {
+                        return 1
+                      }
                     }
 
                     // Then all accepted applications

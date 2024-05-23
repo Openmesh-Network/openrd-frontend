@@ -7,10 +7,12 @@ import { useSetSelectableChains } from "./selectable-chains"
 export interface Settings {
   useAccountAbstraction: boolean
   showTestnet: boolean
+  simulateTransactions: boolean
 }
 const defaultSettings: Settings = {
   useAccountAbstraction: true,
   showTestnet: false,
+  simulateTransactions: true,
 }
 const SettingsContext = createContext<Settings>(defaultSettings)
 const SetSettingsContext = createContext<(settings: Settings) => void>(() => {})
@@ -27,7 +29,11 @@ export function SettingsProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     const storedSettings = localStorage.getItem("settings")
     if (storedSettings) {
-      setSettings(JSON.parse(storedSettings))
+      // storedSettings could be missing certain settings only introduced later
+      setSettings({
+        ...defaultSettings,
+        ...JSON.parse(storedSettings),
+      })
     }
   }, [])
 

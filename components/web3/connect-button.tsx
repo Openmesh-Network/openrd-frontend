@@ -162,6 +162,37 @@ function AccountModal({
         </div>
       </div>
       <br />
+      <div className="items-top flex space-x-2">
+        <Checkbox
+          id="simulateTransactions"
+          checked={settings.simulateTransactions}
+          onCheckedChange={(checked) =>
+            setSettings({
+              ...settings,
+              simulateTransactions:
+                checked === "indeterminate"
+                  ? settings.simulateTransactions
+                  : checked,
+            })
+          }
+        />
+        <div className="grid gap-1.5 leading-none">
+          <label
+            htmlFor="simulateTransactions"
+            className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+          >
+            Simulate transactions
+          </label>
+
+          <p className="text-sm text-muted-foreground">
+            All transactions will first be simulated to check for errors. This
+            is only recommended to be disabled in combination with a proposal
+            builder, in case the transaction's success is dependent on the other
+            actions in the proposal.
+          </p>
+        </div>
+      </div>
+      <br />
       <div className="grid grid-cols-1 gap-2">
         <Button
           onClick={() => {

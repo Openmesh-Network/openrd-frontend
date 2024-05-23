@@ -12,6 +12,8 @@ import {
   BaseError,
   ContractFunctionRevertedError,
   decodeEventLog,
+  encodeFunctionData,
+  Hex,
   isAddress,
 } from "viem"
 import { useChainId, usePublicClient } from "wagmi"
@@ -36,6 +38,7 @@ import { RichTextArea } from "@/components/ui/rich-textarea"
 import { ToastAction } from "@/components/ui/toast"
 import { useToast } from "@/components/ui/use-toast"
 import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
+import { useSettings } from "@/components/context/settings"
 import {
   AddressPicker,
   SelectableAddresses,
@@ -95,6 +98,7 @@ export function RFPCreationForm() {
   const publicClient = usePublicClient()
   const { toast } = useToast()
   const { push } = useRouter()
+  const { simulateTransactions } = useSettings()
 
   const [managerOptions, setManagerOptions] = useState<SelectableAddresses>({})
   useEffect(() => {
@@ -238,56 +242,70 @@ export function RFPCreationForm() {
         })
         return
       }
-      const transactionRequest = await publicClient
-        .simulateContract({
-          account: walletClient.account,
-          abi: RFPsContract.abi,
-          address: RFPsContract.address,
-          functionName: "createRFP",
-          args: [
-            `ipfs://${cid}`,
-            BigInt(Math.round(values.deadline.getTime() / 1000)),
-            values.budget.map((b) => {
-              return {
-                ...b,
-                tokenContract: b.tokenContract as Address,
-              }
-            }),
-            values.taskManager as Address,
-            values.disputeManger as Address,
-            values.manager as Address,
-          ],
-          value: values.nativeBudget,
-        })
-        .catch((err) => {
-          console.error(err)
-          if (err instanceof BaseError) {
-            let errorName = err.shortMessage ?? "Simulation failed."
-            const revertError = err.walk(
-              (err) => err instanceof ContractFunctionRevertedError
-            )
-            if (revertError instanceof ContractFunctionRevertedError) {
-              errorName += ` -> ${revertError.data?.errorName}` ?? ""
+      const contractCall = {
+        chain: undefined,
+        account: walletClient.account,
+        abi: RFPsContract.abi,
+        address: RFPsContract.address,
+        functionName: "createRFP",
+        args: [
+          `ipfs://${cid}`,
+          BigInt(Math.round(values.deadline.getTime() / 1000)),
+          values.budget.map((b) => {
+            return {
+              ...b,
+              tokenContract: b.tokenContract as Address,
             }
-            return errorName
-          }
-          return "Simulation failed."
-        })
-      if (typeof transactionRequest === "string") {
-        dismiss()
-        toast({
-          title: "RFP creation failed",
-          description: transactionRequest,
-          variant: "destructive",
-        })
-        return
+          }),
+          values.taskManager as Address,
+          values.disputeManger as Address,
+          values.manager as Address,
+        ],
+        value: values.nativeBudget,
+      } as const
+      let transactionHash: Hex | undefined
+      if (simulateTransactions) {
+        const transactionRequest = await publicClient
+          .simulateContract(contractCall)
+          .then((result) => result.request)
+          .catch((err) => {
+            console.error(err)
+            if (err instanceof BaseError) {
+              let errorName = err.shortMessage ?? "Simulation failed."
+              const revertError = err.walk(
+                (err) => err instanceof ContractFunctionRevertedError
+              )
+              if (revertError instanceof ContractFunctionRevertedError) {
+                errorName += ` -> ${revertError.data?.errorName}` ?? ""
+              }
+              return errorName
+            }
+            return "Simulation failed."
+          })
+
+        if (typeof transactionRequest === "string") {
+          dismiss()
+          toast({
+            title: "RFP creation failed",
+            description: transactionRequest,
+            variant: "destructive",
+          })
+          return
+        }
+        transactionHash = await walletClient
+          .writeContract(transactionRequest)
+          .catch((err) => {
+            console.error(err)
+            return undefined
+          })
+      } else {
+        transactionHash = await walletClient
+          .writeContract(contractCall)
+          .catch((err) => {
+            console.error(err)
+            return undefined
+          })
       }
-      const transactionHash = await walletClient
-        .writeContract(transactionRequest.request)
-        .catch((err) => {
-          console.error(err)
-          return undefined
-        })
       if (!transactionHash) {
         dismiss()
         toast({

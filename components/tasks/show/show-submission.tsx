@@ -61,7 +61,7 @@ export function ShowSubmission({
   const directFeedbackMetadata = useMetadata<
     ShowSubmissionFeedbackMetadata | undefined
   >({
-    url: submission.metadata,
+    url: submission.feedback,
     defaultValue: undefined,
     emptyValue: {},
   })

@@ -187,7 +187,7 @@ function AccountModal({
           <p className="text-sm text-muted-foreground">
             All transactions will first be simulated to check for errors. This
             is only recommended to be disabled in combination with a proposal
-            builder, in case the transaction's success is dependent on the other
+            builder, in case the transaction success is dependent on the other
             actions in the proposal.
           </p>
         </div>

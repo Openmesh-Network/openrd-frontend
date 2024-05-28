@@ -726,6 +726,7 @@ export function ProjectCreationForm({
                       customAllowed={true}
                     />
                     <NativeBalanceInput
+                      chainId={chainId}
                       value={nativeRewardItem.amount}
                       onChange={(change) => {
                         updateNativeReward(i, {
@@ -798,6 +799,7 @@ export function ProjectCreationForm({
                         }}
                       />
                       <ERC20BalanceInput
+                        chainId={chainId}
                         token={
                           isAddress(rewardItem.token)
                             ? rewardItem.token

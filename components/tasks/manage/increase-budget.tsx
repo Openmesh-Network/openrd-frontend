@@ -327,6 +327,7 @@ export function IncreaseBudget({
               <FormLabel>Native Budget</FormLabel>
               <FormControl>
                 <NativeBalanceInput
+                  chainId={chainId}
                   {...field}
                   onChange={(change) => {
                     field.onChange(change)
@@ -362,6 +363,7 @@ export function IncreaseBudget({
                       value={budgetItem.tokenContract}
                     />
                     <ERC20BalanceInput
+                      chainId={chainId}
                       token={budgetItem.tokenContract as Address}
                       min={budget[i].amount}
                       value={budgetItem.amount}

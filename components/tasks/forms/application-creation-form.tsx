@@ -500,6 +500,7 @@ export function ApplicationCreationForm({
                   >
                     <div className="flex gap-x-1 w-full">
                       <AddressPicker
+                        chainId={chainId}
                         addressName="receiver"
                         selectableAddresses={selectableAddresses}
                         value={nativeRewardItem.to}
@@ -561,6 +562,7 @@ export function ApplicationCreationForm({
                   >
                     <div className="flex gap-x-1 w-full">
                       <AddressPicker
+                        chainId={chainId}
                         addressName="receiver"
                         selectableAddresses={selectableAddresses}
                         value={rewardItem.to}
@@ -574,6 +576,7 @@ export function ApplicationCreationForm({
                         customAllowed={true}
                       />
                       <AddressPicker
+                        chainId={chainId}
                         addressName="ERC20 token"
                         selectableAddresses={budgetTokens}
                         value={rewardItem.token}

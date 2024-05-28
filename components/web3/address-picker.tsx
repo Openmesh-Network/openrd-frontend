@@ -35,6 +35,7 @@ export interface SelectableAddresses {
 
 export interface AddressPickerProps
   extends Omit<React.HTMLAttributes<HTMLDivElement>, "onChange"> {
+  chainId?: number
   addressName?: string
   selectableAddresses?: SelectableAddresses
   value?: string
@@ -45,6 +46,7 @@ export interface AddressPickerProps
 const AddressPicker = React.forwardRef<HTMLDivElement, AddressPickerProps>(
   (
     {
+      chainId: _chainId,
       addressName: _addressName,
       selectableAddresses: _selectableAddresses,
       value: _value,
@@ -55,7 +57,8 @@ const AddressPicker = React.forwardRef<HTMLDivElement, AddressPickerProps>(
     },
     ref
   ) => {
-    const chainId = useChainId()
+    const connectedChainId = useChainId()
+    const chainId = _chainId ?? connectedChainId
     const chain = chains.find((c) => c.id === chainId)
 
     const selectableAddresses = _selectableAddresses ?? {}

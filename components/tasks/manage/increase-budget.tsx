@@ -355,6 +355,7 @@ export function IncreaseBudget({
                 >
                   <div className="flex gap-x-1 w-full">
                     <AddressPicker
+                      chainId={chainId}
                       addressName="ERC20 token"
                       selectableAddresses={{
                         [budgetItem.tokenContract]:

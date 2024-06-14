@@ -5,23 +5,17 @@ import { AddressTrustlessManagementContract } from "@/contracts/AddressTrustless
 import { DAOContract } from "@/contracts/DAOContract"
 import { PessimisticActionsContract } from "@/contracts/PessimisticActions"
 import { TaskDisputesContract } from "@/openrd-indexer/contracts/TaskDisputes"
-import { TasksContract } from "@/openrd-indexer/contracts/Tasks"
 import { Task } from "@/openrd-indexer/types/tasks"
 import { zodResolver } from "@hookform/resolvers/zod"
-import axios from "axios"
 import { useForm } from "react-hook-form"
-import {
-  BaseError,
-  ContractFunctionRevertedError,
-  decodeEventLog,
-  decodeFunctionData,
-  formatUnits,
-} from "viem"
-import { useChainId, usePublicClient, useSwitchChain } from "wagmi"
+import { formatUnits } from "viem"
+import { usePublicClient } from "wagmi"
 import { z } from "zod"
 
 import { chains } from "@/config/wagmi-config"
+import { addToIpfs } from "@/lib/api"
 import { errorsOfAbi } from "@/lib/error-decoding"
+import { usePerformTransaction } from "@/hooks/usePerformTransaction"
 import { Alert } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import {
@@ -36,10 +30,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { RichTextArea } from "@/components/ui/rich-textarea"
 import { Textarea } from "@/components/ui/textarea"
-import { ToastAction } from "@/components/ui/toast"
-import { useToast } from "@/components/ui/use-toast"
 import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
-import { AddToIpfsRequest, AddToIpfsResponse } from "@/app/api/addToIpfs/route"
 
 const formSchema = z.object({
   title: z.string().min(1, "Title cannot be empty."),
@@ -65,11 +56,10 @@ export function DipsuteCreationForm({
   task: Task
   refresh: () => Promise<void>
 }) {
-  const connectedChainId = useChainId()
-  const { switchChainAsync } = useSwitchChain()
-  const walletClient = useAbstractWalletClient()
-  const publicClient = usePublicClient()
-  const { toast } = useToast()
+  const walletClient = useAbstractWalletClient({ chainId })
+  const publicClient = usePublicClient({ chainId })
+  const { performTransaction, performingTransaction, loggers } =
+    usePerformTransaction({ chainId })
   const nativeCurrency =
     chains.find((c) => c.id === chainId)?.nativeCurrency ??
     chains[0].nativeCurrency
@@ -104,113 +94,51 @@ export function DipsuteCreationForm({
     getDisputeCost().catch(console.error)
   }, [publicClient, task.disputeManager])
 
-  const [submitting, setSubmitting] = useState<boolean>(false)
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    const executorApplication = task.applications[task.executorApplication]
-    if (!executorApplication) {
-      toast({
-        title: "Executor application not found",
-        description: "Please try again later.",
-        variant: "destructive",
-      })
-      return
-    }
-
-    if (connectedChainId !== chainId) {
-      const switchChainResult = await switchChainAsync?.({
-        chainId: chainId,
-      }).catch((err) => {
-        console.error(err)
-      })
-      if (!switchChainResult || switchChainResult.id !== chainId) {
-        toast({
-          title: "Wrong chain",
-          description: `Please switch to ${chains.find((c) => c.id === chainId)?.name ?? chainId}.`,
-          variant: "destructive",
-        })
-        return
-      }
-    }
-    if (submitting) {
-      toast({
-        title: "Please wait",
-        description: "The past submission is still running.",
-        variant: "destructive",
-      })
-      return
-    }
-    const submit = async () => {
-      setSubmitting(true)
-      let { dismiss } = toast({
-        title: "Creating dispute",
-        description: "Uploading metadata to IPFS...",
-      })
-
-      const metadata = {
-        title: values.title,
-        summary: values.summary,
-        body: values.body,
-      }
-      const addToIpfsRequest: AddToIpfsRequest = {
-        json: JSON.stringify(metadata),
-      }
-      const cid = await axios
-        .post("/api/addToIpfs", addToIpfsRequest)
-        .then((response) => (response.data as AddToIpfsResponse).cid)
-        .catch((err) => {
-          console.error(err)
+    await performTransaction({
+      transactionName: "Dispute creation",
+      transaction: async () => {
+        const executorApplication = task.applications[task.executorApplication]
+        if (!executorApplication) {
+          loggers.onError?.({
+            title: "Executor application not found",
+            description: "Please try again later.",
+          })
           return undefined
-        })
-      if (!cid) {
-        dismiss()
-        toast({
-          title: "Dispute creation failed",
-          description: "Could not upload metadata to IPFS.",
-          variant: "destructive",
-        })
-        return
-      }
-      console.log(`Sucessfully uploaded dispute metadata to ipfs: ${cid}`)
+        }
 
-      dismiss()
-      dismiss = toast({
-        title: "Generating transaction",
-        description: "Please sign the transaction in your wallet...",
-      }).dismiss
+        const metadata = {
+          title: values.title,
+          summary: values.summary,
+          body: values.body,
+        }
+        const cid = await addToIpfs(metadata, loggers)
+        if (!cid) {
+          return undefined
+        }
 
-      if (!publicClient || !walletClient?.account) {
-        dismiss()
-        toast({
-          title: "Dispute creation failed",
-          description: `${publicClient ? "Wallet" : "Public"}Client is undefined.`,
-          variant: "destructive",
-        })
-        return
-      }
-      // Assumes default dispute installation
-      const managementInfo = {
-        manager: AddressTrustlessManagementContract.address,
-        role: BigInt(TaskDisputesContract.address),
-        trustlessActions: PessimisticActionsContract.address,
-      }
-      const trustlessActionsInfo = {
-        manager: AddressTrustlessManagementContract.address,
-        role: BigInt(PessimisticActionsContract.address),
-      }
-      const disputeInfo = {
-        taskId: taskId,
-        partialNativeReward: executorApplication.nativeReward.map(
-          (reward) =>
-            (reward.amount * BigInt(values.rewardPercentage)) / BigInt(100)
-        ),
-        partialReward: executorApplication.reward.map(
-          (reward) =>
-            (reward.amount * BigInt(values.rewardPercentage)) / BigInt(100)
-        ),
-      }
-      const transactionRequest = await publicClient
-        .simulateContract({
-          account: walletClient.account,
+        // Assumes default dispute installation
+        const managementInfo = {
+          manager: AddressTrustlessManagementContract.address,
+          role: BigInt(TaskDisputesContract.address),
+          trustlessActions: PessimisticActionsContract.address,
+        }
+        const trustlessActionsInfo = {
+          manager: AddressTrustlessManagementContract.address,
+          role: BigInt(PessimisticActionsContract.address),
+        }
+        const disputeInfo = {
+          taskId: taskId,
+          partialNativeReward: executorApplication.nativeReward.map(
+            (reward) =>
+              (reward.amount * BigInt(values.rewardPercentage)) / BigInt(100)
+          ),
+          partialReward: executorApplication.reward.map(
+            (reward) =>
+              (reward.amount * BigInt(values.rewardPercentage)) / BigInt(100)
+          ),
+        }
+        return {
           abi: [
             ...TaskDisputesContract.abi,
             ...errorsOfAbi(AddressTrustlessManagementContract.abi),
@@ -226,140 +154,13 @@ export function DipsuteCreationForm({
             trustlessActionsInfo,
             disputeInfo,
           ],
-          chain: chains.find((c) => c.id == chainId),
           value: disputeCost,
-        })
-        .catch((err) => {
-          console.error(err)
-          if (err instanceof BaseError) {
-            let errorName = err.shortMessage ?? "Simulation failed."
-            const revertError = err.walk(
-              (err) => err instanceof ContractFunctionRevertedError
-            )
-            if (revertError instanceof ContractFunctionRevertedError) {
-              errorName += ` -> ${revertError.data?.errorName}` ?? ""
-            }
-            return errorName
-          }
-          return "Simulation failed."
-        })
-      if (typeof transactionRequest === "string") {
-        dismiss()
-        toast({
-          title: "Dispute creation failed",
-          description: transactionRequest,
-          variant: "destructive",
-        })
-        return
-      }
-      const transactionHash = await walletClient
-        .writeContract(transactionRequest.request)
-        .catch((err) => {
-          console.error(err)
-          return undefined
-        })
-      if (!transactionHash) {
-        dismiss()
-        toast({
-          title: "Dispute creation failed",
-          description: "Transaction rejected.",
-          variant: "destructive",
-        })
-        return
-      }
-
-      dismiss()
-      dismiss = toast({
-        duration: 120_000, // 2 minutes
-        title: "Dispute transaction submitted",
-        description: "Waiting until confirmed on the blockchain...",
-        action: (
-          <ToastAction
-            altText="View on explorer"
-            onClick={() => {
-              const chain = chains.find((c) => c.id === chainId)
-              if (!chain) {
-                return
-              }
-
-              window.open(
-                `${chain.blockExplorers.default.url}/tx/${transactionHash}`,
-                "_blank"
-              )
-            }}
-          >
-            View on explorer
-          </ToastAction>
-        ),
-      }).dismiss
-
-      const receipt = await publicClient.waitForTransactionReceipt({
-        hash: transactionHash,
-      })
-      dismiss()
-      dismiss = toast({
-        title: "Dispute transaction confirmed!",
-        description: "Parsing transaction logs...",
-      }).dismiss
-
-      let disputeCreated = false
-      receipt.logs.forEach((log) => {
-        try {
-          if (
-            log.address.toLowerCase() !== TasksContract.address.toLowerCase()
-          ) {
-            // Only interested in logs originating from the tasks contract
-            return
-          }
-
-          const disputeCreatedEvent = decodeEventLog({
-            abi: PessimisticActionsContract.abi,
-            eventName: "ActionCreated",
-            topics: log.topics,
-            data: log.data,
-          })
-          const tasksAction = decodeFunctionData({
-            abi: TasksContract.abi,
-            data: disputeCreatedEvent.args.actions[0].data,
-          })
-          if (
-            tasksAction.functionName === "completeByDispute" &&
-            tasksAction.args[0] === taskId
-          ) {
-            disputeCreated = true
-          }
-        } catch {}
-      })
-      if (disputeCreated === undefined) {
-        dismiss()
-        toast({
-          title: "Error retrieving dispute created event",
-          description: "The dispute creation possibly failed.",
-          variant: "destructive",
-        })
-        return
-      }
-
-      dismiss()
-      dismiss = toast({
-        title: "Success!",
-        description: "The dispute has been created.",
-        variant: "success",
-        action: (
-          <ToastAction
-            altText="Refresh"
-            onClick={() => {
-              refresh()
-            }}
-          >
-            Refresh
-          </ToastAction>
-        ),
-      }).dismiss
-    }
-
-    await submit().catch(console.error)
-    setSubmitting(false)
+        }
+      },
+      onConfirmed: (receipt) => {
+        refresh()
+      },
+    })
   }
 
   const [firstRender, setFirstRender] = useState(true)
@@ -476,7 +277,7 @@ export function DipsuteCreationForm({
             </FormItem>
           )}
         />
-        <Button type="submit" disabled={submitting}>
+        <Button type="submit" disabled={performingTransaction}>
           Create dispute ({formatUnits(disputeCost, nativeCurrency.decimals)}{" "}
           {nativeCurrency.symbol})
         </Button>

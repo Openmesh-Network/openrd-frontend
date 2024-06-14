@@ -31,7 +31,7 @@ export function ShowRFPSummary({
   onRFPInfo?: (rfpInfo: any) => void
 }) {
   const chain = chains.find((c) => c.id === chainId)
-  const publicClient = usePublicClient({ chainId: chainId })
+  const publicClient = usePublicClient({ chainId })
 
   const [indexerRFP, setIndexerRFP] = useState<IndexedRFP | undefined>(
     undefined

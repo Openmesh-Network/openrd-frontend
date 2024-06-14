@@ -6,17 +6,11 @@ import { ERC20Transfer } from "@/openrd-indexer/types/tasks"
 import { zodResolver } from "@hookform/resolvers/zod"
 import axios from "axios"
 import { useFieldArray, useForm } from "react-hook-form"
-import {
-  Address,
-  BaseError,
-  ContractFunctionRevertedError,
-  decodeEventLog,
-} from "viem"
-import { useChainId, usePublicClient, useSwitchChain } from "wagmi"
+import { Address } from "viem"
 import { z } from "zod"
 
-import { chains } from "@/config/wagmi-config"
 import { validAddress } from "@/lib/regex"
+import { usePerformTransaction } from "@/hooks/usePerformTransaction"
 import { Button } from "@/components/ui/button"
 import { ErrorWrapper } from "@/components/ui/error-wrapper"
 import {
@@ -28,8 +22,6 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form"
-import { ToastAction } from "@/components/ui/toast"
-import { useToast } from "@/components/ui/use-toast"
 import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 import {
   AddressPicker,
@@ -70,11 +62,10 @@ export function IncreaseBudget({
   budget: ERC20Transfer[]
   refresh: () => Promise<void>
 }) {
-  const connectedChainId = useChainId()
-  const { switchChainAsync } = useSwitchChain()
-  const walletClient = useAbstractWalletClient()
-  const publicClient = usePublicClient()
-  const { toast } = useToast()
+  const walletClient = useAbstractWalletClient({ chainId })
+  const { performTransaction, performingTransaction } = usePerformTransaction({
+    chainId,
+  })
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -84,51 +75,11 @@ export function IncreaseBudget({
     },
   })
 
-  const [submitting, setSubmitting] = useState<boolean>(false)
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (connectedChainId !== chainId) {
-      const switchChainResult = await switchChainAsync?.({
-        chainId: chainId,
-      }).catch((err) => {
-        console.error(err)
-      })
-      if (!switchChainResult || switchChainResult.id !== chainId) {
-        toast({
-          title: "Wrong chain",
-          description: `Please switch to ${chains.find((c) => c.id === chainId)?.name ?? chainId}.`,
-          variant: "destructive",
-        })
-        return
-      }
-    }
-    if (submitting) {
-      toast({
-        title: "Please wait",
-        description: "The past submission is still running.",
-        variant: "destructive",
-      })
-      return
-    }
-    const submit = async () => {
-      setSubmitting(true)
-
-      let { dismiss } = toast({
-        title: "Generating transaction",
-        description: "Please sign the transaction in your wallet...",
-      })
-
-      if (!publicClient || !walletClient?.account) {
-        dismiss()
-        toast({
-          title: "Budget increase failed",
-          description: `${publicClient ? "Wallet" : "Public"}Client is undefined.`,
-          variant: "destructive",
-        })
-        return
-      }
-      const transactionRequest = await publicClient
-        .simulateContract({
-          account: walletClient.account,
+    await performTransaction({
+      transactionName: "Increase budget",
+      transaction: async () => {
+        return {
           abi: TasksContract.abi,
           address: TasksContract.address,
           functionName: "increaseBudget",
@@ -137,132 +88,12 @@ export function IncreaseBudget({
             values.budget.map((b, i) => b.amount - budget[i].amount),
           ],
           value: values.nativeBudget - nativeBudget,
-          chain: chains.find((c) => c.id == chainId),
-        })
-        .catch((err) => {
-          console.error(err)
-          if (err instanceof BaseError) {
-            let errorName = err.shortMessage ?? "Simulation failed."
-            const revertError = err.walk(
-              (err) => err instanceof ContractFunctionRevertedError
-            )
-            if (revertError instanceof ContractFunctionRevertedError) {
-              errorName += ` -> ${revertError.data?.errorName}` ?? ""
-            }
-            return errorName
-          }
-          return "Simulation failed."
-        })
-      if (typeof transactionRequest === "string") {
-        dismiss()
-        toast({
-          title: "Budget increase failed",
-          description: transactionRequest,
-          variant: "destructive",
-        })
-        return
-      }
-      const transactionHash = await walletClient
-        .writeContract(transactionRequest.request)
-        .catch((err) => {
-          console.error(err)
-          return undefined
-        })
-      if (!transactionHash) {
-        dismiss()
-        toast({
-          title: "Budget increase failed",
-          description: "Transaction rejected.",
-          variant: "destructive",
-        })
-        return
-      }
-
-      dismiss()
-      dismiss = toast({
-        duration: 120_000, // 2 minutes
-        title: "Increase budget transaction submitted",
-        description: "Waiting until confirmed on the blockchain...",
-        action: (
-          <ToastAction
-            altText="View on explorer"
-            onClick={() => {
-              const chain = chains.find((c) => c.id === chainId)
-              if (!chain) {
-                return
-              }
-
-              window.open(
-                `${chain.blockExplorers.default.url}/tx/${transactionHash}`,
-                "_blank"
-              )
-            }}
-          >
-            View on explorer
-          </ToastAction>
-        ),
-      }).dismiss
-
-      const receipt = await publicClient.waitForTransactionReceipt({
-        hash: transactionHash,
-      })
-      dismiss()
-      dismiss = toast({
-        title: "Increase budget transaction confirmed!",
-        description: "Parsing transaction logs...",
-      }).dismiss
-
-      let budgetChanged = false
-      receipt.logs.forEach((log) => {
-        try {
-          if (
-            log.address.toLowerCase() !== TasksContract.address.toLowerCase()
-          ) {
-            // Only interested in logs originating from the tasks contract
-            return
-          }
-
-          const submissionCreatedEvent = decodeEventLog({
-            abi: TasksContract.abi,
-            eventName: "BudgetChanged",
-            topics: log.topics,
-            data: log.data,
-          })
-          if (submissionCreatedEvent.args.taskId === taskId) {
-            budgetChanged = true
-          }
-        } catch {}
-      })
-      if (!budgetChanged) {
-        dismiss()
-        toast({
-          title: "Error retrieving budget changed event",
-          description: "The budget increase possibly failed.",
-          variant: "destructive",
-        })
-        return
-      }
-
-      dismiss()
-      dismiss = toast({
-        title: "Success!",
-        description: "The budget has been increased.",
-        variant: "success",
-        action: (
-          <ToastAction
-            altText="Refresh"
-            onClick={() => {
-              refresh()
-            }}
-          >
-            Refresh
-          </ToastAction>
-        ),
-      }).dismiss
-    }
-
-    await submit().catch(console.error)
-    setSubmitting(false)
+        }
+      },
+      onConfirmed: (receipt) => {
+        refresh()
+      },
+    })
   }
 
   const [budgetTokens, setBudgetTokens] = useState<SelectableAddresses>({})
@@ -353,7 +184,7 @@ export function IncreaseBudget({
                   key={i}
                   error={form.formState.errors.budget?.at?.(i)}
                 >
-                  <div className="flex gap-x-1 w-full">
+                  <div className="flex w-full gap-x-1">
                     <AddressPicker
                       chainId={chainId}
                       addressName="ERC20 token"
@@ -391,7 +222,7 @@ export function IncreaseBudget({
           </FormDescription>
           <FormMessage />
         </FormItem>
-        <Button type="submit" disabled={submitting}>
+        <Button type="submit" disabled={performingTransaction}>
           Increase budget
         </Button>
       </form>

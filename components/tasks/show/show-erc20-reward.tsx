@@ -20,7 +20,7 @@ export function ShowERC20Reward({
   budget: { tokenContract: Address }
   reward: ShowERC20Reward[]
 }) {
-  const publicClient = usePublicClient({ chainId: chainId })
+  const publicClient = usePublicClient({ chainId })
 
   const [tokenInfo, setTokenInfo] = useState<{
     name?: string

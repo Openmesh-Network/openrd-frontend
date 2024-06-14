@@ -253,7 +253,7 @@ export function RPFsFilter({
           }}
           value={rfpsSearchBar}
           placeholder="Search on title or description"
-          className="h-[35px] mb-8 w-full rounded-[8px] border-[0.7px] border-[#0085FF] bg-white px-5 py-[12px] text-[14px] font-light text-[#000000] placeholder-[#9b9b9b] outline-none focus:border-primary dark:bg-opacity-10 md:h-[44px] md:w-[600px] md:text-[16px]"
+          className="mb-8 h-[35px] w-full rounded-[8px] border-[0.7px] border-[#0085FF] bg-white px-5 py-[12px] text-[14px] font-light text-[#000000] placeholder-[#9b9b9b] outline-none focus:border-primary dark:bg-opacity-10 md:h-[44px] md:w-[600px] md:text-[16px]"
         />
         <AccordionTrigger className="text-xl">Filter RFPs</AccordionTrigger>
         <AccordionContent>

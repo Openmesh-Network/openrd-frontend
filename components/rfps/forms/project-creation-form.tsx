@@ -7,18 +7,12 @@ import { RFP } from "@/openrd-indexer/types/rfp"
 import { zodResolver } from "@hookform/resolvers/zod"
 import axios from "axios"
 import { useFieldArray, useForm } from "react-hook-form"
-import {
-  Address,
-  BaseError,
-  ContractFunctionRevertedError,
-  decodeEventLog,
-  isAddress,
-} from "viem"
-import { useChainId, usePublicClient, useSwitchChain } from "wagmi"
+import { Address, isAddress } from "viem"
 import { z } from "zod"
 
-import { chains } from "@/config/wagmi-config"
+import { addToIpfs } from "@/lib/api"
 import { validAddress } from "@/lib/regex"
+import { usePerformTransaction } from "@/hooks/usePerformTransaction"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import { ErrorWrapper } from "@/components/ui/error-wrapper"
@@ -33,8 +27,6 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { RichTextArea } from "@/components/ui/rich-textarea"
-import { ToastAction } from "@/components/ui/toast"
-import { useToast } from "@/components/ui/use-toast"
 import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 import {
   AddressPicker,
@@ -42,7 +34,6 @@ import {
 } from "@/components/web3/address-picker"
 import { ERC20BalanceInput } from "@/components/web3/erc20-balance-input"
 import { NativeBalanceInput } from "@/components/web3/native-balance-input"
-import { AddToIpfsRequest, AddToIpfsResponse } from "@/app/api/addToIpfs/route"
 import {
   TokenMetadataRequest,
   TokenMetadataResponse,
@@ -95,11 +86,9 @@ export function ProjectCreationForm({
   rfp: RFP
   refresh: () => Promise<void>
 }) {
-  const connectedChainId = useChainId()
-  const { switchChainAsync } = useSwitchChain()
-  const walletClient = useAbstractWalletClient()
-  const publicClient = usePublicClient()
-  const { toast } = useToast()
+  const walletClient = useAbstractWalletClient({ chainId })
+  const { performTransaction, performingTransaction, loggers } =
+    usePerformTransaction({ chainId })
 
   const [selectableAddresses, setSelectableAddresses] =
     useState<SelectableAddresses>({})
@@ -172,120 +161,61 @@ export function ProjectCreationForm({
     },
   })
 
-  const [submitting, setSubmitting] = useState<boolean>(false)
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (connectedChainId !== chainId) {
-      const switchChainResult = await switchChainAsync?.({
-        chainId: chainId,
-      }).catch((err) => {
-        console.error(err)
-      })
-      if (!switchChainResult || switchChainResult.id !== chainId) {
-        toast({
-          title: "Wrong chain",
-          description: `Please switch to ${chains.find((c) => c.id === chainId)?.name ?? chainId}.`,
-          variant: "destructive",
-        })
-        return
-      }
-    }
-    if (submitting) {
-      toast({
-        title: "Please wait",
-        description: "The past submission is still running.",
-        variant: "destructive",
-      })
-      return
-    }
-    const submit = async () => {
-      setSubmitting(true)
-      let { dismiss } = toast({
-        title: "Creating project",
-        description: "Uploading metadata to IPFS...",
-      })
-
-      const metadata = {
-        title: values.title,
-        tags: values.tags,
-        projectSize: values.projectSize,
-        teamSize: values.teamSize,
-        description: values.description,
-        resources: values.resources,
-        links: values.links,
-      }
-      const addToIpfsRequest: AddToIpfsRequest = {
-        json: JSON.stringify(metadata),
-      }
-      const cid = await axios
-        .post("/api/addToIpfs", addToIpfsRequest)
-        .then((response) => (response.data as AddToIpfsResponse).cid)
-        .catch((err) => {
-          console.error(err)
-          return undefined
-        })
-      if (!cid) {
-        dismiss()
-        toast({
-          title: "Project creation failed",
-          description: "Could not upload metadata to IPFS.",
-          variant: "destructive",
-        })
-        return
-      }
-      console.log(`Sucessfully uploaded project metadata to ipfs: ${cid}`)
-
-      dismiss()
-      dismiss = toast({
-        title: "Generating transaction",
-        description: "Please sign the transaction in your wallet...",
-      }).dismiss
-
-      const nativeReward = values.nativeReward.map((r) => {
-        return {
-          ...r,
-          to: r.to as Address,
+    await performTransaction({
+      transactionName: "Project creation",
+      transaction: async () => {
+        const metadata = {
+          title: values.title,
+          tags: values.tags,
+          projectSize: values.projectSize,
+          teamSize: values.teamSize,
+          description: values.description,
+          resources: values.resources,
+          links: values.links,
         }
-      })
-      const reward = rfp.budget
-        .map((b) =>
-          values.reward.filter((r) => r.token === b.tokenContract.toLowerCase())
-        )
-        .reduce(
-          (acc, value) => {
-            if (value.length === 0) {
-              // Push record to skip this token
-              acc.push({
-                nextToken: true,
-                to: "0x519ce4C129a981B2CBB4C3990B1391dA24E8EbF3",
-                amount: BigInt(0),
-              })
-            } else {
-              acc.push(
-                ...value.map((v, i) => {
-                  return {
-                    nextToken: i === value.length - 1,
-                    to: v.to as Address,
-                    amount: v.amount,
-                  }
-                })
-              )
-            }
-            return acc
-          },
-          [] as { nextToken: boolean; to: Address; amount: bigint }[]
-        )
-      if (!publicClient || !walletClient?.account) {
-        dismiss()
-        toast({
-          title: "Project creation failed",
-          description: `${publicClient ? "Wallet" : "Public"}Client is undefined.`,
-          variant: "destructive",
+        const cid = await addToIpfs(metadata, loggers)
+        if (!cid) {
+          return undefined
+        }
+
+        const nativeReward = values.nativeReward.map((r) => {
+          return {
+            ...r,
+            to: r.to as Address,
+          }
         })
-        return
-      }
-      const transactionRequest = await publicClient
-        .simulateContract({
-          account: walletClient.account,
+        const reward = rfp.budget
+          .map((b) =>
+            values.reward.filter(
+              (r) => r.token === b.tokenContract.toLowerCase()
+            )
+          )
+          .reduce(
+            (acc, value) => {
+              if (value.length === 0) {
+                // Push record to skip this token
+                acc.push({
+                  nextToken: true,
+                  to: "0x519ce4C129a981B2CBB4C3990B1391dA24E8EbF3",
+                  amount: BigInt(0),
+                })
+              } else {
+                acc.push(
+                  ...value.map((v, i) => {
+                    return {
+                      nextToken: i === value.length - 1,
+                      to: v.to as Address,
+                      amount: v.amount,
+                    }
+                  })
+                )
+              }
+              return acc
+            },
+            [] as { nextToken: boolean; to: Address; amount: bigint }[]
+          )
+        return {
           abi: RFPsContract.abi,
           address: RFPsContract.address,
           functionName: "submitProject",
@@ -296,133 +226,14 @@ export function ProjectCreationForm({
             nativeReward,
             reward,
           ],
-          chain: chains.find((c) => c.id == chainId),
-        })
-        .catch((err) => {
-          console.error(err)
-          if (err instanceof BaseError) {
-            let errorName = err.shortMessage ?? "Simulation failed."
-            const revertError = err.walk(
-              (err) => err instanceof ContractFunctionRevertedError
-            )
-            if (revertError instanceof ContractFunctionRevertedError) {
-              errorName += ` -> ${revertError.data?.errorName}` ?? ""
-            }
-            return errorName
-          }
-          return "Simulation failed."
-        })
-      if (typeof transactionRequest === "string") {
-        dismiss()
-        toast({
-          title: "Project creation failed",
-          description: transactionRequest,
-          variant: "destructive",
-        })
-        return
-      }
-      const transactionHash = await walletClient
-        .writeContract(transactionRequest.request)
-        .catch((err) => {
-          console.error(err)
-          return undefined
-        })
-      if (!transactionHash) {
-        dismiss()
-        toast({
-          title: "Project creation failed",
-          description: "Transaction rejected.",
-          variant: "destructive",
-        })
-        return
-      }
-
-      dismiss()
-      dismiss = toast({
-        duration: 120_000, // 2 minutes
-        title: "Project transaction submitted",
-        description: "Waiting until confirmed on the blockchain...",
-        action: (
-          <ToastAction
-            altText="View on explorer"
-            onClick={() => {
-              const chain = chains.find((c) => c.id === chainId)
-              if (!chain) {
-                return
-              }
-
-              window.open(
-                `${chain.blockExplorers.default.url}/tx/${transactionHash}`,
-                "_blank"
-              )
-            }}
-          >
-            View on explorer
-          </ToastAction>
-        ),
-      }).dismiss
-
-      const receipt = await publicClient.waitForTransactionReceipt({
-        hash: transactionHash,
-      })
-      dismiss()
-      dismiss = toast({
-        title: "Project transaction confirmed!",
-        description: "Parsing transaction logs...",
-      }).dismiss
-
-      let projectId: number | undefined
-      receipt.logs.forEach((log) => {
-        try {
-          if (
-            log.address.toLowerCase() !== RFPsContract.address.toLowerCase()
-          ) {
-            // Only interested in logs originating from the rfps contract
-            return
-          }
-
-          const projectCreatedEvent = decodeEventLog({
-            abi: RFPsContract.abi,
-            eventName: "ProjectSubmitted",
-            topics: log.topics,
-            data: log.data,
-          })
-          if (projectCreatedEvent.args.rfpId === rfpId) {
-            projectId = projectCreatedEvent.args.projectId
-          }
-        } catch {}
-      })
-      if (projectId === undefined) {
-        dismiss()
-        toast({
-          title: "Error retrieving project id",
-          description: "The project creation possibly failed.",
-          variant: "destructive",
-        })
-        return
-      }
-
-      dismiss()
-      dismiss = toast({
-        title: "Success!",
-        description: "The project has been created.",
-        variant: "success",
-        action: (
-          <ToastAction
-            altText="Refresh"
-            onClick={() => {
-              refresh()
-            }}
-          >
-            Refresh
-          </ToastAction>
-        ),
-      }).dismiss
-    }
-
-    await submit().catch(console.error)
-    setSubmitting(false)
+        }
+      },
+      onConfirmed: (receipt) => {
+        refresh()
+      },
+    })
   }
+
   const {
     fields: tags,
     append: appendTag,
@@ -711,7 +522,7 @@ export function ProjectCreationForm({
                   key={i}
                   error={form.formState.errors.nativeReward?.at?.(i)}
                 >
-                  <div className="flex gap-x-1 w-full">
+                  <div className="flex w-full gap-x-1">
                     <AddressPicker
                       chainId={chainId}
                       addressName="receiver"
@@ -773,7 +584,7 @@ export function ProjectCreationForm({
                     key={i}
                     error={form.formState.errors.reward?.at?.(i)}
                   >
-                    <div className="flex gap-x-1 w-full">
+                    <div className="flex w-full gap-x-1">
                       <AddressPicker
                         chainId={chainId}
                         addressName="receiver"
@@ -842,7 +653,7 @@ export function ProjectCreationForm({
             <FormMessage />
           </FormItem>
         )}
-        <Button type="submit" disabled={submitting}>
+        <Button type="submit" disabled={performingTransaction}>
           Create project
         </Button>
       </form>

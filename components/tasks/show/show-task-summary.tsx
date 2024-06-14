@@ -31,7 +31,7 @@ export function ShowTaskSummary({
   onTaskInfo?: (taskInfo: any) => void
 }) {
   const chain = chains.find((c) => c.id === chainId)
-  const publicClient = usePublicClient({ chainId: chainId })
+  const publicClient = usePublicClient({ chainId })
 
   const [indexerTask, setIndexerTask] = useState<IndexedTask | undefined>(
     undefined

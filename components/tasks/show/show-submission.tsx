@@ -50,7 +50,7 @@ export function ShowSubmission({
   task?: Task
   refresh: () => Promise<void>
 }) {
-  const walletClient = useAbstractWalletClient()
+  const walletClient = useAbstractWalletClient({ chainId })
 
   const directMetadata = useMetadata<ShowSubmissionMetadata | undefined>({
     url: submission.metadata,

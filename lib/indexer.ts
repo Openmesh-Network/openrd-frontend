@@ -23,7 +23,7 @@ const backendBaseUrl = "/indexer" as const
 function checkError(res: AxiosResponse): void {
   if (res.status != 200) {
     throw new Error(
-      `(${res.status}) Backend error: ${res.statusText}, Server repsonse: ${res.data}`
+      `(${res.status}) Backend error: ${res.statusText}, Server response: ${res.data}`
     )
   }
 }

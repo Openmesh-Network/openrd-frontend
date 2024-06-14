@@ -9,13 +9,11 @@ import {
   Task,
   TaskState,
 } from "@/openrd-indexer/types/tasks"
-import { BaseError, ContractFunctionRevertedError, decodeEventLog } from "viem"
-import { useChainId, usePublicClient, useSwitchChain } from "wagmi"
 
-import { chains } from "@/config/wagmi-config"
 import { getUser } from "@/lib/indexer"
 import { useENS } from "@/hooks/useENS"
 import { useMetadata } from "@/hooks/useMetadata"
+import { usePerformTransaction } from "@/hooks/usePerformTransaction"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -26,8 +24,6 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Link } from "@/components/ui/link"
-import { ToastAction } from "@/components/ui/toast"
-import { useToast } from "@/components/ui/use-toast"
 import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 import { SanitizeHTML } from "@/components/sanitize-html"
 
@@ -62,11 +58,10 @@ export function ShowApplication({
   task?: Task
   refresh: () => Promise<void>
 }) {
-  const connectedChainId = useChainId()
-  const { switchChainAsync } = useSwitchChain()
-  const walletClient = useAbstractWalletClient()
-  const publicClient = usePublicClient()
-  const { toast } = useToast()
+  const walletClient = useAbstractWalletClient({ chainId })
+  const { performTransaction, performingTransaction } = usePerformTransaction({
+    chainId,
+  })
   const applicantENS = useENS({ address: application.applicant })
 
   const directMetadata = useMetadata<ShowApplicationMetadata | undefined>({
@@ -102,363 +97,38 @@ export function ShowApplication({
     applicantMetadata?.title ?? applicantENS ?? application.applicant
   const userDescription = applicantMetadata?.description
 
-  const [approvingApplication, setApprovingApplication] =
-    useState<boolean>(false)
   async function approveApplication() {
-    if (connectedChainId !== chainId) {
-      const switchChainResult = await switchChainAsync?.({
-        chainId: chainId,
-      }).catch((err) => {
-        console.error(err)
-      })
-      if (!switchChainResult || switchChainResult.id !== chainId) {
-        toast({
-          title: "Wrong chain",
-          description: `Please switch to ${chains.find((c) => c.id === chainId)?.name ?? chainId}.`,
-          variant: "destructive",
-        })
-        return
-      }
-    }
-    if (approvingApplication) {
-      toast({
-        title: "Please wait",
-        description: "The past approve is still running.",
-        variant: "destructive",
-      })
-      return
-    }
-    const approve = async () => {
-      setApprovingApplication(true)
-      let { dismiss } = toast({
-        title: "Generating transaction",
-        description: "Please sign the transaction in your wallet...",
-      })
-
-      if (!publicClient || !walletClient?.account) {
-        dismiss()
-        toast({
-          title: "Application approve failed",
-          description: `${publicClient ? "Wallet" : "Public"}Client is undefined.`,
-          variant: "destructive",
-        })
-        return
-      }
-      const transactionRequest = await publicClient
-        .simulateContract({
-          account: walletClient.account,
+    await performTransaction({
+      transactionName: "Approve application",
+      transaction: async () => {
+        return {
           abi: TasksContract.abi,
           address: TasksContract.address,
           functionName: "acceptApplications",
           args: [taskId, [applicationId]],
-          chain: chains.find((c) => c.id == chainId),
-        })
-        .catch((err) => {
-          console.error(err)
-          if (err instanceof BaseError) {
-            let errorName = err.shortMessage ?? "Simulation failed."
-            const revertError = err.walk(
-              (err) => err instanceof ContractFunctionRevertedError
-            )
-            if (revertError instanceof ContractFunctionRevertedError) {
-              errorName += ` -> ${revertError.data?.errorName}` ?? ""
-            }
-            return errorName
-          }
-          return "Simulation failed."
-        })
-      if (typeof transactionRequest === "string") {
-        dismiss()
-        toast({
-          title: "Application approve failed",
-          description: transactionRequest,
-          variant: "destructive",
-        })
-        return
-      }
-      const transactionHash = await walletClient
-        .writeContract(transactionRequest.request)
-        .catch((err) => {
-          console.error(err)
-          return undefined
-        })
-      if (!transactionHash) {
-        dismiss()
-        toast({
-          title: "Application approve failed",
-          description: "Transaction rejected.",
-          variant: "destructive",
-        })
-        return
-      }
-
-      dismiss()
-      dismiss = toast({
-        duration: 120_000, // 2 minutes
-        title: "Approve transaction submitted",
-        description: "Waiting until confirmed on the blockchain...",
-        action: (
-          <ToastAction
-            altText="View on explorer"
-            onClick={() => {
-              const chain = chains.find((c) => c.id === chainId)
-              if (!chain) {
-                return
-              }
-
-              window.open(
-                `${chain.blockExplorers.default.url}/tx/${transactionHash}`,
-                "_blank"
-              )
-            }}
-          >
-            View on explorer
-          </ToastAction>
-        ),
-      }).dismiss
-
-      const receipt = await publicClient.waitForTransactionReceipt({
-        hash: transactionHash,
-      })
-      dismiss()
-      dismiss = toast({
-        title: "Approve transaction confirmed!",
-        description: "Parsing transaction logs...",
-      }).dismiss
-
-      let applicationAccepted = false
-      receipt.logs.forEach((log) => {
-        try {
-          if (
-            log.address.toLowerCase() !== TasksContract.address.toLowerCase()
-          ) {
-            // Only interested in logs originating from the tasks contract
-            return
-          }
-
-          const applicationAcceptedEvent = decodeEventLog({
-            abi: TasksContract.abi,
-            eventName: "ApplicationAccepted",
-            topics: log.topics,
-            data: log.data,
-          })
-          if (
-            applicationAcceptedEvent.args.taskId === taskId &&
-            applicationAcceptedEvent.args.applicationId === applicationId
-          ) {
-            applicationAccepted = true
-          }
-        } catch {}
-      })
-      if (!applicationAccepted) {
-        dismiss()
-        toast({
-          title: "Error confirming approve",
-          description: "The application approve possibly failed.",
-          variant: "destructive",
-        })
-        return
-      }
-
-      dismiss()
-      dismiss = toast({
-        title: "Success!",
-        description: "The application has been approved.",
-        variant: "success",
-        action: (
-          <ToastAction
-            altText="Refresh"
-            onClick={() => {
-              refresh()
-            }}
-          >
-            Refresh
-          </ToastAction>
-        ),
-      }).dismiss
-    }
-
-    await approve().catch(console.error)
-    setApprovingApplication(false)
+        }
+      },
+      onConfirmed: (receipt) => {
+        refresh()
+      },
+    })
   }
 
-  const [takingTask, setTakingTask] = useState<boolean>(false)
   async function takeTask() {
-    if (connectedChainId !== chainId) {
-      const switchChainResult = await switchChainAsync?.({
-        chainId: chainId,
-      }).catch((err) => {
-        console.error(err)
-      })
-      if (!switchChainResult || switchChainResult.id !== chainId) {
-        toast({
-          title: "Wrong chain",
-          description: `Please switch to ${chains.find((c) => c.id === chainId)?.name ?? chainId}.`,
-          variant: "destructive",
-        })
-        return
-      }
-    }
-    if (approvingApplication) {
-      toast({
-        title: "Please wait",
-        description: "The past take task is still running.",
-        variant: "destructive",
-      })
-      return
-    }
-    const take = async () => {
-      setApprovingApplication(true)
-      let { dismiss } = toast({
-        title: "Generating transaction",
-        description: "Please sign the transaction in your wallet...",
-      })
-
-      if (!publicClient || !walletClient?.account) {
-        dismiss()
-        toast({
-          title: "Take task failed",
-          description: `${publicClient ? "Wallet" : "Public"}Client is undefined.`,
-          variant: "destructive",
-        })
-        return
-      }
-      const transactionRequest = await publicClient
-        .simulateContract({
-          account: walletClient.account,
+    await performTransaction({
+      transactionName: "Take task",
+      transaction: async () => {
+        return {
           abi: TasksContract.abi,
           address: TasksContract.address,
           functionName: "takeTask",
           args: [taskId, applicationId],
-          chain: chains.find((c) => c.id == chainId),
-        })
-        .catch((err) => {
-          console.error(err)
-          if (err instanceof BaseError) {
-            let errorName = err.shortMessage ?? "Simulation failed."
-            const revertError = err.walk(
-              (err) => err instanceof ContractFunctionRevertedError
-            )
-            if (revertError instanceof ContractFunctionRevertedError) {
-              errorName += ` -> ${revertError.data?.errorName}` ?? ""
-            }
-            return errorName
-          }
-          return "Simulation failed."
-        })
-      if (typeof transactionRequest === "string") {
-        dismiss()
-        toast({
-          title: "Take task failed",
-          description: transactionRequest,
-          variant: "destructive",
-        })
-        return
-      }
-      const transactionHash = await walletClient
-        .writeContract(transactionRequest.request)
-        .catch((err) => {
-          console.error(err)
-          return undefined
-        })
-      if (!transactionHash) {
-        dismiss()
-        toast({
-          title: "Take task failed",
-          description: "Transaction rejected.",
-          variant: "destructive",
-        })
-        return
-      }
-
-      dismiss()
-      dismiss = toast({
-        duration: 120_000, // 2 minutes
-        title: "Take task submitted",
-        description: "Waiting until confirmed on the blockchain...",
-        action: (
-          <ToastAction
-            altText="View on explorer"
-            onClick={() => {
-              const chain = chains.find((c) => c.id === chainId)
-              if (!chain) {
-                return
-              }
-
-              window.open(
-                `${chain.blockExplorers.default.url}/tx/${transactionHash}`,
-                "_blank"
-              )
-            }}
-          >
-            View on explorer
-          </ToastAction>
-        ),
-      }).dismiss
-
-      const receipt = await publicClient.waitForTransactionReceipt({
-        hash: transactionHash,
-      })
-      dismiss()
-      dismiss = toast({
-        title: "Task task transaction confirmed!",
-        description: "Parsing transaction logs...",
-      }).dismiss
-
-      let taskTaken = false
-      receipt.logs.forEach((log) => {
-        try {
-          if (
-            log.address.toLowerCase() !== TasksContract.address.toLowerCase()
-          ) {
-            // Only interested in logs originating from the tasks contract
-            return
-          }
-
-          const taskTakenEvent = decodeEventLog({
-            abi: TasksContract.abi,
-            eventName: "TaskTaken",
-            topics: log.topics,
-            data: log.data,
-          })
-          if (
-            taskTakenEvent.args.taskId === taskId &&
-            taskTakenEvent.args.applicationId === applicationId
-          ) {
-            taskTaken = true
-          }
-        } catch {}
-      })
-      if (!taskTaken) {
-        dismiss()
-        toast({
-          title: "Error confirming task taken",
-          description: "The task taken transaction possibly failed.",
-          variant: "destructive",
-        })
-        return
-      }
-
-      dismiss()
-      dismiss = toast({
-        title: "Success!",
-        description: "The task has been taken.",
-        variant: "success",
-        action: (
-          <ToastAction
-            altText="Refresh"
-            onClick={() => {
-              refresh()
-            }}
-          >
-            Refresh
-          </ToastAction>
-        ),
-      }).dismiss
-    }
-
-    await take().catch(console.error)
-    setTakingTask(false)
+        }
+      },
+      onConfirmed: (receipt) => {
+        refresh()
+      },
+    })
   }
 
   const [firstRender, setFirstRender] = useState(true)
@@ -549,7 +219,7 @@ export function ShowApplication({
           <CardFooter>
             <Button
               onClick={() => takeTask().catch(console.error)}
-              disabled={takingTask}
+              disabled={performingTransaction}
             >
               Take task
             </Button>
@@ -563,7 +233,7 @@ export function ShowApplication({
           <CardFooter>
             <Button
               onClick={() => approveApplication().catch(console.error)}
-              disabled={approvingApplication}
+              disabled={performingTransaction}
             >
               Approve application
             </Button>

@@ -16,7 +16,7 @@ const ERC20BalanceInput = React.forwardRef<
   HTMLInputElement,
   ERC20BalanceInputProps
 >(({ chainId, token, value, onChange, ...props }, ref) => {
-  const publicClient = usePublicClient({ chainId: chainId })
+  const publicClient = usePublicClient({ chainId })
 
   const [tokenInfo, setTokenInfo] = useState<{
     decimals?: number

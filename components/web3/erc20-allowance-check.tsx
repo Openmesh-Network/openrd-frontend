@@ -6,6 +6,7 @@ import { Address, erc20Abi, formatUnits, maxUint256, parseAbiItem } from "viem"
 import { usePublicClient } from "wagmi"
 
 import { chains } from "@/config/wagmi-config"
+import { usePerformTransaction } from "@/hooks/usePerformTransaction"
 import { Alert, AlertTitle } from "@/components/ui/alert"
 import { Button } from "@/components/ui/button"
 import { ToastAction } from "@/components/ui/toast"
@@ -27,14 +28,9 @@ export function ERC20AllowanceCheck({
   spender,
   account,
 }: ERC20AllowanceCheck) {
-  const walletClient = useAbstractWalletClient({ chainId: chainId })
-  const publicClient = usePublicClient({ chainId: chainId })
-
-  const enabled =
-    token !== undefined &&
-    amount !== undefined &&
-    spender !== undefined &&
-    account !== undefined
+  const publicClient = usePublicClient({ chainId })
+  const { performTransaction, performingTransaction, loggers } =
+    usePerformTransaction({ chainId })
 
   const [allowance, setAllowance] = useState<bigint | undefined>(undefined)
   const [tokenInfo, setTokenInfo] = useState<{ decimals: number }>({
@@ -77,107 +73,38 @@ export function ERC20AllowanceCheck({
   }, [publicClient, token])
 
   const increaseAllowance = (to: bigint) => {
-    const setAllowance = async () => {
-      if (!spender) {
-        toast({
-          title: "ERC20 allowance failed",
-          description: "Spender is undefined.",
-          variant: "destructive",
-        })
-        return
-      }
-      if (!token) {
-        toast({
-          title: "ERC20 allowance failed",
-          description: "Token is undefined.",
-          variant: "destructive",
-        })
-        return
-      }
-      if (!walletClient?.account) {
-        toast({
-          title: "ERC20 allowance failed",
-          description: "WalletClient is undefined.",
-          variant: "destructive",
-        })
-        return
-      }
+    async function setAllowance() {
+      await performTransaction({
+        transactionName: "Increase allowance",
+        transaction: async () => {
+          if (token === undefined) {
+            loggers.onError?.({
+              title: "Token is undefined",
+              description: "Please try again later or reach out for support.",
+            })
+            return undefined
+          }
+          if (spender === undefined) {
+            loggers.onError?.({
+              title: "Spender is undefined",
+              description: "Please try again later or reach out for support.",
+            })
+            return undefined
+          }
 
-      let { dismiss } = toast({
-        title: "Generating transaction",
-        description: "Please sign the transaction in your wallet...",
+          return {
+            abi: [
+              parseAbiItem("function approve(address spender, uint256 amount)"),
+            ],
+            address: token,
+            functionName: "approve",
+            args: [spender, to],
+          }
+        },
+        onConfirmed: (receipt) => {
+          getAllowance().catch(console.error)
+        },
       })
-      const transactionHash = await walletClient
-        .writeContract({
-          abi: [
-            parseAbiItem("function approve(address spender, uint256 amount)"),
-          ],
-          address: token,
-          functionName: "approve",
-          args: [spender, to],
-          account: account ?? walletClient.account,
-          chain: chains.find((c) => c.id === chainId),
-        })
-        .catch((err) => {
-          console.error(err)
-          return undefined
-        })
-      if (!transactionHash) {
-        dismiss()
-        toast({
-          title: "Task creation failed",
-          description: "Transaction rejected.",
-          variant: "destructive",
-        })
-        return
-      }
-
-      dismiss()
-      dismiss = toast({
-        duration: 120_000, // 2 minutes
-        title: "Allowance transaction submitted",
-        description: "Waiting until confirmed on the blockchain...",
-        action: (
-          <ToastAction
-            altText="View on explorer"
-            onClick={() => {
-              const chain = chains.find((c) => c.id === chainId)
-              if (!chain) {
-                return
-              }
-
-              window.open(
-                `${chain.blockExplorers.default.url}/tx/${transactionHash}`,
-                "_blank"
-              )
-            }}
-          >
-            View on explorer
-          </ToastAction>
-        ),
-      }).dismiss
-
-      if (!publicClient) {
-        dismiss()
-        toast({
-          title: "Cannot watch blockchain",
-          description: "PublicClient is undefined.",
-          variant: "destructive",
-        })
-        return
-      }
-
-      const receipt = await publicClient.waitForTransactionReceipt({
-        hash: transactionHash,
-      })
-      dismiss()
-      dismiss = toast({
-        title: "Transaction confirmed!",
-        description: "Your allowance has been increased.",
-        variant: "success",
-      }).dismiss
-
-      await getAllowance()
     }
 
     setAllowance().catch(console.error)
@@ -197,14 +124,23 @@ export function ERC20AllowanceCheck({
                   {formatUnits(allowance, tokenInfo.decimals)}):
                 </span>
               </div>
-              <div className="flex gap-x-2 right-2">
-                <Button onClick={() => increaseAllowance(amount)}>
+              <div className="right-2 flex gap-x-2">
+                <Button
+                  onClick={() => increaseAllowance(amount)}
+                  disabled={performingTransaction}
+                >
                   Allow {formatUnits(amount, tokenInfo.decimals)}
                 </Button>
-                <Button onClick={() => increaseAllowance(amount * BigInt(10))}>
+                <Button
+                  onClick={() => increaseAllowance(amount * BigInt(10))}
+                  disabled={performingTransaction}
+                >
                   Allow {formatUnits(amount * BigInt(10), tokenInfo.decimals)}
                 </Button>
-                <Button onClick={() => increaseAllowance(maxUint256)}>
+                <Button
+                  onClick={() => increaseAllowance(maxUint256)}
+                  disabled={performingTransaction}
+                >
                   Allow infinite
                 </Button>
               </div>

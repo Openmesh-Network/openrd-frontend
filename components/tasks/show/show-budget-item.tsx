@@ -18,7 +18,7 @@ export function ShowBudgetItem({
   escrow?: Address
 }) {
   const chain = chains.find((c) => c.id === chainId)
-  const publicClient = usePublicClient({ chainId: chainId })
+  const publicClient = usePublicClient({ chainId })
 
   const [tokenInfo, setTokenInfo] = useState<{
     name?: string

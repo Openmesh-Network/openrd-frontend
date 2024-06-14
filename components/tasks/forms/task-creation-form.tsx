@@ -7,18 +7,13 @@ import { TasksContract } from "@/openrd-indexer/contracts/Tasks"
 import { zodResolver } from "@hookform/resolvers/zod"
 import axios from "axios"
 import { useFieldArray, useForm } from "react-hook-form"
-import {
-  Address,
-  BaseError,
-  ContractFunctionRevertedError,
-  decodeEventLog,
-  isAddress,
-} from "viem"
-import { useChainId, usePublicClient } from "wagmi"
+import { Address, decodeEventLog, isAddress } from "viem"
+import { useChainId } from "wagmi"
 import { z } from "zod"
 
-import { chains } from "@/config/wagmi-config"
+import { addToIpfs } from "@/lib/api"
 import { validAddress, validAddressOrEmpty } from "@/lib/regex"
+import { usePerformTransaction } from "@/hooks/usePerformTransaction"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import { ErrorWrapper } from "@/components/ui/error-wrapper"
@@ -33,8 +28,6 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { RichTextArea } from "@/components/ui/rich-textarea"
-import { ToastAction } from "@/components/ui/toast"
-import { useToast } from "@/components/ui/use-toast"
 import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 import {
   AddressPicker,
@@ -43,7 +36,6 @@ import {
 import { ERC20AllowanceCheck } from "@/components/web3/erc20-allowance-check"
 import { ERC20BalanceInput } from "@/components/web3/erc20-balance-input"
 import { NativeBalanceInput } from "@/components/web3/native-balance-input"
-import { AddToIpfsRequest, AddToIpfsResponse } from "@/app/api/addToIpfs/route"
 import { TokensRequest, TokensResponse } from "@/app/api/tokens/route"
 
 const formSchema = z.object({
@@ -98,9 +90,9 @@ const formSchema = z.object({
 
 export function TaskCreationForm() {
   const chainId = useChainId()
-  const walletClient = useAbstractWalletClient()
-  const publicClient = usePublicClient()
-  const { toast } = useToast()
+  const walletClient = useAbstractWalletClient({ chainId })
+  const { performTransaction, performingTransaction, loggers } =
+    usePerformTransaction({ chainId })
   const { push } = useRouter()
 
   const [managerOptions, setManagerOptions] = useState<SelectableAddresses>({})
@@ -197,70 +189,24 @@ export function TaskCreationForm() {
     },
   })
 
-  const [submitting, setSubmitting] = useState<boolean>(false)
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (submitting) {
-      toast({
-        title: "Please wait",
-        description: "The past submission is still running.",
-      })
-      return
-    }
-    const submit = async () => {
-      setSubmitting(true)
-      let { dismiss } = toast({
-        title: "Creating task",
-        description: "Uploading metadata to IPFS...",
-      })
-
-      const metadata = {
-        title: values.title,
-        tags: values.tags,
-        projectSize: values.projectSize,
-        teamSize: values.teamSize,
-        description: values.description,
-        resources: values.resources,
-        links: values.links,
-      }
-      const addToIpfsRequest: AddToIpfsRequest = {
-        json: JSON.stringify(metadata),
-      }
-      const cid = await axios
-        .post("/api/addToIpfs", addToIpfsRequest)
-        .then((response) => (response.data as AddToIpfsResponse).cid)
-        .catch((err) => {
-          console.error(err)
+    await performTransaction({
+      transactionName: "Task creation",
+      transaction: async () => {
+        const metadata = {
+          title: values.title,
+          tags: values.tags,
+          projectSize: values.projectSize,
+          teamSize: values.teamSize,
+          description: values.description,
+          resources: values.resources,
+          links: values.links,
+        }
+        const cid = await addToIpfs(metadata, loggers)
+        if (!cid) {
           return undefined
-        })
-      if (!cid) {
-        dismiss()
-        toast({
-          title: "Task creation failed",
-          description: "Could not upload metadata to IPFS.",
-          variant: "destructive",
-        })
-        return
-      }
-      console.log(`Sucessfully uploaded task metadata to ipfs: ${cid}`)
-
-      dismiss()
-      dismiss = toast({
-        title: "Generating transaction",
-        description: "Please sign the transaction in your wallet...",
-      }).dismiss
-
-      if (!publicClient || !walletClient?.account) {
-        dismiss()
-        toast({
-          title: "Task creation failed",
-          description: `${publicClient ? "Wallet" : "Public"}Client is undefined.`,
-          variant: "destructive",
-        })
-        return
-      }
-      const transactionRequest = await publicClient
-        .simulateContract({
-          account: walletClient.account,
+        }
+        return {
           abi: TasksContract.abi,
           address: TasksContract.address,
           functionName: "createTask",
@@ -298,125 +244,40 @@ export function TaskCreationForm() {
             }),
           ],
           value: values.nativeBudget,
-        })
-        .catch((err) => {
-          console.error(err)
-          if (err instanceof BaseError) {
-            let errorName = err.shortMessage ?? "Simulation failed."
-            const revertError = err.walk(
-              (err) => err instanceof ContractFunctionRevertedError
-            )
-            if (revertError instanceof ContractFunctionRevertedError) {
-              errorName += ` -> ${revertError.data?.errorName}` ?? ""
-            }
-            return errorName
-          }
-          return "Simulation failed."
-        })
-      if (typeof transactionRequest === "string") {
-        dismiss()
-        toast({
-          title: "Task creation failed",
-          description: transactionRequest,
-          variant: "destructive",
-        })
-        return
-      }
-      const transactionHash = await walletClient
-        .writeContract(transactionRequest.request)
-        .catch((err) => {
-          console.error(err)
-          return undefined
-        })
-      if (!transactionHash) {
-        dismiss()
-        toast({
-          title: "Task creation failed",
-          description: "Transaction rejected.",
-          variant: "destructive",
-        })
-        return
-      }
-
-      dismiss()
-      dismiss = toast({
-        duration: 120_000, // 2 minutes
-        title: "Task transaction submitted",
-        description: "Waiting until confirmed on the blockchain...",
-        action: (
-          <ToastAction
-            altText="View on explorer"
-            onClick={() => {
-              const chain = chains.find((c) => c.id === chainId)
-              if (!chain) {
-                return
-              }
-
-              window.open(
-                `${chain.blockExplorers.default.url}/tx/${transactionHash}`,
-                "_blank"
-              )
-            }}
-          >
-            View on explorer
-          </ToastAction>
-        ),
-      }).dismiss
-
-      const receipt = await publicClient.waitForTransactionReceipt({
-        hash: transactionHash,
-      })
-      dismiss()
-      dismiss = toast({
-        title: "Task transaction confirmed!",
-        description: "Parsing transaction logs...",
-      }).dismiss
-
-      let taskId: bigint | undefined
-      receipt.logs.forEach((log) => {
-        try {
-          if (
-            log.address.toLowerCase() !== TasksContract.address.toLowerCase()
-          ) {
-            // Only interested in logs originating from the tasks contract
-            return
-          }
-
-          const taskCreatedEvent = decodeEventLog({
-            abi: TasksContract.abi,
-            eventName: "TaskCreated",
-            topics: log.topics,
-            data: log.data,
-          })
-          taskId = taskCreatedEvent.args.taskId
-        } catch {}
-      })
-      if (taskId === undefined) {
-        dismiss()
-        toast({
-          title: "Error retrieving task id",
-          description: "The task creation possibly failed.",
-          variant: "destructive",
-        })
-        return
-      }
-
-      setTimeout(() => {
-        if (walletClient.chain) {
-          push(`/tasks/${walletClient.chain.id}:${taskId}`)
         }
-      }, 2000)
+      },
+      onConfirmed: (receipt) => {
+        let taskId: bigint | undefined
+        receipt.logs.forEach((log) => {
+          try {
+            if (
+              log.address.toLowerCase() !== TasksContract.address.toLowerCase()
+            ) {
+              // Only interested in logs originating from the tasks contract
+              return
+            }
 
-      dismiss()
-      dismiss = toast({
-        title: "Success!",
-        description: "The task has been created.",
-        variant: "success",
-      }).dismiss
-    }
+            const taskCreatedEvent = decodeEventLog({
+              abi: TasksContract.abi,
+              eventName: "TaskCreated",
+              topics: log.topics,
+              data: log.data,
+            })
+            taskId = taskCreatedEvent.args.taskId
+          } catch {}
+        })
+        if (taskId === undefined) {
+          loggers.onError?.({
+            title: "Error retrieving task id",
+            description: "Task creation possibly failed.",
+          })
+        }
 
-    await submit().catch(console.error)
-    setSubmitting(false)
+        setTimeout(() => {
+          push(`/tasks/${chainId}:${taskId}`)
+        }, 2000)
+      },
+    })
   }
 
   const {
@@ -786,7 +647,7 @@ export function TaskCreationForm() {
                   key={i}
                   error={form.formState.errors.budget?.at?.(i)}
                 >
-                  <div className="flex gap-x-1 w-full">
+                  <div className="flex w-full gap-x-1">
                     <AddressPicker
                       addressName="ERC20 token"
                       selectableAddresses={tokens}
@@ -856,7 +717,7 @@ export function TaskCreationForm() {
                   key={i}
                   error={form.formState.errors.preapprove?.at?.(i)}
                 >
-                  <div className="flex gap-x-1 w-full">
+                  <div className="flex w-full gap-x-1">
                     <AddressPicker
                       addressName="Applicant"
                       value={preapproveItem.applicant}
@@ -894,35 +755,37 @@ export function TaskCreationForm() {
           </FormDescription>
           <FormMessage />
         </FormItem>
-        <FormField
-          control={form.control}
-          name="draft"
-          render={({ field }) => (
-            <FormItem className="flex flex-col">
-              <FormLabel>Propose to DAO</FormLabel>
-              <FormControl>
-                <AddressPicker
-                  addressName="DAO"
-                  selectableAddresses={draftOptions}
-                  {...field}
-                  onChange={(change) => {
-                    field.onChange(change)
-                    form.trigger("draft")
-                  }}
-                />
-              </FormControl>
-              <FormDescription>
-                Instead of funding this task yourself, you are able to propose
-                it to any DAO that opted into this feature. This includes all
-                Openmesh departments. The task will only be created if the DAO
-                approves it. The budget for the task will be paid from the DAO
-                treasury.
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <Button type="submit" disabled={submitting}>
+        {false && (
+          <FormField
+            control={form.control}
+            name="draft"
+            render={({ field }) => (
+              <FormItem className="flex flex-col">
+                <FormLabel>Propose to DAO</FormLabel>
+                <FormControl>
+                  <AddressPicker
+                    addressName="DAO"
+                    selectableAddresses={draftOptions}
+                    {...field}
+                    onChange={(change) => {
+                      field.onChange(change)
+                      form.trigger("draft")
+                    }}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Instead of funding this task yourself, you are able to propose
+                  it to any DAO that opted into this feature. This includes all
+                  Openmesh departments. The task will only be created if the DAO
+                  approves it. The budget for the task will be paid from the DAO
+                  treasury.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+        <Button type="submit" disabled={performingTransaction}>
           Create task
         </Button>
       </form>

@@ -25,7 +25,7 @@ export function UniqueInteractors() {
     <div>
       {uniqueInteractors !== undefined ? (
         <div className="text-center">
-          <div className="mx-auto mb-[5px] flex size-[42px] items-center justify-center rounded-full border-[1px] border-[#E2E8F0] p-[4px] text-xl text-[#000] dark:border-[#1D283A] dark:text-[#fff]">{uniqueInteractors}</div>
+          <div className="mx-auto mb-[5px] flex size-[42px] items-center justify-center rounded-full border border-[#E2E8F0] p-[4px] text-xl text-black dark:border-[#1D283A] dark:text-white">{uniqueInteractors}</div>
           <div className="flex gap-x-[5px]">
             <img
               className='w-[15px] dark:hidden'

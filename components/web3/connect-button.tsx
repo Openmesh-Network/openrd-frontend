@@ -20,7 +20,7 @@ import { Separator } from "../ui/separator"
 export function ConnectButton() {
   const connectedChain = useChainId()
   const { switchChain } = useSwitchChain()
-  const walletClient = useAbstractWalletClient()
+  const walletClient = useAbstractWalletClient({ chainId: connectedChain })
   const addressTitle = useAddressTitle(walletClient?.account?.address)
   const selectableChains = useSelectableChains()
 
@@ -228,28 +228,28 @@ function Modal({
   return (
     <>
       <div
-        className="justify-center items-center flex overflow-x-hidden overflow-y-auto fixed inset-0 z-50 outline-none focus:outline-none"
+        className="fixed inset-0 z-50 flex items-center justify-center overflow-y-auto overflow-x-hidden outline-none focus:outline-none"
         onClick={() => dismiss()}
       >
         <div
           onClick={(e) => e.stopPropagation()}
-          className="relative w-auto my-6 mx-2 max-w-sm min-w-64 drop-shadow-xl"
+          className="relative mx-2 my-6 w-auto min-w-64 max-w-sm drop-shadow-xl"
         >
           {/*content*/}
           <div
-            className={`rounded-lg relative flex flex-col w-full bg-secondary outline-none focus:outline-none`}
+            className={`relative flex w-full flex-col rounded-lg bg-secondary outline-none focus:outline-none`}
           >
             {/*header*/}
-            <div className="flex items-start justify-between p-3 rounded-t">
-              <h3 className={`text-lg pr-4 font-semibold text-primary`}>
+            <div className="flex items-start justify-between rounded-t p-3">
+              <h3 className={`pr-4 text-lg font-semibold text-primary`}>
                 {title}
               </h3>
               <button
-                className={`bg-transparent opacity-1 float-right text-3xl rounded-lg`}
+                className={`opacity-1 float-right rounded-lg bg-transparent text-3xl`}
                 onClick={() => dismiss()}
               >
                 <span
-                  className={`-mt-1 bg-transparent text-primary opacity-1 h-8 w-6 text-2xl block`}
+                  className={`opacity-1 -mt-1 block h-8 w-6 bg-transparent text-2xl text-primary`}
                 >
                   ×
                 </span>
@@ -257,13 +257,13 @@ function Modal({
             </div>
             <Separator />
             {/*footer*/}
-            <div className={`p-3 w-full rounded-b-lg bg-secondary`}>
+            <div className={`w-full rounded-b-lg bg-secondary p-3`}>
               {children}
             </div>
           </div>
         </div>
       </div>
-      <div className="opacity-25 fixed inset-0 z-40 bg-primary"></div>
+      <div className="fixed inset-0 z-40 bg-primary opacity-25"></div>
     </>
   )
 }

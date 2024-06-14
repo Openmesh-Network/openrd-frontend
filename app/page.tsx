@@ -176,8 +176,8 @@ export default function IndexPage() {
           </div>
           <TotalBudgetValue />
         </div>
-        <div className="mb-[15px] mt-[25px] gap-y-[15px] gap-x-[45px] lg:flex flex-wrap justify-evenly">
-          <div className="w-full md:w-auto flex flex-wrap gap-y-[15px] gap-x-[45px] justify-evenly">
+        <div className="mb-[15px] mt-[25px] flex-wrap justify-evenly gap-x-[45px] gap-y-[15px] lg:flex">
+          <div className="flex w-full flex-wrap justify-evenly gap-x-[45px] gap-y-[15px] md:w-auto">
             <UniqueInteractors />
             <TaskCounter state={TaskState.Open} />
             <TaskCounter state={TaskState.Taken} />

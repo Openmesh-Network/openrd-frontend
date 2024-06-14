@@ -34,7 +34,7 @@ const Combobox = React.forwardRef(
         ref={ref}
         {...props}
         className={cn(
-          "flex w-full flex-col space-y-1 max-w-[450px]",
+          "flex w-full max-w-[450px] flex-col space-y-1",
           className
         )}
       >

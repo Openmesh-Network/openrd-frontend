@@ -5,13 +5,11 @@ import { useEffect, useState } from "react"
 import { RFPsContract } from "@/openrd-indexer/contracts/RFPs"
 import { Project, RFP } from "@/openrd-indexer/types/rfp"
 import { Reward } from "@/openrd-indexer/types/tasks"
-import { BaseError, ContractFunctionRevertedError, decodeEventLog } from "viem"
-import { useChainId, usePublicClient, useSwitchChain } from "wagmi"
 
-import { chains } from "@/config/wagmi-config"
 import { getUser } from "@/lib/indexer"
 import { useENS } from "@/hooks/useENS"
 import { useMetadata } from "@/hooks/useMetadata"
+import { usePerformTransaction } from "@/hooks/usePerformTransaction"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import {
@@ -22,8 +20,6 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 import { Link } from "@/components/ui/link"
-import { ToastAction } from "@/components/ui/toast"
-import { useToast } from "@/components/ui/use-toast"
 import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 import { SanitizeHTML } from "@/components/sanitize-html"
 import { ShowApplicantMetadata } from "@/components/tasks/show/show-application"
@@ -52,11 +48,10 @@ export function ShowProject({
   rfp?: RFP
   refresh: () => Promise<void>
 }) {
-  const connectedChainId = useChainId()
-  const { switchChainAsync } = useSwitchChain()
-  const walletClient = useAbstractWalletClient()
-  const publicClient = usePublicClient()
-  const { toast } = useToast()
+  const walletClient = useAbstractWalletClient({ chainId })
+  const { performTransaction, performingTransaction } = usePerformTransaction({
+    chainId,
+  })
   const representativeENS = useENS({ address: project.representative })
 
   const directMetadata = useMetadata<ShowProjectMetadata | undefined>({
@@ -100,50 +95,11 @@ export function ShowProject({
     representativeMetadata?.title ?? representativeENS ?? project.representative
   const userDescription = representativeMetadata?.description
 
-  const [acceptingProject, setAcceptingProject] = useState<boolean>(false)
   async function acceptProject() {
-    if (connectedChainId !== chainId) {
-      const switchChainResult = await switchChainAsync?.({
-        chainId: chainId,
-      }).catch((err) => {
-        console.error(err)
-      })
-      if (!switchChainResult || switchChainResult.id !== chainId) {
-        toast({
-          title: "Wrong chain",
-          description: `Please switch to ${chains.find((c) => c.id === chainId)?.name ?? chainId}.`,
-          variant: "destructive",
-        })
-        return
-      }
-    }
-    if (acceptingProject) {
-      toast({
-        title: "Please wait",
-        description: "The past accept is still running.",
-        variant: "destructive",
-      })
-      return
-    }
-    const accept = async () => {
-      setAcceptingProject(true)
-      let { dismiss } = toast({
-        title: "Generating transaction",
-        description: "Please sign the transaction in your wallet...",
-      })
-
-      if (!publicClient || !walletClient?.account) {
-        dismiss()
-        toast({
-          title: "Project accept failed",
-          description: `${publicClient ? "Wallet" : "Public"}Client is undefined.`,
-          variant: "destructive",
-        })
-        return
-      }
-      const transactionRequest = await publicClient
-        .simulateContract({
-          account: walletClient.account,
+    await performTransaction({
+      transactionName: "Accept project",
+      transaction: async () => {
+        return {
           abi: RFPsContract.abi,
           address: RFPsContract.address,
           functionName: "acceptProject",
@@ -153,135 +109,12 @@ export function ShowProject({
             project.nativeReward.map((r) => r.amount), // accept their requested budget, should make this configurable in a form
             project.reward.map((r) => r.amount), // accept their requested budget, should make this configurable in a form
           ],
-          chain: chains.find((c) => c.id == chainId),
-        })
-        .catch((err) => {
-          console.error(err)
-          if (err instanceof BaseError) {
-            let errorName = err.shortMessage ?? "Simulation failed."
-            const revertError = err.walk(
-              (err) => err instanceof ContractFunctionRevertedError
-            )
-            if (revertError instanceof ContractFunctionRevertedError) {
-              errorName += ` -> ${revertError.data?.errorName}` ?? ""
-            }
-            return errorName
-          }
-          return "Simulation failed."
-        })
-      if (typeof transactionRequest === "string") {
-        dismiss()
-        toast({
-          title: "Project accept failed",
-          description: transactionRequest,
-          variant: "destructive",
-        })
-        return
-      }
-      const transactionHash = await walletClient
-        .writeContract(transactionRequest.request)
-        .catch((err) => {
-          console.error(err)
-          return undefined
-        })
-      if (!transactionHash) {
-        dismiss()
-        toast({
-          title: "Project accept failed",
-          description: "Transaction rejected.",
-          variant: "destructive",
-        })
-        return
-      }
-
-      dismiss()
-      dismiss = toast({
-        duration: 120_000, // 2 minutes
-        title: "Approve transaction submitted",
-        description: "Waiting until confirmed on the blockchain...",
-        action: (
-          <ToastAction
-            altText="View on explorer"
-            onClick={() => {
-              const chain = chains.find((c) => c.id === chainId)
-              if (!chain) {
-                return
-              }
-
-              window.open(
-                `${chain.blockExplorers.default.url}/tx/${transactionHash}`,
-                "_blank"
-              )
-            }}
-          >
-            View on explorer
-          </ToastAction>
-        ),
-      }).dismiss
-
-      const receipt = await publicClient.waitForTransactionReceipt({
-        hash: transactionHash,
-      })
-      dismiss()
-      dismiss = toast({
-        title: "Approve transaction confirmed!",
-        description: "Parsing transaction logs...",
-      }).dismiss
-
-      let projectAccepted = false
-      receipt.logs.forEach((log) => {
-        try {
-          if (
-            log.address.toLowerCase() !== RFPsContract.address.toLowerCase()
-          ) {
-            // Only interested in logs originating from the rfps contract
-            return
-          }
-
-          const projectAcceptedEvent = decodeEventLog({
-            abi: RFPsContract.abi,
-            eventName: "ProjectAccepted",
-            topics: log.topics,
-            data: log.data,
-          })
-          if (
-            projectAcceptedEvent.args.rfpId === rfpId &&
-            projectAcceptedEvent.args.projectId === projectId
-          ) {
-            projectAccepted = true
-          }
-        } catch {}
-      })
-      if (!projectAccepted) {
-        dismiss()
-        toast({
-          title: "Error confirming accept",
-          description: "The project accept possibly failed.",
-          variant: "destructive",
-        })
-        return
-      }
-
-      dismiss()
-      dismiss = toast({
-        title: "Success!",
-        description: "The project has been accepted.",
-        variant: "success",
-        action: (
-          <ToastAction
-            altText="Refresh"
-            onClick={() => {
-              refresh()
-            }}
-          >
-            Refresh
-          </ToastAction>
-        ),
-      }).dismiss
-    }
-
-    await accept().catch(console.error)
-    setAcceptingProject(false)
+        }
+      },
+      onConfirmed: (receipt) => {
+        refresh()
+      },
+    })
   }
 
   const [firstRender, setFirstRender] = useState(true)
@@ -320,7 +153,7 @@ export function ShowProject({
               <div className="flex flex-wrap gap-y-[10px] italic">
                 {tags?.map?.((tag, index) => (
                   <p
-                    className="ml-1  border-b-[0.5px] border-[#505050] dark:border-[#7F8DA3]"
+                    className="ml-1  border-b-[0.5px] border-grey dark:border-light"
                     key={index}
                   >
                     {tag.tag}
@@ -404,7 +237,7 @@ export function ShowProject({
           <CardFooter>
             <Button
               onClick={() => acceptProject().catch(console.error)}
-              disabled={acceptingProject}
+              disabled={performingTransaction}
             >
               Accept project
             </Button>

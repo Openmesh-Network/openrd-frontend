@@ -7,20 +7,13 @@ import { RFPsContract } from "@/openrd-indexer/contracts/RFPs"
 import { zodResolver } from "@hookform/resolvers/zod"
 import axios from "axios"
 import { useFieldArray, useForm } from "react-hook-form"
-import {
-  Address,
-  BaseError,
-  ContractFunctionRevertedError,
-  decodeEventLog,
-  encodeFunctionData,
-  Hex,
-  isAddress,
-} from "viem"
-import { useChainId, usePublicClient } from "wagmi"
+import { Address, decodeEventLog, isAddress } from "viem"
+import { useChainId } from "wagmi"
 import { z } from "zod"
 
-import { chains } from "@/config/wagmi-config"
-import { validAddress, validAddressOrEmpty } from "@/lib/regex"
+import { addToIpfs } from "@/lib/api"
+import { validAddress } from "@/lib/regex"
+import { usePerformTransaction } from "@/hooks/usePerformTransaction"
 import { Button } from "@/components/ui/button"
 import { DatePicker } from "@/components/ui/date-picker"
 import { ErrorWrapper } from "@/components/ui/error-wrapper"
@@ -35,10 +28,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { RichTextArea } from "@/components/ui/rich-textarea"
-import { ToastAction } from "@/components/ui/toast"
-import { useToast } from "@/components/ui/use-toast"
 import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
-import { useSettings } from "@/components/context/settings"
 import {
   AddressPicker,
   SelectableAddresses,
@@ -46,7 +36,6 @@ import {
 import { ERC20AllowanceCheck } from "@/components/web3/erc20-allowance-check"
 import { ERC20BalanceInput } from "@/components/web3/erc20-balance-input"
 import { NativeBalanceInput } from "@/components/web3/native-balance-input"
-import { AddToIpfsRequest, AddToIpfsResponse } from "@/app/api/addToIpfs/route"
 import { TokensRequest, TokensResponse } from "@/app/api/tokens/route"
 
 const formSchema = z.object({
@@ -94,11 +83,10 @@ const formSchema = z.object({
 
 export function RFPCreationForm() {
   const chainId = useChainId()
-  const walletClient = useAbstractWalletClient()
-  const publicClient = usePublicClient()
-  const { toast } = useToast()
+  const walletClient = useAbstractWalletClient({ chainId })
+  const { performTransaction, performingTransaction, loggers } =
+    usePerformTransaction({ chainId })
   const { push } = useRouter()
-  const { simulateTransactions } = useSettings()
 
   const [managerOptions, setManagerOptions] = useState<SelectableAddresses>({})
   useEffect(() => {
@@ -181,220 +169,76 @@ export function RFPCreationForm() {
     },
   })
 
-  const [submitting, setSubmitting] = useState<boolean>(false)
   async function onSubmit(values: z.infer<typeof formSchema>) {
-    if (submitting) {
-      toast({
-        title: "Please wait",
-        description: "The past submission is still running.",
-      })
-      return
-    }
-    const submit = async () => {
-      setSubmitting(true)
-      let { dismiss } = toast({
-        title: "Creating RFP",
-        description: "Uploading metadata to IPFS...",
-      })
-
-      const metadata = {
-        title: values.title,
-        tags: values.tags,
-        maxProjectFunding: values.maxProjectFunding,
-        maxAwardedProjects: values.maxAwardedProjects,
-        description: values.description,
-        projectRequirements: values.projectRequirements,
-        links: values.links,
-      }
-      const addToIpfsRequest: AddToIpfsRequest = {
-        json: JSON.stringify(metadata),
-      }
-      const cid = await axios
-        .post("/api/addToIpfs", addToIpfsRequest)
-        .then((response) => (response.data as AddToIpfsResponse).cid)
-        .catch((err) => {
-          console.error(err)
+    await performTransaction({
+      transactionName: "RFP creation",
+      transaction: async () => {
+        const metadata = {
+          title: values.title,
+          tags: values.tags,
+          maxProjectFunding: values.maxProjectFunding,
+          maxAwardedProjects: values.maxAwardedProjects,
+          description: values.description,
+          projectRequirements: values.projectRequirements,
+          links: values.links,
+        }
+        const cid = await addToIpfs(metadata, loggers)
+        if (!cid) {
           return undefined
-        })
-      if (!cid) {
-        dismiss()
-        toast({
-          title: "RFP creation failed",
-          description: "Could not upload metadata to IPFS.",
-          variant: "destructive",
-        })
-        return
-      }
-      console.log(`Sucessfully uploaded RFP metadata to ipfs: ${cid}`)
-
-      dismiss()
-      dismiss = toast({
-        title: "Generating transaction",
-        description: "Please sign the transaction in your wallet...",
-      }).dismiss
-
-      if (!publicClient || !walletClient?.account) {
-        dismiss()
-        toast({
-          title: "Task creation failed",
-          description: `${publicClient ? "Wallet" : "Public"}Client is undefined.`,
-          variant: "destructive",
-        })
-        return
-      }
-      const contractCall = {
-        chain: undefined,
-        account: walletClient.account,
-        abi: RFPsContract.abi,
-        address: RFPsContract.address,
-        functionName: "createRFP",
-        args: [
-          `ipfs://${cid}`,
-          BigInt(Math.round(values.deadline.getTime() / 1000)),
-          values.budget.map((b) => {
-            return {
-              ...b,
-              tokenContract: b.tokenContract as Address,
-            }
-          }),
-          values.taskManager as Address,
-          values.disputeManger as Address,
-          values.manager as Address,
-        ],
-        value: values.nativeBudget,
-      } as const
-      let transactionHash: Hex | undefined
-      if (simulateTransactions) {
-        const transactionRequest = await publicClient
-          .simulateContract(contractCall)
-          .then((result) => result.request)
-          .catch((err) => {
-            console.error(err)
-            if (err instanceof BaseError) {
-              let errorName = err.shortMessage ?? "Simulation failed."
-              const revertError = err.walk(
-                (err) => err instanceof ContractFunctionRevertedError
-              )
-              if (revertError instanceof ContractFunctionRevertedError) {
-                errorName += ` -> ${revertError.data?.errorName}` ?? ""
+        }
+        return {
+          abi: RFPsContract.abi,
+          address: RFPsContract.address,
+          functionName: "createRFP",
+          args: [
+            `ipfs://${cid}`,
+            BigInt(Math.round(values.deadline.getTime() / 1000)),
+            values.budget.map((b) => {
+              return {
+                ...b,
+                tokenContract: b.tokenContract as Address,
               }
-              return errorName
+            }),
+            values.taskManager as Address,
+            values.disputeManger as Address,
+            values.manager as Address,
+          ],
+          value: values.nativeBudget,
+        }
+      },
+      onConfirmed: (receipt) => {
+        let rfpId: bigint | undefined
+        receipt.logs.forEach((log) => {
+          try {
+            if (
+              log.address.toLowerCase() !== RFPsContract.address.toLowerCase()
+            ) {
+              // Only interested in logs originating from the tasks contract
+              return
             }
-            return "Simulation failed."
-          })
 
-        if (typeof transactionRequest === "string") {
-          dismiss()
-          toast({
-            title: "RFP creation failed",
-            description: transactionRequest,
-            variant: "destructive",
+            const rfpCreatedEvent = decodeEventLog({
+              abi: RFPsContract.abi,
+              eventName: "RFPCreated",
+              topics: log.topics,
+              data: log.data,
+            })
+            rfpId = rfpCreatedEvent.args.rfpId
+          } catch {}
+        })
+        if (rfpId === undefined) {
+          loggers.onError?.({
+            title: "Error retrieving RFP id",
+            description: "The RFP creation possibly failed.",
           })
           return
         }
-        transactionHash = await walletClient
-          .writeContract(transactionRequest)
-          .catch((err) => {
-            console.error(err)
-            return undefined
-          })
-      } else {
-        transactionHash = await walletClient
-          .writeContract(contractCall)
-          .catch((err) => {
-            console.error(err)
-            return undefined
-          })
-      }
-      if (!transactionHash) {
-        dismiss()
-        toast({
-          title: "RFP creation failed",
-          description: "Transaction rejected.",
-          variant: "destructive",
-        })
-        return
-      }
 
-      dismiss()
-      dismiss = toast({
-        duration: 120_000, // 2 minutes
-        title: "RFP transaction submitted",
-        description: "Waiting until confirmed on the blockchain...",
-        action: (
-          <ToastAction
-            altText="View on explorer"
-            onClick={() => {
-              const chain = chains.find((c) => c.id === chainId)
-              if (!chain) {
-                return
-              }
-
-              window.open(
-                `${chain.blockExplorers.default.url}/tx/${transactionHash}`,
-                "_blank"
-              )
-            }}
-          >
-            View on explorer
-          </ToastAction>
-        ),
-      }).dismiss
-
-      const receipt = await publicClient.waitForTransactionReceipt({
-        hash: transactionHash,
-      })
-      dismiss()
-      dismiss = toast({
-        title: "RFP transaction confirmed!",
-        description: "Parsing transaction logs...",
-      }).dismiss
-
-      let rfpId: bigint | undefined
-      receipt.logs.forEach((log) => {
-        try {
-          if (
-            log.address.toLowerCase() !== RFPsContract.address.toLowerCase()
-          ) {
-            // Only interested in logs originating from the tasks contract
-            return
-          }
-
-          const rfpCreatedEvent = decodeEventLog({
-            abi: RFPsContract.abi,
-            eventName: "RFPCreated",
-            topics: log.topics,
-            data: log.data,
-          })
-          rfpId = rfpCreatedEvent.args.rfpId
-        } catch {}
-      })
-      if (rfpId === undefined) {
-        dismiss()
-        toast({
-          title: "Error retrieving RFP id",
-          description: "The RFP creation possibly failed.",
-          variant: "destructive",
-        })
-        return
-      }
-
-      setTimeout(() => {
-        if (walletClient.chain) {
-          push(`/RFPs/${walletClient.chain.id}:${rfpId}`)
-        }
-      }, 2000)
-
-      dismiss()
-      dismiss = toast({
-        title: "Success!",
-        description: "The RFP has been created.",
-        variant: "success",
-      }).dismiss
-    }
-
-    await submit().catch(console.error)
-    setSubmitting(false)
+        setTimeout(() => {
+          push(`/RFPs/${chainId}:${rfpId}`)
+        }, 2000)
+      },
+    })
   }
 
   const {
@@ -777,7 +621,7 @@ export function RFPCreationForm() {
                   key={i}
                   error={form.formState.errors.budget?.at?.(i)}
                 >
-                  <div className="flex gap-x-1 w-full">
+                  <div className="flex w-full gap-x-1">
                     <AddressPicker
                       addressName="ERC20 token"
                       selectableAddresses={tokens}
@@ -838,7 +682,7 @@ export function RFPCreationForm() {
           </FormDescription>
           <FormMessage />
         </FormItem>
-        <Button type="submit" disabled={submitting}>
+        <Button type="submit" disabled={performingTransaction}>
           Create RFP
         </Button>
       </form>

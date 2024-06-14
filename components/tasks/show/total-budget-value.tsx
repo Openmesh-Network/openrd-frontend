@@ -33,12 +33,14 @@ export function TotalBudgetValue() {
             <Image
               src={`/images/utils/usdc.svg`}
               alt="USDC"
-              className={`ml-1 w-[15px]`}
+              width={15}
+              height={15}
             />
             <Image
               src={`/images/utils/usdt.svg`}
               alt="USDT"
-              className={`w-[15px]`}
+              width={15}
+              height={15}
             />
           </div>
           <div className="text-sm">Total Project Values</div>

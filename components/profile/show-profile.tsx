@@ -120,7 +120,6 @@ export function ShowProfile({ address }: { address: Address }) {
                               )}
                             </div>
                             <ShowTaskSummary
-                              index={i}
                               key={`${chainId}:${taskId}`}
                               chainId={chainId}
                               taskId={taskId}

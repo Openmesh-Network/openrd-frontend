@@ -95,7 +95,9 @@ export function ShowEvent({
             <Image
               alt="Event sender avatar"
               src={`https://effigy.im/a/${transaction.from}.svg`}
-              className="w-[25px] rounded-full"
+              className="rounded-full"
+              width={25}
+              height={25}
             />
           )}
           <div className="text-base font-normal">

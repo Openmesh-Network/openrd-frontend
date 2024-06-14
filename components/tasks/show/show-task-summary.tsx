@@ -21,13 +21,9 @@ import { ShowTaskMetadata } from "./show-task"
 export function ShowTaskSummary({
   chainId,
   taskId,
-  index,
-  onTaskInfo,
 }: {
   chainId: number
   taskId: bigint
-  index: number
-  onTaskInfo?: (taskInfo: any) => void
 }) {
   const chain = chains.find((c) => c.id === chainId)
   const publicClient = usePublicClient({ chainId })
@@ -102,21 +98,10 @@ export function ShowTaskSummary({
     })
   }, [chainId, taskId])
 
-  useEffect(() => {
-    if (blockchainTask && onTaskInfo) {
-      onTaskInfo({
-        chainId,
-        taskId,
-        deadline: Number(blockchainTask.deadline),
-        budget: indexerTask?.usdValue ?? 0,
-      })
-    }
-  }, [blockchainTask, chainId, taskId])
-
   const indexedMetadata = indexerTask?.cachedMetadata
     ? (JSON.parse(indexerTask?.cachedMetadata) as ShowTaskMetadata)
     : undefined
-  const title = indexedMetadata?.title
+  const title = indexedMetadata?.title ?? directMetadata?.title
   const tags = indexedMetadata?.tags ?? []
   const usdValue = indexerTask?.usdValue ?? 0
   const description =
@@ -126,18 +111,16 @@ export function ShowTaskSummary({
   const deadline = blockchainTask?.deadline ?? indexerTask?.deadline
 
   return (
-    <Card
-      className={`w-full justify-between gap-x-[10px] border-x-0 border-b-2 border-t-0 py-[20px] !shadow-none md:flex ${index !== 0 && "rounded-none"} ${index === 0 && "rounded-b-none"}`}
-    >
-      <div className="w-full px-2 md:flex md:px-[25px]">
-        <div className="!px-0 md:w-3/5 lg:w-[55%] xl:w-1/2">
+    <Card className={`w-full justify-between border-0 !shadow-none md:flex`}>
+      <div className="w-full md:flex">
+        <div className="md:w-[55%] px-[25px] py-[10px]">
           <CardHeader className="!px-0 !pb-0">
             <Link className="" href={`/tasks/${chainId}:${taskId}`}>
               <div className="cursor-pointer text-lg font-bold">
                 {title ?? <Skeleton className="bg-white md:h-6 md:w-[250px]" />}
               </div>
             </Link>
-            <div className="overflow-hidden md:max-h-[100px]">
+            <div className="overflow-hidden max-h-[100px]">
               <SanitizeHTML html={description} />
             </div>
           </CardHeader>
@@ -155,17 +138,17 @@ export function ShowTaskSummary({
             </div>
           </CardContent>
         </div>
-        <div className="text- text-sm md:w-[22%] md:pt-8 md:text-base">
+        <div className="text-sm md:w-[22%] md:text-base place-content-center text-center">
           <span className="md:hidden">Budget: </span>${usdValue}
         </div>
-        <div className="text-sm md:w-[16%] md:pt-8 md:text-base lg:w-[13%] xl:w-[10%]">
+        <div className="text-sm md:w-[22%] md:text-base place-content-center text-center">
           <span className="md:hidden">Deadline: </span>
           {daysUntil(String(deadline))}
         </div>
       </div>
-      <CardFooter>
+      <CardFooter className="p-0 md:w-[10%] place-content-center py-[10px]">
         <Link
-          className="mx-7 my-auto !mt-4 cursor-pointer justify-center whitespace-nowrap rounded-md border-[0.5px] border-[#0354EC] bg-transparent !py-[2px] px-[10px] text-[15px] text-[#0354EC] hover:bg-[#0354EC]  hover:text-white md:mx-0 md:!mt-0 md:mr-4 md:w-fit"
+          className="cursor-pointer justify-center whitespace-nowrap rounded-md border-[0.5px] border-[#0354EC] bg-transparent !py-[2px] px-[10px] text-[15px] text-[#0354EC] hover:bg-[#0354EC]  hover:text-white md:mx-0 md:!mt-0 md:mr-4 w-fit"
           href={`/tasks/${chainId}:${taskId}`}
         >
           View task

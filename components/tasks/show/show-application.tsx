@@ -145,7 +145,9 @@ export function ShowApplication({
             <Image
               alt="Applicant avatar"
               src={`https://effigy.im/a/${application.applicant}.svg`}
-              className="w-[35px] rounded-full"
+              className="rounded-full"
+              width={35}
+              height={35}
             />
             <Link
               href={`/profile/${application.applicant}`}

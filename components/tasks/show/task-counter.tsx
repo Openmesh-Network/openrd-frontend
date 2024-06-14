@@ -29,16 +29,8 @@ export function TaskCounter({ state }: { state: TaskState }) {
             {counter}
           </div>
           <div className="flex gap-x-[5px]">
-            <Image
-              alt="task counter image"
-              className={stateToImg(state)?.className}
-              src={stateToImg(state)?.src}
-            />
-            <Image
-              alt="task counter image"
-              className={stateToImgDark(state)?.className}
-              src={stateToImgDark(state)?.src}
-            />
+            <Image alt="task counter image" {...stateToImg(state)} />
+            <Image alt="task counter image" {...stateToImgDark(state)} />
             <h2>{stateToString(state)} tasks</h2>
           </div>
         </div>
@@ -65,17 +57,23 @@ function stateToImg(state: TaskState) {
     case TaskState.Open:
       return {
         src: `/images/utils/open.svg`,
-        className: "w-[17px] dark:hidden",
+        className: "dark:hidden",
+        width: 17,
+        height: 17,
       }
     case TaskState.Taken:
       return {
         src: `/images/utils/pencil.svg`,
-        className: "w-[15px] dark:hidden",
+        className: "dark:hidden",
+        width: 15,
+        height: 15,
       }
     case TaskState.Closed:
       return {
         src: `/images/utils/check.svg`,
-        className: "w-[18px] dark:hidden",
+        className: "dark:hidden",
+        width: 18,
+        height: 18,
       }
   }
 }
@@ -85,17 +83,23 @@ function stateToImgDark(state: TaskState) {
     case TaskState.Open:
       return {
         src: `/images/utils/open-white.svg`,
-        className: "w-[17px] dark:flex hidden",
+        className: "dark:flex hidden",
+        width: 17,
+        height: 17,
       }
     case TaskState.Taken:
       return {
         src: `/images/utils/pencil-white.svg`,
-        className: "w-[15px] dark:flex hidden",
+        className: "dark:flex hidden",
+        width: 15,
+        height: 15,
       }
     case TaskState.Closed:
       return {
         src: `/images/utils/check-white.svg`,
-        className: "w-[18px] dark:flex hidden",
+        className: "dark:flex hidden",
+        width: 18,
+        height: 18,
       }
   }
 }

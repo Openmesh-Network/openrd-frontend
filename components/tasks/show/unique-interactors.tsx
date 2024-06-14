@@ -28,14 +28,18 @@ export function UniqueInteractors() {
           </div>
           <div className="flex gap-x-[5px]">
             <Image
-              className="w-[15px] dark:hidden"
+              className="dark:hidden"
               src={`/images/utils/accounts.svg`}
               alt={"unique account interacted image"}
+              width={15}
+              height={15}
             />
             <Image
-              className="hidden w-[15px] dark:flex"
+              className="hidden dark:flex"
               src={`/images/utils/accounts-white.svg`}
               alt={"unique account interacted image"}
+              width={15}
+              height={15}
             />
             <h2>Unique accounts interacted</h2>
           </div>

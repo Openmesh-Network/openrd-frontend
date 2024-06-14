@@ -129,9 +129,11 @@ export function ShowProject({
           {/* Would be cool to add a hover effect here to show stats of the person (completion rate etc.) */}
           <div className="flex gap-x-[15px]">
             <Image
-              alt="matic"
+              alt="Project representative"
               src={`https://effigy.im/a/${project.representative}.svg`}
-              className="w-[35px] rounded-full"
+              className="rounded-full"
+              width={35}
+              height={35}
             />
             <Link
               href={`/profile/${project.representative}`}

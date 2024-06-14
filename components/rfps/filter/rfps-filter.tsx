@@ -288,7 +288,7 @@ export function RPFsFilter({
                                 height={20}
                                 width={20}
                                 src={`/images/utils/x.svg`}
-                                alt={""}
+                                alt={"Remove"}
                               />
                             </Button>
                           </div>

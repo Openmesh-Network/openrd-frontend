@@ -1,7 +1,7 @@
-/* eslint-disable @next/next/no-img-element */
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import { RFPsContract } from "@/openrd-indexer/contracts/RFPs"
 import { Project, RFP } from "@/openrd-indexer/types/rfp"
 import { Reward } from "@/openrd-indexer/types/tasks"
@@ -128,11 +128,11 @@ export function ShowProject({
         <CardTitle className="flex space-x-2">
           {/* Would be cool to add a hover effect here to show stats of the person (completion rate etc.) */}
           <div className="flex gap-x-[15px]">
-            <img
+            <Image
               alt="matic"
               src={`https://effigy.im/a/${project.representative}.svg`}
               className="w-[35px] rounded-full"
-            ></img>
+            />
             <Link
               href={`/profile/${project.representative}`}
               className="shrink text-[20px]"

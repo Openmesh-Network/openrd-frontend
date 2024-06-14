@@ -1,4 +1,3 @@
-/* eslint-disable @next/next/no-img-element */
 "use client"
 
 import { Address, formatUnits } from "viem"
@@ -30,20 +29,6 @@ export function ShowReward({
         <span>
           {formatUnits(total, decimals)} {name}
         </span>
-        {name === "MATIC" && (
-          <img
-            alt="matic"
-            src="/images/task/polygon-matic-logo.svg"
-            className="w-[15px]"
-          ></img>
-        )}
-        {name === "ETHER" && (
-          <img
-            alt="matic"
-            src="/images/task/ethereum-eth-logo.svg"
-            className="w-[12px]"
-          ></img>
-        )}
       </div>
       {total !== BigInt(0) && (
         <ul className="list-disc pl-4">

@@ -1,12 +1,9 @@
-/* eslint-disable tailwindcss/no-unnecessary-arbitrary-value */
 import * as React from "react"
-import { useEffect, useState } from "react"
-import Image from "next/image"
+import { useState } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 
 import { NavItem } from "@/types/nav"
-import { siteConfig } from "@/config/site"
 import { cn } from "@/lib/utils"
 
 import { NotificationsToggle } from "./notifications-toggle"
@@ -31,7 +28,7 @@ export function MobileNav({ items }: MainNavProps) {
         onClick={navbarToggleHandler}
         id="navbarToggler"
         aria-label="Mobile Menu"
-        className="absolute right-4 top-1/2 block translate-y-[-50%] rounded-lg px-3 py-[6px] ring-primary focus:ring-2 lg:hidden"
+        className="absolute right-4 top-1/2 block -translate-y-1/2 rounded-lg px-3 py-[6px] ring-primary focus:ring-2 lg:hidden"
       >
         <span
           className={`relative my-1.5 block h-0.5 w-[30px] bg-black transition-all duration-300  ${
@@ -51,7 +48,7 @@ export function MobileNav({ items }: MainNavProps) {
       </button>
       <nav
         id="navbarCollapse"
-        className={`navbar border-body-color/50 dark:border-body-color/20 dark:bg-dark absolute right-0 z-50 w-full rounded border-[.5px] bg-white px-6 py-4 duration-300 dark:bg-[#000] lg:visible lg:static lg:mr-[95px] lg:w-auto lg:border-none lg:!bg-transparent lg:p-0 lg:opacity-100 ${
+        className={`navbar border-body-color/50 dark:border-body-color/20 dark:bg-dark absolute right-0 z-50 w-full rounded border-[.5px] bg-white px-6 py-4 duration-300 dark:bg-black lg:visible lg:static lg:mr-[95px] lg:w-auto lg:border-none lg:!bg-transparent lg:p-0 lg:opacity-100 ${
           navbarOpen
             ? "visibility top-full opacity-100"
             : "invisible top-[120%] opacity-0"

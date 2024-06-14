@@ -1,4 +1,3 @@
-/* eslint-disable tailwindcss/no-unnecessary-arbitrary-value */
 "use client"
 
 import { useEffect, useState } from "react"
@@ -127,7 +126,7 @@ export function ShowRFPSummary({
       className={`w-full justify-between gap-x-[10px] border-x-0 border-b-2 border-t-0 py-[20px] !shadow-none md:flex ${index !== 0 && "rounded-none"} ${index === 0 && "rounded-b-none"}`}
     >
       <div className="w-full px-2 md:flex md:px-[25px]">
-        <div className="!px-0 md:w-[60%] lg:w-[55%] xl:w-[50%]">
+        <div className="!px-0 md:w-3/5 lg:w-[55%] xl:w-1/2">
           <CardHeader className="!px-0 !pb-0">
             <Link className="" href={`/rfps/${chainId}:${rfpId}`}>
               <div className="cursor-pointer text-lg font-bold">

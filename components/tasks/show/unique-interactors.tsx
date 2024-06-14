@@ -1,9 +1,7 @@
-/* eslint-disable @next/next/no-img-element */
 "use client"
 
-import Image from 'next/image'
-
 import { useEffect, useState } from "react"
+import Image from "next/image"
 
 import { getTotalUsers } from "@/lib/indexer"
 
@@ -25,15 +23,19 @@ export function UniqueInteractors() {
     <div>
       {uniqueInteractors !== undefined ? (
         <div className="text-center">
-          <div className="mx-auto mb-[5px] flex size-[42px] items-center justify-center rounded-full border border-[#E2E8F0] p-[4px] text-xl text-black dark:border-[#1D283A] dark:text-white">{uniqueInteractors}</div>
+          <div className="mx-auto mb-[5px] flex size-[42px] items-center justify-center rounded-full border border-[#E2E8F0] p-[4px] text-xl text-black dark:border-[#1D283A] dark:text-white">
+            {uniqueInteractors}
+          </div>
           <div className="flex gap-x-[5px]">
-            <img
-              className='w-[15px] dark:hidden'
-              src={`/images/utils/accounts.svg`} alt={''}          
+            <Image
+              className="w-[15px] dark:hidden"
+              src={`/images/utils/accounts.svg`}
+              alt={"unique account interacted image"}
             />
-            <img
-              className='hidden w-[15px] dark:flex'
-              src={`/images/utils/accounts-white.svg`} alt={''}          
+            <Image
+              className="hidden w-[15px] dark:flex"
+              src={`/images/utils/accounts-white.svg`}
+              alt={"unique account interacted image"}
             />
             <h2>Unique accounts interacted</h2>
           </div>

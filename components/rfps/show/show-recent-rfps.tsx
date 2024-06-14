@@ -1,4 +1,3 @@
-/* eslint-disable tailwindcss/no-unnecessary-arbitrary-value */
 "use client"
 
 import { useEffect, useState } from "react"
@@ -72,7 +71,7 @@ export function ShowRecentRFPss({ rfpList }: { rfpList: RFPIdentifier[] }) {
             Project
           </p>
         </div>
-        <div className="hidden w-[20%] items-center md:flex">
+        <div className="hidden w-1/5 items-center md:flex">
           <p className="pr-[10px]">Budget</p>
           <svg
             width="11"
@@ -123,7 +122,7 @@ export function ShowRecentRFPss({ rfpList }: { rfpList: RFPIdentifier[] }) {
             />
           </svg>
         </div>
-        <div className="hidden w-[20%] items-center md:flex">
+        <div className="hidden w-1/5 items-center md:flex">
           <p className="pr-[10px]">Ends</p>
           <svg
             width="11"

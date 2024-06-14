@@ -1,7 +1,7 @@
-/* eslint-disable @next/next/no-img-element */
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
 
 import { getTotalUsdValue } from "@/lib/indexer"
 
@@ -18,10 +18,10 @@ export function TotalBudgetValue() {
   }, [])
 
   const formatNumber = (number: number) => {
-    return number.toLocaleString('en-US', {
+    return number.toLocaleString("en-US", {
       minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    });
+      maximumFractionDigits: 2,
+    })
   }
 
   return (
@@ -29,17 +29,15 @@ export function TotalBudgetValue() {
       {budgetValue !== undefined ? (
         <div>
           <div className="flex gap-x-[5px] text-xl font-bold">
-            <div>
-              ${formatNumber(budgetValue)}
-            </div>
-            <img
+            <div>${formatNumber(budgetValue)}</div>
+            <Image
               src={`/images/utils/usdc.svg`}
-              alt="image"
+              alt="USDC"
               className={`ml-1 w-[15px]`}
             />
-            <img
+            <Image
               src={`/images/utils/usdt.svg`}
-              alt="image"
+              alt="USDT"
               className={`w-[15px]`}
             />
           </div>

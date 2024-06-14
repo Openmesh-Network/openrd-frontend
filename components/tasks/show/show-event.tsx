@@ -1,7 +1,7 @@
-/* eslint-disable @next/next/no-img-element */
 "use client"
 
 import { useEffect, useState } from "react"
+import Image from "next/image"
 import { TaskEvent } from "@/openrd-indexer/types/task-events"
 import { Block, isAddress, Transaction } from "viem"
 import { usePublicClient } from "wagmi"
@@ -92,11 +92,11 @@ export function ShowEvent({
       <CardHeader>
         <div className="flex items-center gap-x-2">
           {transaction?.from && (
-            <img
-              alt="ethereum avatar"
+            <Image
+              alt="Event sender avatar"
               src={`https://effigy.im/a/${transaction.from}.svg`}
               className="w-[25px] rounded-full"
-            ></img>
+            />
           )}
           <div className="text-base font-normal">
             {sender && isAddress(sender) ? formatAddress(sender) : sender}

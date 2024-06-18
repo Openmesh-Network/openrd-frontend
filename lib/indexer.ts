@@ -4,16 +4,17 @@ import {
   EventReturn,
   FilterRFPsReturn,
   FilterTasksReturn,
+  RecentEventsReturn,
+  RecentRFPEventsReturn,
   RFPEventReturn,
   RFPReturn,
   TaskReturn,
-  TotalEventsReturn,
-  TotalRFPEventsReturn,
   TotalUsdValueReturn,
   TotalUsersReturn,
   UserEventsReturn,
   UserReturn,
 } from "@/openrd-indexer/api/return-types"
+import { EventIdentifier } from "@/openrd-indexer/types/event-identifier"
 import { replacer, reviver } from "@/openrd-indexer/utils/json"
 import axios, { AxiosResponse } from "axios"
 import { Address } from "viem"
@@ -39,8 +40,12 @@ export async function getTask(
   return JSON.parse(JSON.stringify(res.data), reviver)
 }
 
-export async function getEvent(eventIndex: number): Promise<EventReturn> {
-  const res = await axios.get(`${backendBaseUrl}/event/${eventIndex}`)
+export async function getEvent(
+  eventIndex: EventIdentifier
+): Promise<EventReturn> {
+  const res = await axios.get(
+    `${backendBaseUrl}/event/${eventIndex.chainId}/${eventIndex.transactionHash}/${eventIndex.logIndex}`
+  )
   checkError(res)
   return JSON.parse(JSON.stringify(res.data), reviver)
 }
@@ -68,8 +73,8 @@ export async function userEvents(address: Address): Promise<UserEventsReturn> {
   return JSON.parse(JSON.stringify(res.data), reviver)
 }
 
-export async function getTotalEvents(): Promise<TotalEventsReturn> {
-  const res = await axios.get(`${backendBaseUrl}/totalEvents`)
+export async function getRecentEvents(): Promise<RecentEventsReturn> {
+  const res = await axios.get(`${backendBaseUrl}/recentEvents`)
   checkError(res)
   return JSON.parse(JSON.stringify(res.data), reviver)
 }
@@ -121,8 +126,12 @@ export async function getRFP(
   return JSON.parse(JSON.stringify(res.data), reviver)
 }
 
-export async function getRFPEvent(eventIndex: number): Promise<RFPEventReturn> {
-  const res = await axios.get(`${backendBaseUrl}/rfpEvent/${eventIndex}`)
+export async function getRFPEvent(
+  eventIndex: EventIdentifier
+): Promise<RFPEventReturn> {
+  const res = await axios.get(
+    `${backendBaseUrl}/rfpEvent/${eventIndex.chainId}/${eventIndex.transactionHash}/${eventIndex.logIndex}`
+  )
   checkError(res)
   return JSON.parse(JSON.stringify(res.data), reviver)
 }
@@ -138,8 +147,8 @@ export async function filterRFPs(
   return JSON.parse(JSON.stringify(res.data), reviver)
 }
 
-export async function getTotalRFPEvents(): Promise<TotalRFPEventsReturn> {
-  const res = await axios.get(`${backendBaseUrl}/totalRFPEvents`)
+export async function getRecentRFPEvents(): Promise<RecentRFPEventsReturn> {
+  const res = await axios.get(`${backendBaseUrl}/recentRFPEvents`)
   checkError(res)
   return JSON.parse(JSON.stringify(res.data), reviver)
 }

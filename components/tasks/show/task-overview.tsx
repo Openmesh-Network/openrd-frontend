@@ -2,7 +2,6 @@
 
 import { useState } from "react"
 
-import { buttonVariants } from "@/components/ui/button"
 import { Link } from "@/components/ui/link"
 import { TasksFilter } from "@/components/tasks/filter/tasks-filter"
 

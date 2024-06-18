@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { EventIdentifier } from "@/openrd-indexer/types/event-identifier"
 
 import { userEvents } from "@/lib/indexer"
 import { buttonVariants } from "@/components/ui/button"
@@ -16,7 +17,7 @@ import { ShowEvent } from "./tasks/show/show-event"
 
 export function NotificationsToggle() {
   const walletClient = useAbstractWalletClient()
-  const [events, setEvents] = React.useState<number[]>([])
+  const [events, setEvents] = React.useState<EventIdentifier[]>([])
 
   const getEvents = async () => {
     if (!walletClient?.account?.address) {
@@ -45,9 +46,7 @@ export function NotificationsToggle() {
           <span>No notifications for this account.</span>
         ) : (
           events
-            .sort((a, b) => a - b)
-            .slice(-5)
-            .reverse()
+            .slice(0, 5)
             .map((eventId, i) => (
               <ShowEvent
                 index={i}

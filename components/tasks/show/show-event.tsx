@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import Image from "next/image"
+import { EventIdentifier } from "@/openrd-indexer/types/event-identifier"
 import { TaskEvent } from "@/openrd-indexer/types/task-events"
 import { Block, isAddress, Transaction } from "viem"
 import { usePublicClient } from "wagmi"
@@ -26,7 +27,7 @@ export function ShowEvent({
   viewTask,
   index,
 }: {
-  eventIndex: number
+  eventIndex: EventIdentifier
   hideDescription?: boolean
   viewTask?: boolean
   index: number

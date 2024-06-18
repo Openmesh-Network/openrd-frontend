@@ -1,32 +1,30 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { EventIdentifier } from "@/openrd-indexer/types/event-identifier"
 
-import { getTotalEvents } from "@/lib/indexer"
+import { getRecentEvents } from "@/lib/indexer"
 
 import { ShowEvent } from "./show-event"
 
 export function ShowRecentEvents() {
-  const [eventCount, setEventCount] = useState<number>(0)
+  const [recentEventIds, setRecentEventIds] = useState<EventIdentifier[]>([])
 
   useEffect(() => {
-    const getEventCount = async () => {
-      const totalEvents = await getTotalEvents()
-      setEventCount(totalEvents.totalEvents)
+    const getRecentEventIds = async () => {
+      const recentEvents = await getRecentEvents()
+      setRecentEventIds(recentEvents)
     }
 
-    getEventCount().catch(console.error)
+    getRecentEventIds().catch(console.error)
   }, [])
 
   return (
     <div>
       <div className="mb-[10px] mt-[5px] md:text-lg">Latest updates:</div>
-      {Array.from({ length: eventCount }, (value, index) => index)
-        .slice(-5)
-        .reverse()
-        .map((eventId, i) => (
-          <ShowEvent key={i} eventIndex={eventId} viewTask={true} index={i} />
-        ))}
+      {recentEventIds.map((eventId, i) => (
+        <ShowEvent key={i} eventIndex={eventId} viewTask={true} index={i} />
+      ))}
     </div>
   )
 }

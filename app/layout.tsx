@@ -1,7 +1,7 @@
 import "@/styles/globals.css"
 
+import { Suspense } from "react"
 import { Metadata, Viewport } from "next"
-import { Suspense } from "react";
 
 import { siteConfig } from "@/config/site"
 import { fontSans } from "@/lib/fonts"
@@ -19,9 +19,9 @@ export const metadata: Metadata = {
   },
   description: siteConfig.description,
   icons: {
-    icon: "/icon.png",
-    shortcut: "/icon.png",
-    apple: "/icon.png",
+    icon: "/icon.svg",
+    shortcut: "/icon.svg",
+    apple: "/icon.svg",
   },
 }
 

@@ -49,7 +49,7 @@ export function SiteHeader() {
       </div>
       <div className="container flex h-16 items-center space-x-4 sm:justify-between sm:space-x-0 md:hidden">
         <Link href="/" className="flex items-center space-x-2">
-          <Image alt="Logo" src="/icon.png" width={20} height={20} />
+          <Image alt="Logo" src="/icon.svg" width={20} height={20} />
           <span className="inline-block font-bold">{siteConfig.name}</span>
         </Link>
         <MobileNav items={navItems} />

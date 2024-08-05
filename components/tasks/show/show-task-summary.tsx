@@ -113,14 +113,14 @@ export function ShowTaskSummary({
   return (
     <Card className={`w-full justify-between border-0 !shadow-none md:flex`}>
       <div className="w-full md:flex">
-        <div className="md:w-[55%] px-[25px] py-[10px]">
+        <div className="px-[25px] py-[10px] md:w-[55%]">
           <CardHeader className="!px-0 !pb-0">
             <Link className="" href={`/tasks/${chainId}:${taskId}`}>
               <div className="cursor-pointer text-lg font-bold">
                 {title ?? <Skeleton className="bg-white md:h-6 md:w-[250px]" />}
               </div>
             </Link>
-            <div className="overflow-hidden max-h-[100px]">
+            <div className="max-h-[100px] overflow-hidden">
               <SanitizeHTML html={description} />
             </div>
           </CardHeader>
@@ -138,17 +138,17 @@ export function ShowTaskSummary({
             </div>
           </CardContent>
         </div>
-        <div className="text-sm md:w-[22%] md:text-base place-content-center text-center">
+        <div className="place-content-center text-center text-sm md:w-[22%] md:text-base">
           <span className="md:hidden">Budget: </span>${usdValue}
         </div>
-        <div className="text-sm md:w-[22%] md:text-base place-content-center text-center">
+        <div className="place-content-center text-center text-sm md:w-[22%] md:text-base">
           <span className="md:hidden">Deadline: </span>
           {daysUntil(String(deadline))}
         </div>
       </div>
-      <CardFooter className="p-0 md:w-[10%] place-content-center py-[10px]">
+      <CardFooter className="place-content-center p-0 py-[10px] md:w-[10%]">
         <Link
-          className="cursor-pointer justify-center whitespace-nowrap rounded-md border-[0.5px] border-[#0354EC] bg-transparent !py-[2px] px-[10px] text-[15px] text-[#0354EC] hover:bg-[#0354EC]  hover:text-white md:mx-0 md:!mt-0 md:mr-4 w-fit"
+          className="w-fit cursor-pointer justify-center whitespace-nowrap rounded-md border-[0.5px] border-[#0354EC] bg-transparent !py-[2px] px-[10px] text-[15px] text-[#0354EC]  hover:bg-[#0354EC] hover:text-white md:mx-0 md:!mt-0 md:mr-4"
           href={`/tasks/${chainId}:${taskId}`}
         >
           View task

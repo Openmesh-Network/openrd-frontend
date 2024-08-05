@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react"
-import { ERC20Transfer, Task } from "@/openrd-indexer/types/tasks"
+import { ERC20Transfer } from "@/openrd-indexer/types/tasks"
 import { publicClients } from "@/openrd-indexer/utils/chain-cache"
 import { getPrice } from "@/openrd-indexer/utils/get-token-price"
-import { createPublicClient, http } from "viem"
+import { useQuery } from "@tanstack/react-query"
+import { Address, createPublicClient, erc20Abi, http } from "viem"
+import { usePublicClient } from "wagmi"
 
 import { chains } from "@/config/wagmi-config"
 
@@ -13,12 +15,59 @@ export interface Budget {
 
 export function usePrice({
   chainId,
-  budget,
+  budget: providedBudget,
+  directBalance,
 }: {
   chainId: number
   budget?: Budget
+  directBalance?: Address
 }) {
   const [price, setPrice] = useState<number | undefined>(undefined)
+
+  const publicClient = usePublicClient({ chainId })
+  const tokens = providedBudget?.budget?.map((b) => b.tokenContract) ?? []
+  const { data: directBudget } = useQuery({
+    queryKey: [chainId, publicClient, tokens, directBalance, "directBudget"],
+    queryFn: async () => {
+      if (!publicClient || !directBalance) {
+        return undefined
+      }
+
+      const promises: [Promise<bigint>, Promise<ERC20Transfer[]>] = [
+        publicClient.getBalance({ address: directBalance }),
+        Promise.resolve([]),
+      ]
+      if (tokens.length !== 0) {
+        promises[1] = publicClient
+          .multicall({
+            contracts: tokens.map((t) => {
+              return {
+                abi: erc20Abi,
+                address: t,
+                functionName: "balanceOf",
+                args: [directBalance],
+              }
+            }),
+          })
+          .then((balances) =>
+            balances.map((b) => b.result as bigint | undefined)
+          )
+          .then((balances) =>
+            balances.map((b, i) => {
+              return {
+                tokenContract: tokens[i],
+                amount: b ?? BigInt(0),
+              }
+            })
+          )
+      }
+
+      const balances = await Promise.all(promises)
+      return { nativeBudget: balances[0], budget: balances[1] } as Budget
+    },
+  })
+
+  const budget = directBudget ?? providedBudget
   useEffect(() => {
     const fetchPrice = async () => {
       if (!budget) {
@@ -45,5 +94,6 @@ export function usePrice({
 
     fetchPrice().catch(console.error)
   }, [chainId, budget])
+
   return price
 }

@@ -3,15 +3,18 @@
 import { useEffect, useState } from "react"
 import Image from "next/image"
 import { useRouter } from "next/navigation"
+import { CrowdfundedTasksManagerFactoryContract } from "@/contracts/CrowdfundedTasksManagerFactory"
 import { TasksContract } from "@/openrd-indexer/contracts/Tasks"
+import { normalizeAddress } from "@/openrd-indexer/utils/normalize-address"
 import { zodResolver } from "@hookform/resolvers/zod"
 import axios from "axios"
 import { useFieldArray, useForm } from "react-hook-form"
-import { Address, decodeEventLog, isAddress } from "viem"
+import { Address, decodeEventLog, Hex, isAddress } from "viem"
 import { useChainId } from "wagmi"
 import { z } from "zod"
 
 import { addToIpfs } from "@/lib/api"
+import { getBlockTime } from "@/lib/blocktime"
 import { validAddress, validAddressOrEmpty } from "@/lib/regex"
 import { usePerformTransaction } from "@/hooks/usePerformTransaction"
 import { Button } from "@/components/ui/button"
@@ -29,6 +32,7 @@ import {
 import { Input } from "@/components/ui/input"
 import { RichTextArea } from "@/components/ui/rich-textarea"
 import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
+import { ShowTaskMetadata } from "@/components/tasks/show/show-task"
 import {
   AddressPicker,
   SelectableAddresses,
@@ -63,11 +67,6 @@ const formSchema = z.object({
         .regex(validAddress, "Applicant must be a valid address."),
     })
     .array(),
-  draft: z
-    .string()
-    .regex(validAddressOrEmpty, "Draft DAO must be a valid address."),
-
-  // Additional draft fields
 
   // Metadata fields
   title: z.string().min(1, "Title cannot be empty."),
@@ -86,6 +85,15 @@ const formSchema = z.object({
       url: z.string().url("URL is invalid."),
     })
     .array(),
+
+  // Additional fields
+  nonce: z.string(),
+  draft: z
+    .string()
+    .regex(validAddressOrEmpty, "Draft DAO must be a valid address."),
+  executionDelay: z.coerce
+    .number()
+    .min(1, "No execution delay breaks security."),
 })
 
 export function TaskCreationForm() {
@@ -104,6 +112,7 @@ export function TaskCreationForm() {
 
     setManagerOptions({
       [walletClient.account.address]: { name: "Myself" },
+      // [CrowdfundedTasksManagerFactoryContract.address]: { name: "Crowdfunded" },
     })
   }, [walletClient?.account?.address])
   const disputeManagerOptions: SelectableAddresses = {
@@ -168,7 +177,6 @@ export function TaskCreationForm() {
       nativeBudget: BigInt(0),
       budget: [],
       preapprove: [],
-      draft: "",
 
       title: "",
       tags: [],
@@ -186,6 +194,13 @@ export function TaskCreationForm() {
           url: "",
         },
       ],
+
+      nonce: crypto.getRandomValues(new Uint8Array(32)).reduce(
+        (acc, byte) => acc + byte.toString(16).padStart(2, "0"), // Every byte (256) takes 2 hex characters
+        "0x"
+      ),
+      draft: "",
+      executionDelay: (7 * 24 * 60 * 60) / getBlockTime(chainId), // 1 week, does not update on chain switch
     },
   })
 
@@ -193,7 +208,7 @@ export function TaskCreationForm() {
     await performTransaction({
       transactionName: "Task creation",
       transaction: async () => {
-        const metadata = {
+        const metadata: ShowTaskMetadata = {
           title: values.title,
           tags: values.tags,
           projectSize: values.projectSize,
@@ -202,48 +217,103 @@ export function TaskCreationForm() {
           resources: values.resources,
           links: values.links,
         }
+        switch (values.manager.toLowerCase()) {
+          case CrowdfundedTasksManagerFactoryContract.address.toLowerCase():
+            metadata.managementExtension = values.manager
+            metadata.nonce = values.nonce
+        }
         const cid = await addToIpfs(metadata, loggers)
         if (!cid) {
           return undefined
         }
+
+        const metadataUri = `ipfs://${cid}`
+        const deadline = BigInt(Math.round(values.deadline.getTime() / 1000))
+        const manager = values.manager as Address
+        const disputeManager = values.disputeManger as Address
+        const budget = values.budget.map((b) => {
+          return {
+            ...b,
+            tokenContract: b.tokenContract as Address,
+          }
+        })
+        const preapprove = values.preapprove.map((p) => {
+          return {
+            applicant: p.applicant as Address,
+            nativeReward:
+              values.nativeBudget !== BigInt(0)
+                ? [
+                    {
+                      to: p.applicant as Address,
+                      amount: values.nativeBudget,
+                    },
+                  ]
+                : [],
+            reward: values.budget.map((b) => {
+              return {
+                nextToken: true,
+                to: p.applicant as Address,
+                amount: b.amount,
+              }
+            }),
+          }
+        })
+        const nativeBudget = values.nativeBudget
+
+        if (
+          normalizeAddress(manager) ===
+          normalizeAddress(CrowdfundedTasksManagerFactoryContract.address)
+        ) {
+          const nonce = values.nonce as Hex
+          const nativeRate = nativeBudget
+          const executionDelay = values.executionDelay
+          const budgetTokens = budget.map((b) => {
+            return { tokenContract: b.tokenContract, rate: b.amount }
+          })
+          return {
+            abi: CrowdfundedTasksManagerFactoryContract.abi,
+            address: CrowdfundedTasksManagerFactoryContract.address,
+            functionName: "deploy",
+            args: [
+              nonce,
+              metadataUri,
+              deadline,
+              disputeManager,
+              nativeRate,
+              executionDelay,
+              budgetTokens,
+              preapprove.map((p) => {
+                return {
+                  applicant: p.applicant,
+                  nativeReward: p.nativeReward.map((r) => {
+                    return { to: r.to, amount: BigInt(0) }
+                  }),
+                  reward: p.reward.map((r) => {
+                    return {
+                      nextToken: r.nextToken,
+                      to: r.to,
+                      amount: BigInt(0),
+                    }
+                  }),
+                }
+              }),
+            ],
+          } as any
+        }
+
         return {
           abi: TasksContract.abi,
           address: TasksContract.address,
           functionName: "createTask",
           args: [
-            `ipfs://${cid}`,
-            BigInt(Math.round(values.deadline.getTime() / 1000)),
-            values.manager as Address,
-            values.disputeManger as Address,
-            values.budget.map((b) => {
-              return {
-                ...b,
-                tokenContract: b.tokenContract as Address,
-              }
-            }),
-            values.preapprove.map((p) => {
-              return {
-                applicant: p.applicant as Address,
-                nativeReward:
-                  values.nativeBudget !== BigInt(0)
-                    ? [
-                        {
-                          to: p.applicant as Address,
-                          amount: values.nativeBudget,
-                        },
-                      ]
-                    : [],
-                reward: values.budget.map((b) => {
-                  return {
-                    nextToken: true,
-                    to: p.applicant as Address,
-                    amount: b.amount,
-                  }
-                }),
-              }
-            }),
+            metadataUri,
+            deadline,
+            manager,
+            disputeManager,
+            budget,
+            preapprove,
           ],
-          value: values.nativeBudget,
+          value: nativeBudget,
         }
       },
       onConfirmed: (receipt) => {
@@ -319,6 +389,12 @@ export function TaskCreationForm() {
     name: "preapprove",
     control: form.control,
   })
+
+  const altManager =
+    form.getValues().manager.toLowerCase() ===
+    CrowdfundedTasksManagerFactoryContract.address.toLowerCase()
+      ? "Crowdfunded"
+      : undefined
 
   return (
     <Form {...form}>
@@ -617,26 +693,52 @@ export function TaskCreationForm() {
         <FormField
           control={form.control}
           name="nativeBudget"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Native Budget</FormLabel>
-              <FormControl>
-                <NativeBalanceInput
-                  {...field}
-                  onChange={(change) => {
-                    field.onChange(change)
-                    form.trigger("nativeBudget")
-                  }}
-                  account={walletClient?.account?.address}
-                />
-              </FormControl>
-              <FormDescription>
-                The amount of native currency that is available as budget for
-                this task (ETH on Ethereum, MATIC on Polygon).
-              </FormDescription>
-              <FormMessage />
-            </FormItem>
-          )}
+          render={({ field }) =>
+            altManager === "Crowdfunded" ? (
+              <FormItem>
+                <FormLabel>Native Rate</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min={0}
+                    step={1}
+                    {...field}
+                    value={field.value.toString()}
+                    onChange={(change) => {
+                      field.onChange(BigInt(change.target.value))
+                      form.trigger("nativeBudget")
+                    }}
+                  />
+                </FormControl>
+                <FormDescription>
+                  The voting power granted by donating native currency. This
+                  number is only relevant as ratio compared to other currency
+                  rates. A rate of 0 means no voting power will be granted for
+                  donating this currency.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            ) : (
+              <FormItem>
+                <FormLabel>Native Budget</FormLabel>
+                <FormControl>
+                  <NativeBalanceInput
+                    {...field}
+                    onChange={(change) => {
+                      field.onChange(change)
+                      form.trigger("nativeBudget")
+                    }}
+                    account={walletClient?.account?.address}
+                  />
+                </FormControl>
+                <FormDescription>
+                  The amount of native currency that is available as budget for
+                  this task (ETH on Ethereum, MATIC on Polygon).
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )
+          }
         />
         <FormItem>
           <FormLabel>ERC20 Budget</FormLabel>
@@ -661,19 +763,37 @@ export function TaskCreationForm() {
                       }}
                       customAllowed={true}
                     />
-                    <ERC20BalanceInput
-                      token={
-                        isAddress(budgetItem.tokenContract)
-                          ? budgetItem.tokenContract
-                          : undefined
-                      }
-                      value={budgetItem.amount}
-                      onChange={(change) => {
-                        updateBudget(i, { ...budgetItem, amount: change })
-                        form.trigger("budget")
-                      }}
-                      account={walletClient?.account?.address}
-                    />
+                    {altManager === "Crowdfunded" ? (
+                      <div>
+                        <Input
+                          type="number"
+                          min={0}
+                          step={1}
+                          value={budgetItem.amount.toString()}
+                          onChange={(change) => {
+                            updateBudget(i, {
+                              ...budgetItem,
+                              amount: BigInt(change.target.value),
+                            })
+                            form.trigger("budget")
+                          }}
+                        />
+                      </div>
+                    ) : (
+                      <ERC20BalanceInput
+                        token={
+                          isAddress(budgetItem.tokenContract)
+                            ? budgetItem.tokenContract
+                            : undefined
+                        }
+                        value={budgetItem.amount}
+                        onChange={(change) => {
+                          updateBudget(i, { ...budgetItem, amount: change })
+                          form.trigger("budget")
+                        }}
+                        account={walletClient?.account?.address}
+                      />
+                    )}
                     <Button
                       onClick={() => removeBudget(i)}
                       variant="destructive"
@@ -681,16 +801,18 @@ export function TaskCreationForm() {
                       X
                     </Button>
                   </div>
-                  <ERC20AllowanceCheck
-                    spender={TasksContract.address}
-                    token={
-                      isAddress(budgetItem.tokenContract)
-                        ? budgetItem.tokenContract
-                        : undefined
-                    }
-                    amount={budgetItem.amount}
-                    account={walletClient?.account?.address}
-                  />
+                  {altManager !== "Crowdfunded" && (
+                    <ERC20AllowanceCheck
+                      spender={TasksContract.address}
+                      token={
+                        isAddress(budgetItem.tokenContract)
+                          ? budgetItem.tokenContract
+                          : undefined
+                      }
+                      amount={budgetItem.amount}
+                      account={walletClient?.account?.address}
+                    />
+                  )}
                 </ErrorWrapper>
               ))}
               <Button
@@ -703,8 +825,20 @@ export function TaskCreationForm() {
             </div>
           </FormControl>
           <FormDescription>
-            The amount of ERC20 currency that is available as budget for this
-            task. This can be any token, such as USDT, USDC, or WETH.
+            {altManager === "Crowdfunded" ? (
+              <span>
+                What ERC20 currencies are allowed to be donated and the voting
+                power granted by donating that token. This number is only
+                relevant as ratio compared to other currency rates. A rate of 0
+                means no voting power will be granted for donating this
+                currency.
+              </span>
+            ) : (
+              <span>
+                The amount of ERC20 currency that is available as budget for
+                this task. This can be any token, such as USDT, USDC, or WETH.
+              </span>
+            )}
           </FormDescription>
           <FormMessage />
         </FormItem>
@@ -779,6 +913,36 @@ export function TaskCreationForm() {
                   Openmesh departments. The task will only be created if the DAO
                   approves it. The budget for the task will be paid from the DAO
                   treasury.
+                </FormDescription>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+        {form.getValues().manager.toLowerCase() ===
+          CrowdfundedTasksManagerFactoryContract.address.toLowerCase() && (
+          <FormField
+            control={form.control}
+            name="executionDelay"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Execution Delay</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min={1}
+                    {...field}
+                    onChange={(change) => {
+                      field.onChange(change)
+                      form.trigger("executionDelay")
+                    }}
+                  />
+                </FormControl>
+                <FormDescription>
+                  Blocks required after proposal creation before the proposal
+                  can be executed. As there is no quorum, entering a low value
+                  is not recommended. 1 block is produced approximately every{" "}
+                  {getBlockTime(chainId)}s
                 </FormDescription>
                 <FormMessage />
               </FormItem>

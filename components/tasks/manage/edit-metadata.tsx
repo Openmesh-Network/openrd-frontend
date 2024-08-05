@@ -20,8 +20,7 @@ import {
 } from "@/components/ui/form"
 import { Input } from "@/components/ui/input"
 import { RichTextArea } from "@/components/ui/rich-textarea"
-
-import { ShowTaskMetadata } from "../show/show-task"
+import { ShowTaskMetadata } from "@/components/tasks/show/show-task"
 
 const formSchema = z.object({
   title: z.string().min(1, "Title cannot be empty."),
@@ -73,7 +72,8 @@ export function EditMetadata({
     await performTransaction({
       transactionName: "Edit metadata",
       transaction: async () => {
-        const metadata = {
+        const newMetadata = {
+          ...metadata,
           title: values.title,
           tags: values.tags,
           projectSize: values.projectSize,
@@ -82,7 +82,7 @@ export function EditMetadata({
           resources: values.resources,
           links: values.links,
         }
-        const cid = await addToIpfs(metadata, loggers)
+        const cid = await addToIpfs(newMetadata, loggers)
         if (!cid) {
           return undefined
         }

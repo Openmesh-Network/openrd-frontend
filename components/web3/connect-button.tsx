@@ -10,12 +10,11 @@ import { chains } from "@/config/wagmi-config"
 import { useAddressTitle } from "@/hooks/useAddressTitle"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
+import { Combobox } from "@/components/ui/combobox"
+import { Separator } from "@/components/ui/separator"
 import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
+import { useSelectableChains } from "@/components/context/selectable-chains"
 import { useSetSettings, useSettings } from "@/components/context/settings"
-
-import { useSelectableChains } from "../context/selectable-chains"
-import { Combobox } from "../ui/combobox"
-import { Separator } from "../ui/separator"
 
 export function ConnectButton() {
   const connectedChain = useChainId()

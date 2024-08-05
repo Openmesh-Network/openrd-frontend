@@ -115,7 +115,7 @@ export function Withdraw() {
       transactionName: "Withdrawal",
       transaction: async () => {
         return {
-          abi: [parseAbiItem("function transfer(address to, uint amount)")],
+          abi: [parseAbiItem("function transfer(address to, uint256 amount)")],
           address: values.erc20transfer.tokenContract as Address,
           functionName: "transfer",
           args: [values.to as Address, values.erc20transfer.amount],

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useState } from "react"
+import { CrowdfundedTasksManagerFactoryContract } from "@/contracts/CrowdfundedTasksManagerFactory"
 import { DisputesReturn } from "@/openrd-indexer/api/return-types"
 import { TasksContract } from "@/openrd-indexer/contracts/Tasks"
 import {
@@ -9,7 +10,7 @@ import {
   Task,
   TaskState,
 } from "@/openrd-indexer/types/tasks"
-import { formatUnits } from "viem"
+import { formatUnits, getCreate2Address, isHex } from "viem"
 import { deepEqual, usePublicClient } from "wagmi"
 
 import { chains } from "@/config/wagmi-config"
@@ -44,9 +45,11 @@ import { ExtendDeadline } from "@/components/tasks/manage/extend-deadline"
 import { IncreaseBudget } from "@/components/tasks/manage/increase-budget"
 
 import { DipsuteCreationForm } from "../forms/dispute-creation-form"
+import { DonateForm } from "../forms/donate-form"
 import { ShowApplication } from "./show-application"
 import { ShowBudgetItem } from "./show-budget-item"
 import { ShowCancelTaskRequest } from "./show-cancel-task-request"
+import { ShowCrowdfunding } from "./show-crowdfunding"
 import { ShowDispute } from "./show-dispute"
 import { ShowEvent } from "./show-event"
 import { ShowSubmission } from "./show-submission"
@@ -64,6 +67,8 @@ export interface ShowTaskMetadata {
     name?: string
     url?: string
   }[]
+  managementExtension?: string
+  nonce?: string
 }
 
 export function ShowTask({
@@ -90,10 +95,6 @@ export function ShowTask({
   const [indexerTask, setIndexerTask] = useState<IndexedTask | undefined>(
     undefined
   )
-  const directPrice = usePrice({
-    chainId: chainId,
-    budget: blockchainTask ?? indexerTask,
-  })
 
   const applyRef = useRef<HTMLDivElement>(null)
 
@@ -213,13 +214,19 @@ export function ShowTask({
     blockchainTask?.submissions ?? indexerTask?.submissions ?? {}
   const cancelTaskRequests =
     blockchainTask?.cancelTaskRequests ?? indexerTask?.cancelTaskRequests ?? {}
-  const usdValue = directPrice ?? indexerTask?.usdValue ?? 0
 
   const managerTitle = useAddressTitle(manager)
   const disputeManagerTitle = useAddressTitle(disputeManager)
   const creatorTitle = useAddressTitle(creator)
 
   const events = indexerTask?.events ?? []
+
+  const directPrice = usePrice({
+    chainId: chainId,
+    budget: blockchainTask ?? indexerTask,
+    directBalance: escrow,
+  })
+  const usdValue = directPrice ?? indexerTask?.usdValue ?? 0
 
   const [budgetLink, setBudgetLink] = useState<string | undefined>(undefined)
   useEffect(() => {
@@ -247,6 +254,22 @@ export function ShowTask({
 
     getBudgetLink().catch(console.error)
   }, [chain, events])
+
+  const managementExtension =
+    directMetadata?.managementExtension ?? indexedMetadata?.managementExtension
+  const nonce = directMetadata?.nonce ?? indexedMetadata?.nonce
+  const crowdfunded =
+    managementExtension !== undefined &&
+    nonce !== undefined &&
+    managementExtension.toLowerCase() ===
+      CrowdfundedTasksManagerFactoryContract.address &&
+    isHex(nonce) &&
+    getCreate2Address({
+      from: CrowdfundedTasksManagerFactoryContract.address,
+      salt: nonce,
+      bytecodeHash:
+        "0x209c4859720b0a163cd8655c8db765d9b5bd280e9c01b709a855f2011fa685f6",
+    }) === manager
 
   return (
     <div>
@@ -400,37 +423,6 @@ export function ShowTask({
               </a>
             </div>
           )}
-          {/* {task.status === 'open' && (
-            <div className="mt-[25px] ">
-              <a
-                href={`${
-                  process.env.NEXT_PUBLIC_ENVIRONMENT === 'PROD'
-                    ? `/openrd/application/${task.id}`
-                    : `/application/${task.id}`
-                }`}
-                className="flex h-[43px] w-[163px] cursor-pointer items-center justify-center rounded-[10px] bg-[#12AD50] text-[12px] font-bold text-white hover:bg-[#0b9040] lg:text-[16px] "
-              >
-                {'Apply now'}
-              </a>
-            </div>
-          )}
-          {task.status === 'active' &&
-            contributorsAllowed &&
-            address &&
-            contributorsAllowed.includes(address) && (
-              <div className="mt-[25px] ">
-                <a
-                  href={`${
-                    process.env.NEXT_PUBLIC_ENVIRONMENT === 'PROD'
-                      ? `/openrd/new-submission/${task.id}`
-                      : `/new-submission/${task.id}`
-                  }`}
-                  className="flex h-[43px] w-[163px] cursor-pointer items-center justify-center rounded-[10px] bg-[#0354EC] text-[12px] font-bold text-white hover:bg-[#5080da] lg:text-[16px] "
-                >
-                  {'Create submission'}
-                </a>
-              </div>
-            )} */}
         </div>
       </div>
       <div className="grid grid-cols-1 gap-4">
@@ -464,6 +456,12 @@ export function ShowTask({
               walletClient.account.address === manager && (
                 <TabsTrigger value="manage">Manage</TabsTrigger>
               )}
+            {crowdfunded && (
+              <TabsTrigger value="crowdfunding">Crowdfunding</TabsTrigger>
+            )}
+            {budget.length !== 0 && escrow !== undefined && (
+              <TabsTrigger value="donate">Donate</TabsTrigger>
+            )}
           </TabsList>
           <TabsContent value="description">
             <SanitizeHTML html={description} styleClass="!text-lg" />
@@ -815,6 +813,25 @@ export function ShowTask({
               </div>
             )}
           </TabsContent>
+          {crowdfunded && (
+            <TabsContent value="crowdfunding">
+              <ShowCrowdfunding
+                chainId={chainId}
+                taskId={taskId}
+                taskManager={manager}
+                budgetTokens={budget.map((b) => b.tokenContract)}
+              />
+            </TabsContent>
+          )}
+          {budget.length !== 0 && escrow !== undefined && (
+            <TabsContent value="donate">
+              <DonateForm
+                chainId={chainId}
+                to={escrow}
+                tokens={budget.map((b) => b.tokenContract)}
+              />
+            </TabsContent>
+          )}
         </Tabs>
       </div>
     </div>

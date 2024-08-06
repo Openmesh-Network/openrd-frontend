@@ -64,11 +64,7 @@ export function MobileNav({ items }: MainNavProps) {
                   className={cn(
                     "flex items-center text-base font-medium text-muted-foreground hover:text-[#000000d0] dark:hover:text-[#ffffffdc]",
                     item.disabled && "cursor-not-allowed opacity-80",
-                    pathname.endsWith("/tasks") &&
-                      item.title === "Tasks" &&
-                      "text-black dark:text-white",
-                    pathname.endsWith("/") &&
-                      item.title === "Home" &&
+                    pathname === item.href.split("?")[0] &&
                       "text-black dark:text-white"
                   )}
                 >

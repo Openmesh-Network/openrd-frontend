@@ -11,15 +11,15 @@ export const siteConfig = {
     },
     {
       title: "Tasks",
-      href: "/tasks/",
+      href: "/tasks",
     },
     {
       title: "RFPs",
-      href: "/rfps/",
+      href: "/rfps",
     },
     {
       title: "Donate",
-      href: `/tasks?tag=${JSON.stringify({
+      href: `/donate?tag=${JSON.stringify({
         equal: "Donate",
       })}&manager=${JSON.stringify({ equal: "0x24496D746Fd003397790E41d0d1Ce61F4F7fd61f" })}`,
     },

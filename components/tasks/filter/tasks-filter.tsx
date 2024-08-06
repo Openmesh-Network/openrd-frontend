@@ -1,6 +1,6 @@
 "use client"
 
-import { ChangeEvent, Suspense, useEffect, useState } from "react"
+import { ChangeEvent, useEffect, useRef, useState } from "react"
 import Image from "next/image"
 import { useSearchParams } from "next/navigation"
 import { Filter, ObjectFilter } from "@/openrd-indexer/api/filter"
@@ -8,7 +8,7 @@ import { FilterTasksReturn } from "@/openrd-indexer/api/return-types"
 import { reviver } from "@/openrd-indexer/utils/json"
 import { parseBigInt } from "@/openrd-indexer/utils/parseBigInt"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useFieldArray, useForm, UseFormReturn } from "react-hook-form"
+import { useFieldArray, useForm } from "react-hook-form"
 import { z } from "zod"
 
 import { filterTasks } from "@/lib/indexer"
@@ -163,6 +163,7 @@ export function TasksFilter({
   const selectableChains = useSelectableChains()
   const searchParams = useSearchParams()
   const [tasksSearchBar, setTasksSearchBar] = useState("")
+  const [requestIndex, setRequestIndex] = useState<number>(0)
 
   const defaultFilter = [
     {
@@ -182,6 +183,7 @@ export function TasksFilter({
     },
   })
 
+  const lastPromise = useRef<Promise<FilterTasksReturn>>()
   async function onSubmit(values: z.infer<typeof formSchema>) {
     const getFilteredTasks = async () => {
       const filteredTasks = await filterTasks(
@@ -199,10 +201,21 @@ export function TasksFilter({
           return acc
         }, {} as ObjectFilter)
       )
-      onFilterApplied(filteredTasks)
+      return filteredTasks
     }
 
-    getFilteredTasks().catch(console.error)
+    const currentPromise = getFilteredTasks()
+    lastPromise.current = currentPromise
+    currentPromise
+      .then((filteredTasks) => {
+        if (lastPromise.current !== currentPromise) {
+          // New filter request has been made, ignore results from this one (otherwise risk to overwrite results of newer one; race condition)
+          return
+        }
+
+        onFilterApplied(filteredTasks)
+      })
+      .catch(console.error)
   }
 
   useEffect(() => {

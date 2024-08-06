@@ -18,7 +18,7 @@ export interface IFilterValues {
 
 export enum FilterProperty {
   Title = "title",
-  // Tags = "tags",
+  Tags = "tag",
   ProjectSize = "projectSize",
   TeamSize = "teamSize",
   Description = "description",
@@ -39,6 +39,7 @@ export const filterFieldOptions: ComboboxOption<FilterProperty>[] = [
     label: "Title",
     value: FilterProperty.Title,
   },
+  { label: "Tags", value: FilterProperty.Tags },
   {
     label: "Project size",
     value: FilterProperty.ProjectSize,
@@ -121,6 +122,7 @@ function validFilterTypes(property: FilterProperty): FilterType[] {
     case FilterProperty.Title:
     case FilterProperty.Description:
       return [FilterType.Equal, FilterType.Includes]
+    case FilterProperty.Tags:
     case FilterProperty.ChainId:
     case FilterProperty.Manager:
     case FilterProperty.DisputeManager:

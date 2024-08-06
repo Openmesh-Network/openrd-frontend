@@ -1,12 +1,14 @@
 "use client"
 
-import { ChangeEvent, useEffect, useState } from "react"
+import { ChangeEvent, Suspense, useEffect, useState } from "react"
 import Image from "next/image"
+import { useSearchParams } from "next/navigation"
 import { Filter, ObjectFilter } from "@/openrd-indexer/api/filter"
 import { FilterTasksReturn } from "@/openrd-indexer/api/return-types"
+import { reviver } from "@/openrd-indexer/utils/json"
 import { parseBigInt } from "@/openrd-indexer/utils/parseBigInt"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { useFieldArray, useForm } from "react-hook-form"
+import { useFieldArray, useForm, UseFormReturn } from "react-hook-form"
 import { z } from "zod"
 
 import { filterTasks } from "@/lib/indexer"
@@ -45,6 +47,24 @@ function getSubfilter(
         obj.cachedMetadata.objectFilter = {}
       }
       return obj.cachedMetadata.objectFilter
+    case FilterProperty.Tags:
+      if (!obj.cachedMetadata) {
+        obj.cachedMetadata = {}
+      }
+      if (!obj.cachedMetadata.objectFilter) {
+        obj.cachedMetadata.objectFilter = {}
+      }
+      if (!obj.cachedMetadata.objectFilter.tags) {
+        obj.cachedMetadata.objectFilter.tags = {
+          some: {
+            objectFilter: {},
+          },
+        }
+      }
+      if (!obj.cachedMetadata.objectFilter.tags.some?.objectFilter) {
+        throw new Error("Tag filter object instantiated incorrectly.")
+      }
+      return obj.cachedMetadata.objectFilter.tags.some.objectFilter
     case FilterProperty.ChainId:
     case FilterProperty.TaskId:
     case FilterProperty.Deadline:
@@ -62,6 +82,7 @@ function getPropertyType(
 ): "number" | "bigint" | "string" {
   switch (property) {
     case FilterProperty.Title:
+    case FilterProperty.Tags:
     case FilterProperty.Description:
     case FilterProperty.Manager:
     case FilterProperty.DisputeManager:
@@ -139,23 +160,9 @@ export function TasksFilter({
 }: {
   onFilterApplied: (filtered: FilterTasksReturn) => void
 }) {
-  const [tasksSearchBar, setTasksSearchBar] = useState("")
   const selectableChains = useSelectableChains()
-
-  const handleSearchBarInput = (event: ChangeEvent<HTMLInputElement>) => {
-    const input = event.target
-    const value = input.value
-
-    if (tasksSearchBar.length + value.length > 100) {
-      return
-    }
-
-    setTasksSearchBar(value)
-
-    if (value === "") {
-      onSubmit(form.getValues()).catch(console.error)
-    }
-  }
+  const searchParams = useSearchParams()
+  const [tasksSearchBar, setTasksSearchBar] = useState("")
 
   const defaultFilter = [
     {
@@ -167,6 +174,7 @@ export function TasksFilter({
       value: { equal: "0" },
     },
   ]
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -197,6 +205,26 @@ export function TasksFilter({
     getFilteredTasks().catch(console.error)
   }
 
+  useEffect(() => {
+    // Initial get tasks (with just default filter applied)
+    onSubmit(form.getValues()).catch(console.error)
+  }, [])
+
+  const handleSearchBarInput = (event: ChangeEvent<HTMLInputElement>) => {
+    const input = event.target
+    const value = input.value
+
+    if (tasksSearchBar.length + value.length > 100) {
+      return
+    }
+
+    setTasksSearchBar(value)
+
+    if (value === "") {
+      onSubmit(form.getValues()).catch(console.error)
+    }
+  }
+
   async function searchBarFilter(value: string) {
     const getFilteredTasks = async () => {
       const filteredTasks = await filterTasks({
@@ -225,20 +253,36 @@ export function TasksFilter({
     getFilteredTasks().catch(console.error)
   }
 
-  useEffect(() => {
-    // Initial get tasks (with just default filter applied)
-    onSubmit(form.getValues()).catch(console.error)
-  }, [])
-
   const {
     fields: filter,
     append: appendFilter,
     remove: removeFilter,
     update: updateFilter,
+    replace: replaceFilter,
   } = useFieldArray({
     name: "filter",
     control: form.control,
   })
+
+  useEffect(() => {
+    const filter = [...defaultFilter]
+    searchParams.forEach((value, key) => {
+      const prop = key as FilterProperty
+      if (!Object.values(FilterProperty).includes(prop)) {
+        console.warn(`Url param ${key} is not a known filter property.`)
+        return
+      }
+
+      filter.push({
+        property: prop,
+        value: JSON.parse(value, reviver),
+      })
+    })
+
+    replaceFilter(filter)
+    form.trigger("filter")
+    onSubmit(form.getValues()).catch(console.error)
+  }, [searchParams])
 
   return (
     <Accordion type="single" collapsible>

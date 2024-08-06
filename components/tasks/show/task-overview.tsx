@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { Suspense, useState } from "react"
 
 import { Link } from "@/components/ui/link"
 import { TasksFilter } from "@/components/tasks/filter/tasks-filter"
@@ -18,7 +18,9 @@ export function TaskOverview() {
       >
         + Add a project
       </Link>
-      <TasksFilter onFilterApplied={setTaskList} />
+      <Suspense>
+        <TasksFilter onFilterApplied={setTaskList} />
+      </Suspense>
       <ShowRecentTasks taskList={taskList} />
     </div>
   )

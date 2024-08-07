@@ -1,3 +1,5 @@
+import { donateUrl } from "./donate.mjs"
+
 export type SiteConfig = typeof siteConfig
 
 export const siteConfig = {
@@ -19,9 +21,7 @@ export const siteConfig = {
     },
     {
       title: "Donate",
-      href: `/donate?tag=${JSON.stringify({
-        equal: "Donate",
-      })}&manager=${JSON.stringify({ equal: "0x24496D746Fd003397790E41d0d1Ce61F4F7fd61f" })}`,
+      href: donateUrl,
     },
   ],
   links: {

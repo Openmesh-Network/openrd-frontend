@@ -5,7 +5,6 @@ import Image from "next/image"
 import { useSearchParams } from "next/navigation"
 import { Filter, ObjectFilter } from "@/openrd-indexer/api/filter"
 import { FilterTasksReturn } from "@/openrd-indexer/api/return-types"
-import { reviver } from "@/openrd-indexer/utils/json"
 import { parseBigInt } from "@/openrd-indexer/utils/parseBigInt"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useFieldArray, useForm } from "react-hook-form"
@@ -163,7 +162,6 @@ export function TasksFilter({
   const selectableChains = useSelectableChains()
   const searchParams = useSearchParams()
   const [tasksSearchBar, setTasksSearchBar] = useState("")
-  const [requestIndex, setRequestIndex] = useState<number>(0)
 
   const defaultFilter = [
     {
@@ -288,7 +286,7 @@ export function TasksFilter({
 
       filter.push({
         property: prop,
-        value: JSON.parse(value, reviver),
+        value: JSON.parse(decodeURIComponent(value)),
       })
     })
 

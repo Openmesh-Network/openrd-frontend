@@ -5,9 +5,10 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useQueryClient } from "@tanstack/react-query"
 import axios from "axios"
 import { useForm } from "react-hook-form"
-import { Address, isAddress, parseAbiItem } from "viem"
+import { Address, isAddress, parseAbiItem, zeroAddress } from "viem"
 import { z } from "zod"
 
+import { chains } from "@/config/wagmi-config"
 import { validAddress } from "@/lib/regex"
 import { usePerformTransaction } from "@/hooks/usePerformTransaction"
 import { Button } from "@/components/ui/button"
@@ -26,6 +27,7 @@ import {
   SelectableAddresses,
 } from "@/components/web3/address-picker"
 import { ERC20BalanceInput } from "@/components/web3/erc20-balance-input"
+import { NativeBalanceInput } from "@/components/web3/native-balance-input"
 import {
   TokenMetadataRequest,
   TokenMetadataResponse,
@@ -53,6 +55,7 @@ export function DonateForm({
       chainId,
     })
   const queryClient = useQueryClient()
+  const chain = chains.find((c) => c.id === chainId)
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -72,6 +75,17 @@ export function DonateForm({
             description: `${values.tokenContract} is not a valid address.`,
           })
           return undefined
+        }
+
+        if (values.tokenContract === zeroAddress) {
+          return {
+            to: to,
+            value: values.amount,
+            data: "0x",
+            blobs: [],
+            maxFeePerBlobGas: BigInt(0),
+            chain: chain,
+          }
         }
 
         return {
@@ -107,21 +121,28 @@ export function DonateForm({
       if (tokensResponse.status === 200) {
         const data = tokensResponse.data as TokenMetadataResponse
         setBudgetTokens(
-          data.tokens.reduce((acc, token) => {
-            let name: string = token.contractAddress
-            if (token.name) {
-              name = token.name
-            }
-            if (token.symbol) {
-              name = `${name} (${token.symbol})`
-            }
+          data.tokens.reduce(
+            (acc, token) => {
+              let name: string = token.contractAddress
+              if (token.name) {
+                name = token.name
+              }
+              if (token.symbol) {
+                name = `${name} (${token.symbol})`
+              }
 
-            acc[token.contractAddress as Address] = {
-              name: name,
-              logo: token.logo,
-            }
-            return acc
-          }, {} as SelectableAddresses)
+              acc[token.contractAddress as Address] = {
+                name: name,
+                logo: token.logo,
+              }
+              return acc
+            },
+            {
+              [zeroAddress]: {
+                name: `${chain?.nativeCurrency.name} (${chain?.nativeCurrency.symbol})`,
+              },
+            } as SelectableAddresses
+          )
         )
       } else {
         console.warn(
@@ -166,17 +187,30 @@ export function DonateForm({
             <FormItem>
               <FormLabel>Amount</FormLabel>
               <FormControl>
-                <ERC20BalanceInput
-                  chainId={chainId}
-                  token={form.getValues().tokenContract as Address}
-                  value={field.value}
-                  onChange={(a) => {
-                    field.onChange(a)
-                    form.trigger("amount")
-                  }}
-                  account={walletClient?.account.address}
-                  showAvailable={true}
-                />
+                {form.getValues().tokenContract === zeroAddress ? (
+                  <NativeBalanceInput
+                    chainId={chainId}
+                    value={field.value}
+                    onChange={(a) => {
+                      field.onChange(a)
+                      form.trigger("amount")
+                    }}
+                    account={walletClient?.account.address}
+                    showAvailable={true}
+                  />
+                ) : (
+                  <ERC20BalanceInput
+                    chainId={chainId}
+                    token={form.getValues().tokenContract as Address}
+                    value={field.value}
+                    onChange={(a) => {
+                      field.onChange(a)
+                      form.trigger("amount")
+                    }}
+                    account={walletClient?.account.address}
+                    showAvailable={true}
+                  />
+                )}
               </FormControl>
               <FormDescription>The amount of tokens to donate.</FormDescription>
               <FormMessage />

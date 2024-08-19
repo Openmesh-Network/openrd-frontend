@@ -1,5 +1,6 @@
 import { useState } from "react"
 import {
+  isContractCall,
   Loggers,
   performTransaction as performTransactionInternal,
   PerformTransactionParameters,
@@ -183,7 +184,7 @@ export function usePerformTransaction(props: usePerformTransactionProps) {
         if (tx === undefined) {
           return undefined
         }
-        if (useAccountAbstraction && walletClient) {
+        if (useAccountAbstraction && walletClient && isContractCall(tx)) {
           // Pretend to have gas
           tx.stateOverride ??= []
           tx.stateOverride.push({

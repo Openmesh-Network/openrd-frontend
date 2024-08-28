@@ -1,22 +1,9 @@
-import { donateUrl } from "./config/donate.mjs"
-
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   rewrites: () => [
     {
       source: "/indexer/:call*",
       destination: "https://openrd.plopmenz.com/indexer/:call*",
-    },
-    {
-      source: "/donate-tasks",
-      destination: "/tasks",
-    },
-  ],
-  redirects: async () => [
-    {
-      source: "/donate",
-      destination: donateUrl,
-      permanent: false,
     },
   ],
   reactStrictMode: true,

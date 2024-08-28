@@ -459,9 +459,9 @@ export function ShowTask({
             {crowdfunded && (
               <TabsTrigger value="crowdfunding">Crowdfunding</TabsTrigger>
             )}
-            {budget.length !== 0 && escrow !== undefined && (
+            {/* {budget.length !== 0 && escrow !== undefined && (
               <TabsTrigger value="donate">Donate</TabsTrigger>
-            )}
+            )} */}
           </TabsList>
           <TabsContent value="description">
             <SanitizeHTML html={description} styleClass="!text-lg" />

@@ -1,5 +1,3 @@
-import { donateUrl } from "./donate.mjs"
-
 export type SiteConfig = typeof siteConfig
 
 export const siteConfig = {
@@ -18,10 +16,6 @@ export const siteConfig = {
     {
       title: "RFPs",
       href: "/rfps",
-    },
-    {
-      title: "Donate",
-      href: donateUrl,
     },
   ],
   links: {

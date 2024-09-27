@@ -271,6 +271,14 @@ export function ShowTask({
         "0x209c4859720b0a163cd8655c8db765d9b5bd280e9c01b709a855f2011fa685f6",
     }) === manager
 
+  const sOpen =
+    manager?.toLowerCase() ===
+    "0x519ce4C129a981B2CBB4C3990B1391dA24E8EbF3".toLowerCase() //hot.plopmenz.eth
+      ? parseInt(
+          description?.split(" sOPEN")[0].split(" ").at(-1)?.trim() ?? "0"
+        )
+      : undefined
+
   return (
     <div>
       <div className="gap-x-[20px] md:flex md:justify-between">
@@ -319,7 +327,7 @@ export function ShowTask({
                 </svg>
                 <p className="mr-[3px] flex items-center">Available funds:</p>{" "}
                 <span className="flex items-center text-[12px] font-bold text-black dark:text-white lg:text-[16px]">
-                  ${usdValue.toFixed(2)}
+                  {sOpen ? `${sOpen} sOPEN` : `$${usdValue.toFixed(2)}`}
                 </span>
               </div>
             </Link>

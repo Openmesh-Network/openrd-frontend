@@ -110,6 +110,15 @@ export function ShowTaskSummary({
     "No description was provided."
   const deadline = blockchainTask?.deadline ?? indexerTask?.deadline
 
+  const manager = blockchainTask?.manager ?? indexerTask?.manager
+  const sOpen =
+    manager?.toLowerCase() ===
+    "0x519ce4C129a981B2CBB4C3990B1391dA24E8EbF3".toLowerCase() //hot.plopmenz.eth
+      ? parseInt(
+          description?.split(" sOPEN")[0].split(" ").at(-1)?.trim() ?? "0"
+        )
+      : undefined
+
   return (
     <Card className={`w-full justify-between border-0 !shadow-none md:flex`}>
       <div className="w-full md:flex">
@@ -139,7 +148,8 @@ export function ShowTaskSummary({
           </CardContent>
         </div>
         <div className="place-content-center text-center text-sm md:w-[22%] md:text-base">
-          <span className="md:hidden">Budget: </span>${usdValue}
+          <span className="md:hidden">Budget: </span>
+          {sOpen ? `${sOpen} sOPEN` : `$${usdValue.toFixed(2)}`}
         </div>
         <div className="place-content-center text-center text-sm md:w-[22%] md:text-base">
           <span className="md:hidden">Deadline: </span>

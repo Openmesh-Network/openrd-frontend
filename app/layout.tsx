@@ -10,6 +10,7 @@ import { Toaster } from "@/components/ui/toaster"
 import { ContextProvider } from "@/components/context/context-provider"
 import { SiteHeader } from "@/components/site-header"
 import { TailwindIndicator } from "@/components/tailwind-indicator"
+import { AccountAbstractionBalance } from "@/components/web3/account-abstraction-balance"
 import { RememberConnectedChain } from "@/components/web3/remember-connected-chain"
 
 export const metadata: Metadata = {
@@ -55,6 +56,7 @@ export default function RootLayout({ children }: RootLayoutProps) {
             <Toaster />
             <TailwindIndicator />
             <RememberConnectedChain />
+            <AccountAbstractionBalance />
           </ContextProvider>
         </body>
       </html>

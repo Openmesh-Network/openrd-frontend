@@ -18,6 +18,7 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { Button } from "@/components/ui/button"
+import { Combobox } from "@/components/ui/combobox"
 import { ErrorWrapper } from "@/components/ui/error-wrapper"
 import { Form, FormControl, FormItem, FormMessage } from "@/components/ui/form"
 import { useSelectableChains } from "@/components/context/selectable-chains"
@@ -162,6 +163,7 @@ export function TasksFilter({
   const selectableChains = useSelectableChains()
   const searchParams = useSearchParams()
   const [tasksSearchBar, setTasksSearchBar] = useState("")
+  const [tagFilter, setTagFilter] = useState("")
 
   const defaultFilter = [
     {
@@ -184,21 +186,57 @@ export function TasksFilter({
   const lastPromise = useRef<Promise<FilterTasksReturn>>()
   async function onSubmit(values: z.infer<typeof formSchema>) {
     const getFilteredTasks = async () => {
-      const filteredTasks = await filterTasks(
-        values.filter.reduce((acc, value) => {
-          if (!value.property || Object.keys(value).length === 0) {
-            // skip
-            return acc
-          }
+      const prettyFilter = [...values.filter]
 
-          let obj = getSubfilter(acc, value.property)
-          obj[value.property] = {
-            ...obj[value.property],
-            ...applyType(value.value, getPropertyType(value.property)),
-          }
+      if (tagFilter) {
+        prettyFilter.push({
+          property: FilterProperty.Tags,
+          value: { equal: tagFilter },
+        })
+      }
+
+      const filter = prettyFilter.reduce((acc, value) => {
+        if (!value.property || Object.keys(value).length === 0) {
+          // skip
           return acc
-        }, {} as ObjectFilter)
-      )
+        }
+
+        let obj = getSubfilter(acc, value.property)
+        obj[value.property] = {
+          ...obj[value.property],
+          ...applyType(value.value, getPropertyType(value.property)),
+        }
+        return acc
+      }, {} as ObjectFilter)
+
+      if (tasksSearchBar) {
+        if (!filter.cachedMetadata) {
+          filter.cachedMetadata = {}
+        }
+
+        filter.cachedMetadata.oneOf = (
+          filter.cachedMetadata.oneOf ?? []
+        ).concat([
+          {
+            objectFilter: {
+              title: {
+                includes: tasksSearchBar.toLowerCase(),
+                convertValueToLowercase: true,
+              },
+            },
+          },
+          {
+            objectFilter: {
+              description: {
+                includes: tasksSearchBar.toLowerCase(),
+                convertValueToLowercase: true,
+              },
+            },
+          },
+        ])
+      }
+
+      const filteredTasks = await filterTasks(filter)
       return filteredTasks
     }
 
@@ -219,50 +257,7 @@ export function TasksFilter({
   useEffect(() => {
     // Initial get tasks (with just default filter applied)
     onSubmit(form.getValues()).catch(console.error)
-  }, [])
-
-  const handleSearchBarInput = (event: ChangeEvent<HTMLInputElement>) => {
-    const input = event.target
-    const value = input.value
-
-    if (tasksSearchBar.length + value.length > 100) {
-      return
-    }
-
-    setTasksSearchBar(value)
-
-    if (value === "") {
-      onSubmit(form.getValues()).catch(console.error)
-    }
-  }
-
-  async function searchBarFilter(value: string) {
-    const getFilteredTasks = async () => {
-      const filteredTasks = await filterTasks({
-        cachedMetadata: {
-          oneOf: [
-            {
-              objectFilter: {
-                title: {
-                  includes: value,
-                },
-              },
-            },
-            {
-              objectFilter: {
-                description: {
-                  includes: value,
-                },
-              },
-            },
-          ],
-        },
-      })
-      onFilterApplied(filteredTasks)
-    }
-
-    getFilteredTasks().catch(console.error)
-  }
+  }, [tasksSearchBar, tagFilter])
 
   const {
     fields: filter,
@@ -298,18 +293,34 @@ export function TasksFilter({
   return (
     <Accordion type="single" collapsible>
       <AccordionItem value="item-1">
-        <input
-          type="text"
-          onInput={handleSearchBarInput}
-          onKeyPress={(e) => {
-            if (e.key === "Enter") {
-              searchBarFilter(tasksSearchBar)
-            }
-          }}
-          value={tasksSearchBar}
-          placeholder="Search tasks, projects"
-          className="mb-8 h-[35px] w-full rounded-[8px] border-[0.7px] border-[#0085FF] bg-white px-5 py-[12px] text-[14px] font-light text-[#000000] placeholder-[#9b9b9b] outline-none focus:border-primary dark:bg-opacity-10 md:h-[44px] md:w-[600px] md:text-[16px]"
-        />
+        <div className="flex flex-col md:flex-row place-content-between gap-2">
+          <input
+            type="text"
+            onChange={(e) => setTasksSearchBar(e.target.value)}
+            value={tasksSearchBar}
+            placeholder="Search tasks, projects"
+            className="h-[35px] w-full rounded-[8px] border-[0.7px] border-[#0085FF] bg-white px-5 py-[12px] text-[14px] font-light text-[#000000] placeholder-[#9b9b9b] outline-none focus:border-primary dark:bg-opacity-10 md:h-[44px] md:text-[16px]"
+          />
+          <Combobox
+            options={[{ label: "No Tag Filter", value: "" }].concat(
+              [
+                "Community Building",
+                "Content Creation",
+                "Marketing",
+                "Technical Writing",
+                "Design",
+                "Animation",
+                "Content Writing",
+              ]
+                .toSorted()
+                .map((t) => {
+                  return { label: t, value: t }
+                })
+            )}
+            value={tagFilter}
+            onChange={(t) => setTagFilter(t as string)}
+          />
+        </div>
         <AccordionTrigger className="text-xl">Filter tasks</AccordionTrigger>
         <AccordionContent>
           <Form {...form}>

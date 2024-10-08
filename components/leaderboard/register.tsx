@@ -7,10 +7,12 @@ import { CheckCircle2 } from "lucide-react"
 import { zeroAddress } from "viem"
 import { useWalletClient } from "wagmi"
 
+import { formatAddress } from "@/lib/general-functions"
 import { useLoggers } from "@/hooks/useLoggers"
 
 import { LoginWithX } from "../social/login-with-x"
 import { Button } from "../ui/button"
+import { Link } from "../ui/link"
 import { ConnectButton } from "../web3/connect-button"
 
 export function LeaderboardRegister() {
@@ -142,7 +144,12 @@ export function LeaderboardRegister() {
         {step1Done ? (
           <div className="flex gap-1">
             <CheckCircle2 className="text-green-600" />
-            <span>{walletClient.account.address}</span>
+            <Link
+              href={`https://etherscan.io/address/${walletClient.account.address}`}
+              target="_blank"
+            >
+              {formatAddress(walletClient.account.address)}
+            </Link>
           </div>
         ) : (
           <div>
@@ -155,7 +162,12 @@ export function LeaderboardRegister() {
         {step2Done ? (
           <div className="flex gap-1">
             <CheckCircle2 className="text-green-600" />
-            <span>@{metadataRequests[0].value}</span>
+            <Link
+              href={`https://x.com/${metadataRequests[0].value}`}
+              target="_blank"
+            >
+              @{metadataRequests[0].value}
+            </Link>
           </div>
         ) : (
           <div>

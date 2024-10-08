@@ -17,6 +17,10 @@ export const siteConfig = {
       title: "RFPs",
       href: "/rfps",
     },
+    // {
+    //   title: "Airdrop",
+    //   href: "/leaderboard",
+    // },
   ],
   links: {
     guide:

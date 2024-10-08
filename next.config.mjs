@@ -5,6 +5,10 @@ const nextConfig = {
       source: "/indexer/:call*",
       destination: "https://openrd.plopmenz.com/indexer/:call*",
     },
+    {
+      source: "/leaderboard-indexer/:call*",
+      destination: "https://openrd.plopmenz.com/leaderboard-indexer/:call*",
+    },
   ],
   reactStrictMode: true,
   images: {

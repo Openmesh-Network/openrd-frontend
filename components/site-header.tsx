@@ -37,7 +37,7 @@ export function SiteHeader() {
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-background">
-      <div className="container hidden h-16 items-center space-x-4 sm:justify-between sm:space-x-0 md:flex">
+      <div className="container hidden h-16 items-center space-x-4 sm:justify-between sm:space-x-0 lg:flex">
         <MainNav items={navItems} />
         <div className="flex flex-1 items-center justify-end space-x-4">
           <nav className="flex items-center space-x-1">
@@ -47,7 +47,7 @@ export function SiteHeader() {
           </nav>
         </div>
       </div>
-      <div className="container flex h-16 items-center space-x-4 sm:justify-between sm:space-x-0 md:hidden">
+      <div className="container flex h-16 items-center space-x-4 sm:justify-between sm:space-x-0 lg:hidden">
         <Link href="/" className="flex items-center space-x-2">
           <Image alt="Logo" src="/icon.svg" width={20} height={20} />
           <span className="inline-block font-bold">{siteConfig.name}</span>

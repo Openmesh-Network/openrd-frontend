@@ -1,10 +1,8 @@
 import { useState } from "react"
 import {
   isContractCall,
-  Loggers,
   performTransaction as performTransactionInternal,
   PerformTransactionParameters,
-  UpdateDuration,
 } from "@plopmenz/viem-extensions"
 import {
   parseEther,
@@ -21,78 +19,24 @@ import {
 import { useChainId, usePublicClient, useSwitchChain } from "wagmi"
 
 import { chains } from "@/config/wagmi-config"
-import { ToastAction, ToastActionElement } from "@/components/ui/toast"
-import { useToast } from "@/components/ui/use-toast"
 import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 import { useSettings } from "@/components/context/settings"
 
-export interface usePerformTransactionProps {
+import { useLoggers } from "./useLoggers"
+
+export interface UsePerformTransactionProps {
   chainId?: number
 }
 
-export function usePerformTransaction(props: usePerformTransactionProps) {
+export function usePerformTransaction(props?: UsePerformTransactionProps) {
   const connectedChainId = useChainId()
   const { switchChainAsync } = useSwitchChain()
-  const walletClient = useAbstractWalletClient({ chainId: props.chainId })
-  const publicClient = usePublicClient({ chainId: props.chainId })
-  const { toast } = useToast()
+  const walletClient = useAbstractWalletClient({ chainId: props?.chainId })
+  const publicClient = usePublicClient({ chainId: props?.chainId })
+  const loggers = useLoggers(props)
   const { useAccountAbstraction, simulateTransactions } = useSettings()
 
   let dismiss = () => {}
-  const loggers: Loggers = {
-    onError: (item) => {
-      console.error(`${item.title}: ${item.description}\n${item.error}`)
-      dismiss()
-      dismiss = toast({
-        ...item,
-        variant: "destructive",
-      }).dismiss
-    },
-    onUpdate: (item) => {
-      console.log(`${item.title}: ${item.description}`)
-      dismiss()
-      let action: ToastActionElement | undefined = undefined
-      const update = item.updateType
-      switch (update?.type) {
-        case "ViewTransactionUpdate":
-          action = (
-            <ToastAction
-              altText="View on explorer"
-              onClick={() => {
-                const chain = chains.find(
-                  (c) => c.id === (props.chainId ?? connectedChainId)
-                )
-                if (!chain) {
-                  return
-                }
-
-                window.open(
-                  `${chain.blockExplorers.default.url}/tx/${update.transactionHash}`,
-                  "_blank"
-                )
-              }}
-            >
-              View on explorer
-            </ToastAction>
-          )
-          break
-      }
-      dismiss = toast({
-        ...item,
-        duration:
-          item.updateDuration === UpdateDuration.Long ? 120_000 : undefined, // 2 minutes
-        action: action,
-      }).dismiss
-    },
-    onSuccess: (item) => {
-      console.log(`${item.title}: ${item.description}`)
-      dismiss()
-      dismiss = toast({
-        ...item,
-        variant: "success",
-      }).dismiss
-    },
-  }
 
   const [performingTransaction, setPerformingTransaction] =
     useState<boolean>(false)
@@ -128,26 +72,24 @@ export function usePerformTransaction(props: usePerformTransactionProps) {
       wcRpcSchema
     >
   ) {
-    if (props.chainId !== undefined && connectedChainId !== props.chainId) {
+    if (props?.chainId !== undefined && connectedChainId !== props.chainId) {
       const switchChainResult = await switchChainAsync?.({
         chainId: props.chainId,
       }).catch((err) => {
         console.error(err)
       })
       if (!switchChainResult || switchChainResult.id !== props.chainId) {
-        toast({
+        loggers.onError?.({
           title: "Wrong chain",
           description: `Please switch to ${chains.find((c) => c.id === props.chainId)?.name ?? props.chainId}.`,
-          variant: "destructive",
         })
         return
       }
     }
     if (performingTransaction) {
-      toast({
+      loggers.onError?.({
         title: "Please wait",
         description: "The past transaction is still running.",
-        variant: "destructive",
       })
       return
     }

@@ -6,6 +6,7 @@ import {
   getPaginationRowModel,
   useReactTable,
 } from "@tanstack/react-table"
+import { checksumAddress, isAddress } from "viem"
 
 import { DroplistItem } from "."
 import { DataTable } from "../ui/data-table"
@@ -26,7 +27,9 @@ export function LeaderboardList({ droplist }: { droplist: DroplistItem[] }) {
           href={`https://etherscan.io/address/${row.original.address}`}
           target="_blank"
         >
-          {row.original.address}
+          {isAddress(row.original.address)
+            ? checksumAddress(row.original.address, 1)
+            : row.original.address}
         </Link>
       ),
     },

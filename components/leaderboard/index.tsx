@@ -36,8 +36,8 @@ export function Leaderboard() {
       <Timeline />
       {droplistPosition === -1 ? (
         <>
-          {droplist.length > 500 && (
-            <Alert className="bg-orange-200 hover:bg-orange-200/80 border-orange-400">
+          {droplist.length >= 500 && (
+            <Alert className="bg-orange-200 hover:bg-orange-200/80 border-orange-400 dark:bg-orange-700 dark:hover:bg-orange-700/80 dark:border-orange-800">
               <AlertTitle className="flex gap-1 place-items-center">
                 <AlertTriangle />
                 No guaranteed allocation!
@@ -47,7 +47,7 @@ export function Leaderboard() {
           <LeaderboardRegister />
         </>
       ) : (
-        <Alert className="bg-green-200 hover:bg-green-200/80 border-green-400">
+        <Alert className="bg-green-200 hover:bg-green-200/80 border-green-400 dark:bg-green-700 dark:hover:bg-green-700/80 dark:border-green-800">
           <AlertTitle>Whitelisted!</AlertTitle>{" "}
           <AlertDescription>
             You are on position #{droplistPosition + 1}

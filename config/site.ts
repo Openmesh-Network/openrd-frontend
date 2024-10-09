@@ -17,10 +17,10 @@ export const siteConfig = {
       title: "RFPs",
       href: "/rfps",
     },
-    // {
-    //   title: "Genesis",
-    //   href: "/genesis",
-    // },
+    {
+      title: "Genesis",
+      href: "/genesis",
+    },
   ],
   links: {
     guide:

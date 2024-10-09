@@ -7,6 +7,7 @@ import { Address } from "viem"
 import { useWalletClient } from "wagmi"
 
 import { Alert, AlertDescription, AlertTitle } from "../ui/alert"
+import { Link } from "../ui/link"
 import { LeaderboardList } from "./list"
 import { LeaderboardRegister } from "./register"
 import Timeline from "./timeline"
@@ -33,6 +34,13 @@ export function Leaderboard() {
 
   return (
     <div className="flex flex-col gap-12 pt-5">
+      <Link
+        className="underline text-xl"
+        href="https://openmesh.network"
+        target="_blank"
+      >
+        Openmesh main website (litepaper, technology, roadmap)
+      </Link>
       <Timeline />
       {droplistPosition === -1 ? (
         <div className="flex flex-col gap-7">

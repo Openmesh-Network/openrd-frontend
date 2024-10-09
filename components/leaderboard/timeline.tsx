@@ -1,11 +1,11 @@
 export default function Timeline() {
   const items = [
     {
-      date: "6:30 PM (AEDT)\n9th October",
+      date: "7 PM (AEDT)\n9th October",
       description: "Public Announcement",
     },
     {
-      date: "6:30 PM (AEDT)\n9th October",
+      date: "7 PM (AEDT)\n9th October",
       description: "Whitelisting starts",
     },
     {

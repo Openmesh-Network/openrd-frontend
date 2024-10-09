@@ -44,6 +44,12 @@ export function LeaderboardRegister() {
     setClickedFollow(true)
   }
 
+  const [clickedRetweet, setClickedRetweet] = useState<boolean>(false)
+  const onClickRetweet = () => {
+    window.open("https://x.com/OpenmeshNetwork", "_blank")
+    setClickedRetweet(true)
+  }
+
   const register = async () => {
     if (!walletClient) {
       loggers.onError?.({
@@ -136,6 +142,7 @@ export function LeaderboardRegister() {
   const step1Done = walletClient !== undefined
   const step2Done = step1Done && metadataRequests.length > 0
   const step3Done = step2Done && clickedFollow
+  const step4Done = step3Done && clickedRetweet
 
   return (
     <div className="flex flex-col gap-5 w-full">
@@ -200,10 +207,25 @@ export function LeaderboardRegister() {
         )}
       </div>
       <div className="flex flex-col gap-1">
-        <span className="text-xl">Step 4</span>
+        <span className="text-xl">Step 4 - Comment & Retweet</span>
+        {step4Done ? (
+          <div className="flex gap-1">
+            <CheckCircle2 className="text-green-600" />
+            <span>Will be checked several times before the distribution.</span>
+          </div>
+        ) : (
+          <div>
+            <Button disabled={!step3Done} onClick={() => onClickRetweet()}>
+              Comment & Retweet
+            </Button>
+          </div>
+        )}
+      </div>
+      <div className="flex flex-col gap-1">
+        <span className="text-xl">Step 5</span>
         <div>
           <Button
-            disabled={!step3Done}
+            disabled={!step4Done}
             onClick={() => register().catch(console.error)}
           >
             Whitelist

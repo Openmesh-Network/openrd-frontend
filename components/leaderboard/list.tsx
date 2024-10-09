@@ -47,7 +47,8 @@ export function LeaderboardList({ droplist }: { droplist: DroplistItem[] }) {
         const date = new Date(row.original.time)
         return (
           <span>
-            {date.getDate()} Oct {date.getHours()}:{date.getMinutes()}
+            {date.getDate()} Oct {date.getHours().toString().padStart(2, "0")}:
+            {date.getMinutes().toString().padStart(2, "0")}
           </span>
         )
       },

@@ -180,6 +180,7 @@ export function LeaderboardRegister() {
         {step3Done ? (
           <div className="flex gap-1">
             <CheckCircle2 className="text-green-600" />
+            <span>Will be checked several times before the distribution.</span>
           </div>
         ) : (
           <div>

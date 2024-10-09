@@ -22,7 +22,7 @@ export default function LeaderboardPage() {
           First-Ever sOPEN Distribution for Our Amazing Early Supporters
         </p>
       </div>
-      <span>
+      <span className="pt-2">
         We want to thank everyone for the tremendous support over the last
         couple of weeks. Our community is{" "}
         <strong>

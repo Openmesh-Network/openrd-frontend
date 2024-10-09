@@ -10,6 +10,7 @@ import { cn } from "@/lib/utils"
 
 import { NotificationsToggle } from "./notifications-toggle"
 import { ThemeToggle } from "./theme-toggle"
+import { Badge } from "./ui/badge"
 import { ConnectButton } from "./web3/connect-button"
 
 interface MainNavProps {
@@ -70,7 +71,14 @@ export function MobileNav({ items }: MainNavProps) {
                       "text-black dark:text-white"
                   )}
                 >
-                  {item.title}
+                  {item.title === "Genesis" ? (
+                    <div className="flex gap-0.5 place-items-center">
+                      {item.title}
+                      <Badge className="mb-3 px-1.5 text-xs">New</Badge>
+                    </div>
+                  ) : (
+                    item.title
+                  )}
                 </Link>
               )
           )}

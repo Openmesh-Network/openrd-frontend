@@ -18,8 +18,8 @@ export const siteConfig = {
       href: "/rfps",
     },
     // {
-    //   title: "Airdrop",
-    //   href: "/leaderboard",
+    //   title: "Genesis",
+    //   href: "/genesis",
     // },
   ],
   links: {

@@ -9,6 +9,8 @@ import { NavItem } from "@/types/nav"
 import { siteConfig } from "@/config/site"
 import { cn } from "@/lib/utils"
 
+import { Badge } from "./ui/badge"
+
 interface MainNavProps {
   items?: NavItem[]
 }
@@ -37,7 +39,14 @@ export function MainNav({ items }: MainNavProps) {
                       "text-black dark:text-white"
                   )}
                 >
-                  {item.title}
+                  {item.title === "Genesis" ? (
+                    <div className="flex gap-0.5 place-items-center">
+                      {item.title}
+                      <Badge className="mb-3 px-1.5 text-xs">New</Badge>
+                    </div>
+                  ) : (
+                    item.title
+                  )}
                 </Link>
               )
           )}

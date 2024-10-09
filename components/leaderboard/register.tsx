@@ -60,7 +60,7 @@ export function LeaderboardRegister() {
       return
     }
     const address = walletClient.account.address
-    const request = JSON.stringify(metadataRequests[0])
+    const request = JSON.stringify(metadataRequests.at(-1))
 
     loggers.onUpdate?.({
       title: "Sign confirmation",
@@ -160,18 +160,27 @@ export function LeaderboardRegister() {
       <div className="flex flex-col gap-1">
         <span className="text-xl">Step 2 - Connect X</span>
         {step2Done ? (
-          <div className="flex gap-1">
+          <div className="flex gap-1 place-items-center">
             <CheckCircle2 className="text-green-600" />
             <Link
-              href={`https://x.com/${metadataRequests[0].value}`}
+              href={`https://x.com/${metadataRequests.at(-1)?.value}`}
               target="_blank"
             >
-              @{metadataRequests[0].value}
+              @{metadataRequests.at(-1)?.value}
             </Link>
+            <LoginWithX
+              className="p-1 h-auto"
+              address={walletClient?.account.address}
+              text="Change"
+              variant={"outline"}
+            />
           </div>
         ) : (
           <div>
-            <LoginWithX address={walletClient?.account.address} />
+            <LoginWithX
+              address={walletClient?.account.address}
+              text="Login with X"
+            />
           </div>
         )}
       </div>

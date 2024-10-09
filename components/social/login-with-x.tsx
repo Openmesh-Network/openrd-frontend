@@ -4,9 +4,19 @@ import { useRouter } from "next/navigation"
 import axios from "axios"
 import { Address } from "viem"
 
-import { Button } from "../ui/button"
+import { Button, ButtonProps } from "../ui/button"
 
-export function LoginWithX({ address }: { address?: Address }) {
+export function LoginWithX({
+  address,
+  text,
+  className,
+  variant,
+}: {
+  address?: Address
+  text: string
+  className?: string
+  variant?: ButtonProps["variant"]
+}) {
   const { push } = useRouter()
 
   const login = async () => {
@@ -19,8 +29,13 @@ export function LoginWithX({ address }: { address?: Address }) {
   }
 
   return (
-    <Button disabled={!address} onClick={() => login().catch(console.error)}>
-      Login With X
+    <Button
+      className={className}
+      disabled={!address}
+      onClick={() => login().catch(console.error)}
+      variant={variant}
+    >
+      {text}
     </Button>
   )
 }

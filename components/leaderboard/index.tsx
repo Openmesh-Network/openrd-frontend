@@ -40,8 +40,8 @@ export function Leaderboard() {
             <Alert className="bg-orange-200 hover:bg-orange-200/80 border-orange-400 dark:bg-orange-700 dark:hover:bg-orange-700/80 dark:border-orange-800">
               <AlertTitle className="flex gap-1 place-items-center">
                 <AlertTriangle />
-                We surpassed 1,000 whitelist sign-ups and are now
-                oversubscribed!
+                All guaranteed slots have been filled. Now, 500 random slots are
+                open for participants.
               </AlertTitle>
             </Alert>
           )}

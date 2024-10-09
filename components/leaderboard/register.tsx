@@ -46,7 +46,10 @@ export function LeaderboardRegister() {
 
   const [clickedRetweet, setClickedRetweet] = useState<boolean>(false)
   const onClickRetweet = () => {
-    window.open("https://x.com/OpenmeshNetwork", "_blank")
+    window.open(
+      "https://x.com/OpenmeshNetwork/status/1843925647661605320",
+      "_blank"
+    )
     setClickedRetweet(true)
   }
 

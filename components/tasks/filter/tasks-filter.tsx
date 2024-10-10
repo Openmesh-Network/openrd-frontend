@@ -293,7 +293,7 @@ export function TasksFilter({
   return (
     <Accordion type="single" collapsible>
       <AccordionItem value="item-1">
-        <div className="flex flex-col md:flex-row place-content-between gap-2">
+        <div className="flex flex-col place-content-between gap-2 md:flex-row">
           <input
             type="text"
             onChange={(e) => setTasksSearchBar(e.target.value)}

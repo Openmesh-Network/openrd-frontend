@@ -40,7 +40,7 @@ export function MainNav({ items }: MainNavProps) {
                   )}
                 >
                   {item.title === "Genesis" ? (
-                    <div className="flex gap-0.5 place-items-center">
+                    <div className="flex place-items-center gap-0.5">
                       {item.title}
                       <Badge className="mb-3 px-1.5 text-xs">New</Badge>
                     </div>

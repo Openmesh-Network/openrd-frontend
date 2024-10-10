@@ -148,7 +148,7 @@ export function LeaderboardRegister() {
   const step4Done = step3Done && clickedRetweet
 
   return (
-    <div className="flex flex-col gap-5 w-full">
+    <div className="flex w-full flex-col gap-5">
       <div className="flex flex-col gap-1">
         <span className="text-xl">Step 1 - Log in</span>
         {step1Done ? (
@@ -170,7 +170,7 @@ export function LeaderboardRegister() {
       <div className="flex flex-col gap-1">
         <span className="text-xl">Step 2 - Connect X</span>
         {step2Done ? (
-          <div className="flex gap-1 place-items-center">
+          <div className="flex place-items-center gap-1">
             <CheckCircle2 className="text-green-600" />
             <Link
               href={`https://x.com/${metadataRequests.at(-1)?.value}`}
@@ -179,7 +179,7 @@ export function LeaderboardRegister() {
               @{metadataRequests.at(-1)?.value}
             </Link>
             <LoginWithX
-              className="p-1 h-auto"
+              className="h-auto p-1"
               address={walletClient?.account.address}
               text="Change"
               variant={"outline"}

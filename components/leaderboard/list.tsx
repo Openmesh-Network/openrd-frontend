@@ -62,7 +62,7 @@ export function LeaderboardList({ droplist }: { droplist: DroplistItem[] }) {
   })
 
   return (
-    <div className="flex-col gap-3 hidden md:flex">
+    <div className="hidden flex-col gap-3 md:flex">
       <span className="text-3xl">Whitelisting stats</span>
       <div className="flex-col gap-1">
         <ScrollArea className="w-full">

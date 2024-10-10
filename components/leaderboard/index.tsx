@@ -35,7 +35,7 @@ export function Leaderboard() {
   return (
     <div className="flex flex-col gap-12 pt-5">
       <Link
-        className="underline text-xl"
+        className="text-xl underline"
         href="https://openmesh.network"
         target="_blank"
       >
@@ -45,8 +45,8 @@ export function Leaderboard() {
       {droplistPosition === -1 ? (
         <div className="flex flex-col gap-7">
           {droplist.length >= 500 && (
-            <Alert className="bg-orange-200 hover:bg-orange-200/80 border-orange-400 dark:bg-orange-700 dark:hover:bg-orange-700/80 dark:border-orange-800">
-              <AlertTitle className="flex gap-1 place-items-center">
+            <Alert className="border-orange-400 bg-orange-200 hover:bg-orange-200/80 dark:border-orange-800 dark:bg-orange-700 dark:hover:bg-orange-700/80">
+              <AlertTitle className="flex place-items-center gap-1">
                 <AlertTriangle />
                 All guaranteed slots have been filled. Now, 500 random slots are
                 open for participants.
@@ -56,7 +56,7 @@ export function Leaderboard() {
           <LeaderboardRegister />
         </div>
       ) : (
-        <Alert className="bg-green-200 hover:bg-green-200/80 border-green-400 dark:bg-green-700 dark:hover:bg-green-700/80 dark:border-green-800">
+        <Alert className="border-green-400 bg-green-200 hover:bg-green-200/80 dark:border-green-800 dark:bg-green-700 dark:hover:bg-green-700/80">
           <AlertTitle>Whitelisted!</AlertTitle>{" "}
           <AlertDescription>
             You are on position #{droplistPosition + 1}

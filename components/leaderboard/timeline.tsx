@@ -42,7 +42,7 @@ export default function Timeline() {
               <div className="flex h-0.5 w-full bg-gray-200 dark:bg-gray-700"></div>
             </div>
             <div className="mt-3 md:pe-8">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-white whitespace-pre-line">
+              <h3 className="whitespace-pre-line text-lg font-semibold text-gray-900 dark:text-white">
                 {item.date}
               </h3>
               <p className="text-base font-normal text-gray-500 dark:text-gray-400">

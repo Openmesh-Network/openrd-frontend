@@ -32,8 +32,10 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion"
 import { Badge } from "@/components/ui/badge"
+import { Label } from "@/components/ui/label"
 import { Link } from "@/components/ui/link"
 import { Separator } from "@/components/ui/separator"
+import { Switch } from "@/components/ui/switch"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAbstractWalletClient } from "@/components/context/abstract-wallet-client"
 import { SanitizeHTML } from "@/components/sanitize-html"
@@ -208,7 +210,7 @@ export function ShowTask({
   const nativeBudget =
     blockchainTask?.nativeBudget ?? indexerTask?.nativeBudget ?? BigInt(0)
   const budget = blockchainTask?.budget ?? indexerTask?.budget ?? []
-  const applications =
+  const rawApplications =
     blockchainTask?.applications ?? indexerTask?.applications ?? {}
   const submissions =
     blockchainTask?.submissions ?? indexerTask?.submissions ?? {}
@@ -254,6 +256,28 @@ export function ShowTask({
 
     getBudgetLink().catch(console.error)
   }, [chain, events])
+
+  const [mergeApplications, setMergeApplication] = useState<boolean>(true)
+  const applications = mergeApplications
+    ? Object.keys(rawApplications)
+        .map(Number)
+        .reduceRight(
+          (mergedApplications, applicationId) => {
+            const application = rawApplications[applicationId]
+            if (
+              !Object.values(mergedApplications).some(
+                (a) =>
+                  a.applicant.toLowerCase() ===
+                  application.applicant.toLowerCase()
+              )
+            ) {
+              mergedApplications[applicationId] = application
+            }
+            return mergedApplications
+          },
+          {} as typeof rawApplications
+        )
+    : rawApplications
 
   const managementExtension =
     directMetadata?.managementExtension ?? indexedMetadata?.managementExtension
@@ -583,6 +607,14 @@ export function ShowTask({
           <TabsContent value="applications">
             <div className="space-y-7">
               <div className="space-y-1">
+                {/* <div className="flex gap-1 items-center float-right">
+                  <Label htmlFor="mergeApplications">Merge applications</Label>
+                  <Switch
+                    id="mergeApplications"
+                    checked={mergeApplications}
+                    onCheckedChange={setMergeApplication}
+                  />
+                </div> */}
                 {objectKeysInt(applications)
                   .sort((applicationId1, applicationId2) => {
                     if (state === TaskState.Taken) {

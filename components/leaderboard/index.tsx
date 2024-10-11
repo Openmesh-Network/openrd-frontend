@@ -2,7 +2,7 @@
 
 import { useQuery } from "@tanstack/react-query"
 import axios from "axios"
-import { AlertTriangle } from "lucide-react"
+import { AlertCircle, AlertTriangle } from "lucide-react"
 import { Address } from "viem"
 import { useWalletClient } from "wagmi"
 
@@ -43,18 +43,29 @@ export function Leaderboard() {
       </Link>
       <Timeline />
       {droplistPosition === -1 ? (
-        <div className="flex flex-col gap-7">
-          {droplist.length >= 500 && (
-            <Alert className="border-orange-400 bg-orange-200 hover:bg-orange-200/80 dark:border-orange-800 dark:bg-orange-700 dark:hover:bg-orange-700/80">
-              <AlertTitle className="flex place-items-center gap-1">
-                <AlertTriangle />
-                All guaranteed slots have been filled. Now, 500 random slots are
-                open for participants.
-              </AlertTitle>
-            </Alert>
-          )}
-          <LeaderboardRegister />
-        </div>
+        Date.now() >
+        Date.UTC(2024, 10 - 1, 11, 23, 59, 59, 999) - 11 * 60 * 60 * 1000 ? (
+          <Alert className="border-red-400 bg-red-200 hover:bg-red-200/80 dark:border-red-800 dark:bg-red-700 dark:hover:bg-red-700/80">
+            <AlertTitle className="flex place-items-center gap-1">
+              <AlertCircle />
+              The whitelist has been closed. Winners will be announced on the
+              12th of October.
+            </AlertTitle>
+          </Alert>
+        ) : (
+          <div className="flex flex-col gap-7">
+            {droplist.length >= 500 && (
+              <Alert className="border-orange-400 bg-orange-200 hover:bg-orange-200/80 dark:border-orange-800 dark:bg-orange-700 dark:hover:bg-orange-700/80">
+                <AlertTitle className="flex place-items-center gap-1">
+                  <AlertTriangle />
+                  All guaranteed slots have been filled. Now, 500 random slots
+                  are open for participants.
+                </AlertTitle>
+              </Alert>
+            )}
+            <LeaderboardRegister />
+          </div>
+        )
       ) : (
         <Alert className="border-green-400 bg-green-200 hover:bg-green-200/80 dark:border-green-800 dark:bg-green-700 dark:hover:bg-green-700/80">
           <AlertTitle>Whitelisted!</AlertTitle>{" "}

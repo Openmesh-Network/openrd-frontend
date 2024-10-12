@@ -27,10 +27,32 @@ export function Leaderboard() {
     },
   })
 
+  const { data: luckynumbers } = useQuery({
+    queryKey: ["luckynumbers"],
+    queryFn: async () => {
+      return await axios
+        .get("/genesis-lucky-numbers.txt")
+        .then((res) => res.data as string)
+        .then((res) => res.split("\n"))
+        .then((res) => res.map((n) => parseInt(n)))
+    },
+  })
+
   const droplistPosition = droplist.findIndex(
     (d) =>
       d.address.toLowerCase() === walletClient?.account.address.toLowerCase()
   )
+
+  // if (droplist?.length && luckynumbers) {
+  //   const addresses = []
+  //   for (let i = 0; i < 500; i++) {
+  //     addresses.push(droplist[i].address)
+  //   }
+  //   for (let i = 0; i < luckynumbers.length; i++) {
+  //     addresses.push(droplist[luckynumbers[i] - 1].address)
+  //   }
+  //   console.log(`[\"${addresses.join('", "')}\"]`)
+  // }
 
   return (
     <div className="flex flex-col gap-12 pt-5">
@@ -48,8 +70,7 @@ export function Leaderboard() {
           <Alert className="border-red-400 bg-red-200 hover:bg-red-200/80 dark:border-red-800 dark:bg-red-700 dark:hover:bg-red-700/80">
             <AlertTitle className="flex place-items-center gap-1">
               <AlertCircle />
-              The whitelist has been closed. Winners will be announced on the
-              12th of October.
+              The whitelist has been closed. Winners have been decided.
             </AlertTitle>
           </Alert>
         ) : (
@@ -65,6 +86,24 @@ export function Leaderboard() {
             )}
             <LeaderboardRegister />
           </div>
+        )
+      ) : luckynumbers !== undefined ? (
+        luckynumbers.includes(droplistPosition + 1) ||
+        droplistPosition < 500 ? (
+          <Alert className="border-green-400 bg-green-200 hover:bg-green-200/80 dark:border-green-800 dark:bg-green-700 dark:hover:bg-green-700/80">
+            <AlertTitle>Congratulations!</AlertTitle>{" "}
+            <AlertDescription>
+              Position #{droplistPosition + 1} is a winning number!
+            </AlertDescription>
+          </Alert>
+        ) : (
+          <Alert className="border-red-400 bg-red-200 hover:bg-red-200/80 dark:border-red-800 dark:bg-red-700 dark:hover:bg-red-700/80">
+            <AlertTitle>Unfortunate...</AlertTitle>{" "}
+            <AlertDescription>
+              Position #{droplistPosition + 1} did not win this time. However
+              there are plenty more initiatives to acquire some OPEN tokens!
+            </AlertDescription>
+          </Alert>
         )
       ) : (
         <Alert className="border-green-400 bg-green-200 hover:bg-green-200/80 dark:border-green-800 dark:bg-green-700 dark:hover:bg-green-700/80">

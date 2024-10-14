@@ -5,6 +5,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import axios from "axios"
 import { useForm } from "react-hook-form"
 import { Address, erc20Abi, formatUnits, isAddress, parseAbiItem } from "viem"
+import { mainnet } from "viem/chains"
 import { useChainId, usePublicClient } from "wagmi"
 import { z } from "zod"
 
@@ -75,21 +76,35 @@ export function Withdraw() {
       if (tokensResponse.status === 200) {
         const data = tokensResponse.data as TokensResponse
         setTokens(
-          data.tokens.reduce((acc, token) => {
-            let name: string = token.contractAddress
-            if (token.name) {
-              name = token.name
-            }
-            if (token.symbol) {
-              name = `${name} (${token.symbol})`
-            }
+          data.tokens
+            .concat(
+              chainId === mainnet.id
+                ? [
+                    {
+                      contractAddress:
+                        "0xc7b10907033Ca6e2FC00FCbb8CDD5cD89f141384",
+                      name: "Synthetic Openmesh",
+                      symbol: "sOPEN",
+                      logo: "/icon.svg",
+                    },
+                  ]
+                : []
+            )
+            .reduce((acc, token) => {
+              let name: string = token.contractAddress
+              if (token.name) {
+                name = token.name
+              }
+              if (token.symbol) {
+                name = `${name} (${token.symbol})`
+              }
 
-            acc[token.contractAddress as Address] = {
-              name: name,
-              logo: token.logo,
-            }
-            return acc
-          }, {} as SelectableAddresses)
+              acc[token.contractAddress as Address] = {
+                name: name,
+                logo: token.logo,
+              }
+              return acc
+            }, {} as SelectableAddresses)
         )
       } else {
         console.warn(`Token fetch failed: ${JSON.stringify(tokensResponse)}`)

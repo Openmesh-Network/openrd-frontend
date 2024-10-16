@@ -269,7 +269,8 @@ export function ShowTask({
                 (a) =>
                   a.applicant.toLowerCase() ===
                   application.applicant.toLowerCase()
-              )
+              ) ||
+              application.accepted
             ) {
               mergedApplications[applicationId] = application
             }

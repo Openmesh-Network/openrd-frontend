@@ -24,8 +24,8 @@ export const siteConfig = {
   ],
   links: {
     guide:
-      "https://open-mesh.gitbook.io/l3a-dao-documentation/getting-started-create-tasks/create-a-task/connect-wallet",
-    docs: "https://open-mesh.gitbook.io/l3a-dao-documentation/about/openr-and-d-101",
+      "https://docs.openmesh.network/open-source-initiatives/openr-and-d/getting-started/perform-tasks/apply-to-task",
+    docs: "https://docs.openmesh.network/open-source-initiatives/openr-and-d",
     forum: "https://circle.openmesh.network/",
     github: "https://github.com/Openmesh-Network/openrd",
   },

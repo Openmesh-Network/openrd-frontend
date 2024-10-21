@@ -4,11 +4,19 @@ import { useEffect, useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import axios from "axios"
 import { useForm } from "react-hook-form"
-import { Address, erc20Abi, formatUnits, isAddress, parseAbiItem } from "viem"
+import {
+  Address,
+  erc20Abi,
+  formatUnits,
+  isAddress,
+  parseAbiItem,
+  zeroAddress,
+} from "viem"
 import { mainnet } from "viem/chains"
 import { useChainId, usePublicClient } from "wagmi"
 import { z } from "zod"
 
+import { chains } from "@/config/wagmi-config"
 import { validAddress } from "@/lib/regex"
 import { usePerformTransaction } from "@/hooks/usePerformTransaction"
 import { Button } from "@/components/ui/button"
@@ -36,6 +44,8 @@ import {
 import { ERC20BalanceInput } from "@/components/web3/erc20-balance-input"
 import { TokensRequest, TokensResponse } from "@/app/api/tokens/route"
 
+import { NativeBalanceInput } from "./native-balance-input"
+
 const formSchema = z.object({
   erc20transfer: z.object({
     tokenContract: z
@@ -48,6 +58,7 @@ const formSchema = z.object({
 
 export function Withdraw() {
   const chainId = useChainId()
+  const chain = chains.find((c) => c.id === chainId)
   const walletClient = useAbstractWalletClient({ chainId })
   const publicClient = usePublicClient({ chainId })
   const { performTransaction, performingTransaction, loggers } =
@@ -90,6 +101,16 @@ export function Withdraw() {
                   ]
                 : []
             )
+            .concat(
+              chain
+                ? {
+                    contractAddress: zeroAddress,
+                    name: chain.nativeCurrency.name,
+                    symbol: chain.nativeCurrency.symbol,
+                    logo: "https://s2.coinmarketcap.com/static/img/coins/64x64/1027.png",
+                  }
+                : []
+            )
             .reduce((acc, token) => {
               let name: string = token.contractAddress
               if (token.name) {
@@ -126,6 +147,34 @@ export function Withdraw() {
   })
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
+    if (values.erc20transfer.tokenContract === zeroAddress) {
+      if (!chain) {
+        loggers.onError?.({
+          title: "Could not find chain",
+          description: `Chain with id ${chainId} was not found.`,
+        })
+        return
+      }
+
+      await performTransaction({
+        transactionName: "Withdrawal",
+        transaction: async () => {
+          return {
+            to: values.to as Address,
+            value: values.erc20transfer.amount,
+            data: "0x",
+            chain: chain,
+          }
+        },
+        onConfirmed: (receipt) => {
+          setWithdrawDone(
+            `Withdrawn ${formatUnits(values.erc20transfer.amount, chain.nativeCurrency.decimals)} ${chain.nativeCurrency.symbol} to ${values.to}.`
+          )
+        },
+      })
+      return
+    }
+
     await performTransaction({
       transactionName: "Withdrawal",
       transaction: async () => {
@@ -194,7 +243,7 @@ export function Withdraw() {
           name="erc20transfer"
           render={({ field }) => (
             <FormItem className="flex flex-col">
-              <FormLabel>ERC20 Transfer</FormLabel>
+              <FormLabel>Transfer</FormLabel>
               <FormControl>
                 <div className="flex w-full gap-x-1">
                   <AddressPicker
@@ -206,20 +255,34 @@ export function Withdraw() {
                       form.trigger("erc20transfer.tokenContract")
                     }}
                     customAllowed={true}
+                    chainId={
+                      field.value.tokenContract === zeroAddress ? 0 : undefined
+                    } // Prevent view on explorer
                   />
-                  <ERC20BalanceInput
-                    token={
-                      isAddress(field.value.tokenContract)
-                        ? field.value.tokenContract
-                        : undefined
-                    }
-                    value={field.value.amount}
-                    onChange={(change) => {
-                      field.value.amount = change
-                      form.trigger("erc20transfer.amount")
-                    }}
-                    account={walletClient?.account?.address}
-                  />
+                  {field.value.tokenContract === zeroAddress ? (
+                    <NativeBalanceInput
+                      value={field.value.amount}
+                      onChange={(change) => {
+                        field.value.amount = change
+                        form.trigger("erc20transfer.amount")
+                      }}
+                      account={walletClient?.account?.address}
+                    />
+                  ) : (
+                    <ERC20BalanceInput
+                      token={
+                        isAddress(field.value.tokenContract)
+                          ? field.value.tokenContract
+                          : undefined
+                      }
+                      value={field.value.amount}
+                      onChange={(change) => {
+                        field.value.amount = change
+                        form.trigger("erc20transfer.amount")
+                      }}
+                      account={walletClient?.account?.address}
+                    />
+                  )}
                 </div>
               </FormControl>
               <FormDescription>

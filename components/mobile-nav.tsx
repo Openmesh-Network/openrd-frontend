@@ -71,14 +71,7 @@ export function MobileNav({ items }: MainNavProps) {
                       "text-black dark:text-white"
                   )}
                 >
-                  {item.title === "Genesis" ? (
-                    <div className="flex place-items-center gap-0.5">
-                      {item.title}
-                      <Badge className="mb-3 px-1.5 text-xs">New</Badge>
-                    </div>
-                  ) : (
-                    item.title
-                  )}
+                  {item.title}
                 </Link>
               )
           )}

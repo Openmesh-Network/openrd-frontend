@@ -5,7 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query"
 import { coinbaseWallet, injected, walletConnect } from "@wagmi/connectors"
 import { createWeb3Modal } from "@web3modal/wagmi/react"
 import { arbitrumSepolia, mainnet, polygon, sepolia } from "viem/chains"
-import { createConfig, http, WagmiProvider } from "wagmi"
+import { createConfig, http, WagmiProvider, fallback } from "wagmi"
 
 import { chains, metadata, projectId } from "@/config/wagmi-config"
 
@@ -18,8 +18,18 @@ const config = createConfig({
   chains,
   ssr: true,
   transports: {
-    [mainnet.id]: http(),
-    [polygon.id]: http(),
+    [mainnet.id]: fallback([
+      http("https://cloudflare-eth.com"),
+      http("https://eth.drpc.org"),
+      http("https://eth.llamarpc.com"),
+      http("https://rpc.ankr.com/eth"),
+    ]),
+    [polygon.id]: fallback([
+      http("https://polygon-rpc.com"),
+      http("https://polygon.drpc.org"),
+      http("https://polygon.llamarpc.com"),
+      http("https://rpc.ankr.com/polygon"),
+    ]),
     [sepolia.id]: http("https://rpc.ankr.com/eth_sepolia"),
     [arbitrumSepolia.id]: http(),
   },

@@ -27,8 +27,6 @@ function getWeb3Auth(): Web3Auth {
     clientId,
     privateKeyProvider,
     web3AuthNetwork: WEB3AUTH_NETWORK.SAPPHIRE_MAINNET,
-    storageKey: "local",
-    enableLogging: true,
   })
 
   web3AuthInstance.initModal().catch(console.error)

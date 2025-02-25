@@ -4,8 +4,8 @@ import { siteConfig } from "./site"
 
 export const appName = siteConfig.name
 export const appDescription = siteConfig.description
-export const appIcon = "https://openrd.plopmenz.com/icon.png" as const
-export const appUrl = "https://openrd.plopmenz.com" as const
+export const appIcon = "https://openrd.openmesh.network/icon.png" as const
+export const appUrl = "https://openrd.openmesh.network" as const
 export const metadata = {
   name: appName,
   description: appDescription,

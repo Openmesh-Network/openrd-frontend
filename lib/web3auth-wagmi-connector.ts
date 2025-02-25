@@ -1,8 +1,8 @@
 import { ChainNotConfiguredError, createConnector } from "@wagmi/core"
+import type { LoginParams } from "@web3auth/auth-adapter"
 import type { IProvider, IWeb3Auth, WALLET_ADAPTER_TYPE } from "@web3auth/base"
 import * as pkg from "@web3auth/base"
 import type { IWeb3AuthModal, ModalConfig } from "@web3auth/modal"
-import type { LoginParams } from "@web3auth/auth-adapter"
 import {
   Address,
   Chain,
@@ -33,7 +33,12 @@ export function getChainConfig(chain: Chain) {
   const chainConfig = {
     chainNamespace: CHAIN_NAMESPACES.EIP155,
     chainId: "0x" + chain.id.toString(16),
-    rpcTarget: chain.id === 1 ? "https://eth.drpc.org" : chain.rpcUrls.default.http[0],
+    rpcTarget:
+      chain.id === 1
+        ? "https://eth.drpc.org"
+        : chain.id === 11155111
+          ? "https://rpc.ankr.com/eth_sepolia"
+          : chain.rpcUrls.default.http[0],
     displayName: chain.name,
     tickerName: chain.nativeCurrency?.name,
     ticker: chain.nativeCurrency?.symbol,
@@ -41,8 +46,8 @@ export function getChainConfig(chain: Chain) {
     blockExplorerUrl: chain.blockExplorers?.default.url[0],
     isTestnet: chain.testnet,
     logo: chain.nativeCurrency?.symbol
-    ? `https://images.toruswallet.io/${chain.nativeCurrency.symbol.toLowerCase()}.svg`
-    : undefined,
+      ? `https://images.toruswallet.io/${chain.nativeCurrency.symbol.toLowerCase()}.svg`
+      : undefined,
   }
   return chainConfig
 }
@@ -71,10 +76,7 @@ export function Web3AuthConnector(parameters: Web3AuthConnectorParams) {
           if (isIWeb3AuthModal(web3AuthInstance)) {
             await web3AuthInstance.connect()
           } else if (loginParams) {
-            await web3AuthInstance.connectTo(
-              WALLET_ADAPTERS.AUTH,
-              loginParams
-            )
+            await web3AuthInstance.connectTo(WALLET_ADAPTERS.AUTH, loginParams)
           } else {
             log.error(
               "please provide valid loginParams when using @web3auth/no-modal"
